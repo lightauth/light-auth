@@ -1,0 +1,54 @@
+{
+  "name": "@light-auth/core",
+  "version": "1.0.0",
+  "description": "light auth core framework agnostic, using artic",
+  "author": {
+    "name": "Sébastien Pertus",
+    "email": "spertus@microsoft.com",
+    "url": "https://github.com/Mimetis"
+  },
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "nodejs",
+    "oauth",
+    "jwt",
+    "oauth2",
+    "authentication",
+    "light-auth"
+  ],
+  "type": "module",
+  "main": "dist/index.mjs",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "npm run clean && rollup -c --bundleConfigAsCjs",
+    "dev": "rollup -cw --bundleConfigAsCjs",
+    "clean": "shx rm -rf dist lib",
+    "start": "rollup -c -w"
+  },
+  "dependencies": {
+    "arctic": "^3.6.0",
+    "cookie": "^1.0.2",
+    "jose": "^6.0.10"
+  },
+  "peerDependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.2",
+    "shx": "^0.4.0",
+    "tslib": "^2.8.1"
+  }
+}

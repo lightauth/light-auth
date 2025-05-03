@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2024", /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "module": "ESNext", /* Specify what module code is generated. */
+    "moduleResolution": "bundler", /* Specify how TypeScript looks up a file from a given module specifier. */
+    "esModuleInterop": true, /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
+    "forceConsistentCasingInFileNames": true, /* Ensure that casing is correct in imports. */
+    "strict": true, /* Enable all strict type-checking options. */
+    "noImplicitAny": true, /* Enable error reporting for expressions and declarations with an implied 'any' type. */
+    "strictNullChecks": true, /* When type checking, take into account 'null' and 'undefined'. */
+    "skipLibCheck": true, /* Skip type checking all .d.ts files. */
+    "outDir": "./dist",
+    "sourceMap": true,
+    "jsx": "preserve",
+    "allowJs": false, /* Allow JavaScript files to be compiled. */
+    "declaration": true, /* Generates corresponding '.d.ts' file. */
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "rollup.config.js"
+  ]
+}

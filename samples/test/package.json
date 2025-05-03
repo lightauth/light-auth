@@ -1,0 +1,13 @@
+{
+    "name": "test",
+    "version": "1.0.0",
+    "description": "test",
+    "main": "app.js",
+    "type": "module",
+    "scripts": {
+        "dev": "npx tsx watch app.ts && node app.js"
+    },
+    "devDependencies": {
+        "@types/node": "^22.15.3"
+    }
+}
