@@ -3,7 +3,7 @@ import {
   createHttpHandlerFunction,
   createLightAuthUserFunction,
   createSigninFunction,
-  createUserStore,
+  createLightAuthUserAdapter,
   DEFAULT_BASE_PATH,
   createSignoutFunction,
   LightAuthConfig,
@@ -11,8 +11,8 @@ import {
   LightAuthSession,
   LightAuthUser,
 } from "@light-auth/core";
-import { nextJsNavigatorStore } from "./store/nextjs-navigator-store";
-import { nextJsCookieStore } from "./store/nextjs-cookie-store";
+import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
+import { nextJsLightAuthCookieStore } from "./nextjs-light-auth-cookie-store";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -76,14 +76,14 @@ export const createNextJsLightAuthUserFunction = (config: LightAuthConfig): (() 
 /**
  * CreateLightAuth is a function that creates the LightAuth components for Next.js.
  * It takes a LightAuthConfig object as a parameter and returns a LightAuthNextJsComponents object.
- * The function also sets default values for the userStore, navigatoreStore, and cookieStore if they are not provided.
+ * The function also sets default values for the userAdapter, router and cookieStore if they are not provided.
  */
 export function CreateLightAuth(config: LightAuthConfig): LightAuthNextJsComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.userStore = config.userStore ?? createUserStore({ base: "./users", isEncrypted: false });
-  config.navigatoreStore = config.navigatoreStore ?? nextJsNavigatorStore;
-  config.cookieStore = config.cookieStore ?? nextJsCookieStore;
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false });
+  config.router = config.router ?? nextJsLightAuthRouter;
+  config.cookieStore = config.cookieStore ?? nextJsLightAuthCookieStore;
 
   return {
     providers: config.providers,

@@ -5,6 +5,7 @@ export interface LightAuthRouter {
   getHeaders: ({ req, res, search }: { req?: BaseRequest; res?: BaseResponse; search: string | RegExp }) => Headers | Promise<Headers>;
   setHeaders: ({ req, res, headers }: { req?: BaseRequest; res?: BaseResponse; headers: Map<string, string> }) => Promise<BaseResponse> | BaseResponse;
   getUrl: ({ req, res }: { req?: BaseRequest; res?: BaseResponse }) => URL | Promise<URL>;
+  writeJson: ({ req, res, data }: { req?: BaseRequest; res?: BaseResponse; data: {} }) => Promise<BaseResponse> | BaseResponse;
 }
 
 export const createLightAuthRouter = (): LightAuthRouter => {
@@ -17,6 +18,19 @@ export const createLightAuthRouter = (): LightAuthRouter => {
         },
       });
       return res;
+    },
+
+    writeJson({ res, data }: { res?: Response; data: any }) {
+      if (!res) throw new Error("Response object is required to write JSON.");
+      const json = JSON.stringify(data);
+      const response = new Response(json, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(json).toString(),
+        },
+      });
+      return response;
     },
 
     getHeaders({ req, res, search }: { req?: Request; res?: Response; search: string | RegExp }): Headers {

@@ -1,17 +1,9 @@
 import express, { type Request, type Response } from "express";
 import { handlers, signIn } from "./auth";
 import * as path from "node:path";
+import * as dotenv from "dotenv";
 
-// import {
-//   errorHandler,
-//   errorNotFoundHandler,
-// } from "./middleware/error.middleware.js"
-// import {
-//   authenticatedUser,
-//   currentSession,
-// } from "./middleware/auth.middleware.js"
-
-import * as pug from "pug";
+dotenv.config();
 
 export const app = express();
 
@@ -31,9 +23,7 @@ app.use(express.json());
 
 app.use("/api/auth/", async (req, res, next) => {
   await handlers(req, res);
-  if (!res.headersSent) {
-    next();
-  }
+  if (!res.headersSent) next();
 });
 
 app.post("/login", async (req: Request, res: Response) => {
@@ -47,18 +37,12 @@ app.get("/protected", async (_req: Request, res: Response) => {
   res.render("protected", { session: res.locals.session });
 });
 
-// app.get(
-//   "/api/protected",
-//   authenticatedUser,
-//   async (_req: Request, res: Response) => {
-//     res.json(res.locals.session)
-//   },
-// )
-
 app.get("/", async (_req: Request, res: Response) => {
   res.render("index", {
     title: "Express Auth Example",
     user: res.locals.session?.user,
+    googleId: process.env.GOOGLE_CLIENT_ID,
+    test: "testde",
   });
 });
 

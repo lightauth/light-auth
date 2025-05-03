@@ -14,9 +14,12 @@ import { decryptJwt, encryptJwt } from "./jwt";
  * @throws Error if any required fields are missing.
  */
 function checkConfig(config: LightAuthConfig, providerName?: string): Required<LightAuthConfig> & { provider: LightAuthProvider } {
+  if (!process.env.LIGHT_AUTH_SECRET_VALUE) {
+    throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+  }
   if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("At least one provider is required");
-  if (config.userStore == null) throw new Error("sessionStore is required");
-  if (config.navigatoreStore == null) throw new Error("navigatoreStore is required");
+  if (config.userAdapter == null) throw new Error("userAdapter is required");
+  if (config.router == null) throw new Error("router is required");
   if (config.cookieStore == null) throw new Error("cookieStore is required");
 
   // if providerName is provider, check if the provider is in the config
@@ -46,7 +49,7 @@ export async function redirectToProviderLogin({
   res?: BaseResponse;
   providerName?: string;
 }): Promise<BaseResponse> {
-  const { provider, navigatoreStore, cookieStore } = checkConfig(config, providerName);
+  const { provider, router, cookieStore } = checkConfig(config, providerName);
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
@@ -70,7 +73,7 @@ export async function redirectToProviderLogin({
 
   // add additional headers
   if (provider.headers) {
-    await navigatoreStore.setHeaders({ req, res, headers: provider.headers });
+    await router.setHeaders({ req, res, headers: provider.headers });
   }
 
   const stateCookie: LightAuthCookie = {
@@ -95,7 +98,7 @@ export async function redirectToProviderLogin({
 
   await cookieStore.setCookies({ req, res, cookies: [stateCookie, codeVerifierCookie] });
 
-  const redirect = await navigatoreStore.redirectTo({ req, res, url: url.toString() });
+  const redirect = await router.redirectTo({ req, res, url: url.toString() });
 
   return redirect;
 }
@@ -113,9 +116,9 @@ export async function providerCallback({
   providerName?: string;
   callbackUrl: string;
 }): Promise<Response> {
-  const { navigatoreStore, userStore: sessionStore, cookieStore, provider } = checkConfig(config, providerName);
+  const { router, userAdapter, cookieStore, provider } = checkConfig(config, providerName);
 
-  const url = await navigatoreStore.getUrl({ req });
+  const url = await router.getUrl({ req });
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
@@ -156,8 +159,8 @@ export async function providerCallback({
   let refresh_token: string | undefined;
   if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
 
-  const id = sessionStore.generateStoreId();
-  const maxAge = 60 * 60 * 24 * 30; // 30 days
+  const id = userAdapter.generateStoreId();
+  const maxAge = process.env.DEFAULT_SESSION_EXPIRATION ? parseInt(process.env.DEFAULT_SESSION_EXPIRATION, 10) : 60 * 60 * 24 * 30;
   const expiresAt = new Date(Date.now() + maxAge * 1000); // 30 days
 
   let session: LightAuthSession = {
@@ -207,11 +210,11 @@ export async function providerCallback({
     user = userSaving ?? user;
   }
 
-  await sessionStore.setUser({ req, res, user });
+  await userAdapter.setUser({ req, res, user });
 
   if (config.onUserSaved) await config.onUserSaved(user);
 
-  const redirectResponse = await navigatoreStore.redirectTo({ req, res, url: callbackUrl });
+  const redirectResponse = await router.redirectTo({ req, res, url: callbackUrl });
   return redirectResponse;
 }
 
@@ -228,19 +231,22 @@ export async function logoutAndRevokeToken({
   revokeToken?: boolean;
   callbackUrl?: string;
 }): Promise<Response> {
-  const { userStore, navigatoreStore, cookieStore } = checkConfig(config);
+  const { userAdapter, router, cookieStore } = checkConfig(config);
 
   const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
   if (cookiesSession == null) return res;
   // get the session from the cookie
   const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
   if (cookieSession == null) return res;
-  const session = JSON.parse(cookieSession.value) as LightAuthSession;
 
-  // get the user from the session store
-  const user = await userStore.getUser({ req, res, id: session.id });
+  let session: LightAuthSession | null = null;
+  try {
+    session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+  } catch (error) {}
 
   if (session) {
+    // get the user from the session store
+    const user = await userAdapter.getUser({ req, res, id: session.id });
     // get the provider name from the session
     const providerName = session?.providerName;
     // get the provider from the config
@@ -268,33 +274,30 @@ export async function logoutAndRevokeToken({
     }
 
     // delete the session
-    if (user) await userStore.deleteUser({ req, res, user });
+    if (user) await userAdapter.deleteUser({ req, res, user });
 
     // delete the session cookie
     await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
   }
 
-  const redirectResponse = await navigatoreStore.redirectTo({ req, res, url: callbackUrl });
+  const redirectResponse = await router.redirectTo({ req, res, url: callbackUrl });
   return redirectResponse;
 }
 
 export async function sessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
-  try {
-    const { cookieStore } = checkConfig(config);
+  const { cookieStore, router } = checkConfig(config);
 
-    const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
-    if (cookiesSession == null) return res;
-    // get the session from the cookie
-    const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
-    if (cookieSession == null) return res;
-    const session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+  const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+  if (cookiesSession == null) return res;
+  // get the session from the cookie
+  const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
+  if (cookieSession == null) return res;
 
-    if (session) {
-      return new Response(JSON.stringify(session), { status: 200 });
-    } else {
-      throw new Error("Session not found");
-    }
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : String(e) }), { status: 200 });
+  const session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+  if (session) {
+    const response = await router.writeJson({ req, res, data: session });
+    return response;
+  } else {
+    throw new Error("Session not found");
   }
 }

@@ -1,4 +1,4 @@
-import { NavigatorStore } from "@light-auth/core";
+import { LightAuthRouter } from "@light-auth/core";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
@@ -8,14 +8,20 @@ import { NextRequest, NextResponse } from "next/server";
  * using the 'cookie' npm package and returning Response objects
  * with appropriate Set-Cookie headers.
  */
-export const nextJsNavigatorStore: NavigatorStore = {
+export const nextJsLightAuthRouter: LightAuthRouter = {
+  writeJson({ res, data }: { res?: NextResponse; data: any }): NextResponse {
+    if (!res) throw new Error("Response is required in writeJson function of nextJsLightAuthRouter");
+
+    return NextResponse.json(data);
+  },
+
   async redirectTo({ url }: { url: string }) {
     redirect(url);
   },
+
   async getUrl({ req }: { req?: NextRequest }) {
-    if (!req) {
-      throw new Error("Request is required in defaultNavigatorStore");
-    }
+    if (!req) throw new Error("Request is required in nextJsLightAuthRouter");
+
     const url = new URL(req.url);
     return url;
   },

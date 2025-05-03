@@ -1,5 +1,5 @@
-import { Cookie, decryptJwt, DEFAULT_SESSION_COOKIE_NAME, encryptJwt, LightAuthSession, LightAuthUser, UserStore } from "@light-auth/core";
-import { nextJsCookieStore } from "./nextjs-cookie-store";
+import { LightAuthCookie, decryptJwt, DEFAULT_SESSION_COOKIE_NAME, encryptJwt, LightAuthSession, LightAuthUser, LightAuthUserAdapter } from "@light-auth/core";
+import { nextJsLightAuthCookieStore } from "./nextjs-light-auth-cookie-store";
 
 /**
  * A concrete SessionStore implementation for Node.js server-side,
@@ -27,9 +27,9 @@ export function splitCookieValue(value: string): Map<number, string> {
   return values;
 }
 
-export const nextJsUserCookieStore: UserStore = {
+export const nextJsLightAuthUserAdapterCookie: LightAuthUserAdapter = {
   async getUser(): Promise<LightAuthUser | null> {
-    const cookies = await nextJsCookieStore.getCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.`) });
+    const cookies = await nextJsLightAuthCookieStore.getCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.`) });
 
     if (!cookies) return null;
 
@@ -38,7 +38,7 @@ export const nextJsUserCookieStore: UserStore = {
 
     // Sort cookies by the integer suffix after the last dot in the name
     const sortedCookies = filteredCookies.slice().sort((a, b) => {
-      const getIndex = (cookie: Cookie) => {
+      const getIndex = (cookie: LightAuthCookie) => {
         const parts = cookie.name.split(".");
         return parseInt(parts[parts.length - 1], 10);
       };
@@ -62,7 +62,7 @@ export const nextJsUserCookieStore: UserStore = {
 
     // template for the cookie
 
-    const cookie: Cookie = {
+    const cookie: LightAuthCookie = {
       name: "",
       value: "",
       httpOnly: true,
@@ -75,23 +75,23 @@ export const nextJsUserCookieStore: UserStore = {
     // create chunks if needed (ie if the jwt is too long > 4096 bytes)
     const chunks = splitCookieValue(jwt);
 
-    let cookies: Cookie[] = [];
+    let cookies: LightAuthCookie[] = [];
 
     for (const [key, value] of chunks) {
       if (value === "") continue;
 
-      const chunkCookie: Cookie = {
+      const chunkCookie: LightAuthCookie = {
         ...cookie,
         name: `${DEFAULT_SESSION_COOKIE_NAME}.${key}`,
         value: value,
       };
       cookies.push(chunkCookie);
     }
-    await nextJsCookieStore.setCookies({ cookies });
+    await nextJsLightAuthCookieStore.setCookies({ cookies });
   },
 
   async deleteUser({ user }: { user: LightAuthUser }): Promise<void> {
-    await nextJsCookieStore.deleteCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.\\d+$`) });
+    await nextJsLightAuthCookieStore.deleteCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.\\d+$`) });
   },
 
   generateStoreId(): string {

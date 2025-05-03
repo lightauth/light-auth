@@ -2,8 +2,8 @@ doctype html
 html
   head
     title= title
-    link(rel="stylesheet", href="/css/output.css")
-    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(rel="stylesheet" href="/css/output.css")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
   body(class="flex flex-col items-center")
     div(class="flex w-[90%] max-w-2xl flex-col justify-start gap-2")
       div(
@@ -14,14 +14,14 @@ html
             if session.user.image
               img(src=`${session.user.image}`, class="h-8 w-8 rounded-full")
             span
-              | Signed in as dd #{ ' ' }
+              | Signed in as #{ ' ' }
               strong= session.user.email || session.user.name
           a(
             class="rounded-md bg-blue-600 px-5 py-2.5 font-medium text-white",
             href="/api/auth/signout"
           ) Sign out
         else
-          span(class="") You are not signed in ddd
+          span(class="") You are not signed in
           a#sign-indiv(
             ,
             class="rounded-md bg-blue-600 px-5 py-2.5 font-medium text-white",

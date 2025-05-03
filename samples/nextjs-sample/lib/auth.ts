@@ -1,5 +1,8 @@
 import { Google, MicrosoftEntraId } from "arctic";
-import { CreateLightAuth, nextJsUserStore } from "@light-auth/nextjs";
+import {
+  CreateLightAuth,
+  nextJsLightAuthUserAdapterCookie,
+} from "@light-auth/nextjs";
 import { LightAuthProvider } from "@light-auth/core";
 
 const googleProvider: LightAuthProvider = {
@@ -25,12 +28,10 @@ const microsoftProvider: LightAuthProvider = {
 
 export const { providers, handlers, signIn, signOut, getSession, getUser } =
   CreateLightAuth({
-    userStore: nextJsUserStore,
+    userAdapter: nextJsLightAuthUserAdapterCookie,
     providers: [googleProvider, microsoftProvider],
     basePath: "/api/auth", // Optional: specify a custom base path for the handlers
     onSessionSaving: async (session, tokens) => {
-      console.log("onSessionSaving:", tokens);
-
       if (!tokens) return session;
       if (!tokens.idToken()) return session;
 

@@ -12,8 +12,6 @@ export function createSigninFunction(
   config: LightAuthConfig
 ): ({ req, res, providerName }: { req?: BaseRequest; res?: BaseResponse; providerName?: string }) => Promise<BaseResponse> {
   return async ({ req, res, providerName }) => {
-    if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
-
     const redirectResponse = await redirectToProviderLogin({ config, res, req, providerName });
     return redirectResponse;
   };
@@ -23,8 +21,6 @@ export function createSignoutFunction(
   config: LightAuthConfig
 ): ({ req, res, revokeToken }: { req?: BaseRequest; res?: BaseResponse; revokeToken?: boolean }) => Promise<BaseResponse> {
   return async ({ req, res, revokeToken }) => {
-    if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
-
     const redirectResponse = await logoutAndRevokeToken({ config, req, revokeToken });
     return redirectResponse;
   };
@@ -34,14 +30,18 @@ export function createLightAuthSessionFunction(
   config: LightAuthConfig
 ): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined> {
   return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
-    if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
+    if (!config.router) throw new Error("router is required");
     if (!config.cookieStore) throw new Error("cookieStore is required");
 
     const cookiesSession = await config.cookieStore.getCookies({ req: args?.req, res: args?.res, search: DEFAULT_SESSION_COOKIE_NAME });
     if (cookiesSession == null || cookiesSession.length <= 0) return null;
-
-    const session = (await decryptJwt(cookiesSession[0].value)) as LightAuthSession;
-    return session;
+    try {
+      // decrypt the session
+      const session = (await decryptJwt(cookiesSession[0].value)) as LightAuthSession;
+      return session;
+    } catch (error) {
+      return null;
+    }
   };
 }
 
@@ -49,27 +49,31 @@ export function createLightAuthUserFunction(
   config: LightAuthConfig
 ): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined> {
   return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
-    if (!config.userStore) throw new Error("userStore is required");
-    if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
+    if (!config.userAdapter) throw new Error("userAdapter is required");
+    if (!config.router) throw new Error("router is required");
     if (!config.cookieStore) throw new Error("cookieStore is required");
 
     const cookiesSession = await config.cookieStore.getCookies({ req: args?.req, res: args?.res, search: DEFAULT_SESSION_COOKIE_NAME });
 
     if (cookiesSession == null || cookiesSession.length <= 0) return null;
-    const session = (await decryptJwt(cookiesSession[0].value)) as LightAuthSession;
-    // get the user from the session store
-    const user = await config.userStore.getUser({ req: args?.req, res: args?.res, id: session.id });
-
-    return user;
+    try {
+      // decrypt the session
+      const session = (await decryptJwt(cookiesSession[0].value)) as LightAuthSession;
+      // get the user from the session store
+      const user = await config.userAdapter.getUser({ req: args?.req, res: args?.res, id: session.id });
+      return user;
+    } catch (error) {
+      return null;
+    }
   };
 }
 
 export function createHttpHandlerFunction(config: LightAuthConfig) {
   const httpHandler = async (req: BaseRequest, res: BaseResponse): Promise<BaseResponse> => {
     if (!req) throw new Error("request is required");
-    if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
+    if (!config.router) throw new Error("router is required");
 
-    const url = await config.navigatoreStore.getUrl({ req });
+    const url = await config.router.getUrl({ req });
 
     const reqUrl = new URL(url);
 
@@ -110,8 +114,8 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
 export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.userStore = config.userStore;
-  config.navigatoreStore = config.navigatoreStore;
+  config.userAdapter = config.userAdapter;
+  config.router = config.router;
   config.cookieStore = config.cookieStore;
 
   return {

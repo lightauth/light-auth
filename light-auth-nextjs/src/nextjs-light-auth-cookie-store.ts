@@ -1,4 +1,4 @@
-import { Cookie, CookieStore } from "@light-auth/core";
+import { LightAuthCookie, LightAuthCookieStore } from "@light-auth/core";
 import { cookies as nextCookies } from "next/headers";
 
 /**
@@ -6,8 +6,8 @@ import { cookies as nextCookies } from "next/headers";
  * using the 'cookie' npm package and returning Response objects
  * with appropriate Set-Cookie headers.
  */
-export const nextJsCookieStore: CookieStore = {
-  async getCookies({ search }: { search: string | RegExp }): Promise<Cookie[] | null> {
+export const nextJsLightAuthCookieStore: LightAuthCookieStore = {
+  async getCookies({ search }: { search: string | RegExp }): Promise<LightAuthCookie[] | null> {
     const cookieStore = await nextCookies();
     const requestCookies = cookieStore.getAll();
     if (!requestCookies) return null;
@@ -18,7 +18,7 @@ export const nextJsCookieStore: CookieStore = {
     // Filter cookies whose names match the regex
     const filteredCookies = requestCookies.filter((c) => regex.test(c.name));
 
-    return filteredCookies as Cookie[];
+    return filteredCookies as LightAuthCookie[];
   },
 
   async deleteCookies({ search }: { search: string | RegExp }): Promise<void> {
@@ -33,7 +33,7 @@ export const nextJsCookieStore: CookieStore = {
     });
   },
 
-  async setCookies({ cookies }: { cookies: Cookie[] }): Promise<void> {
+  async setCookies({ cookies }: { cookies: LightAuthCookie[] }): Promise<void> {
     const cookieStore = await nextCookies();
 
     for (const cookie of cookies) {

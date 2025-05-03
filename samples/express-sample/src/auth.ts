@@ -1,7 +1,7 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { LightAuthProvider } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { CreateLightAuth } from "./wrapper";
+import { CreateLightAuth } from "./light-auth/light-auth";
 
 const googleProvider: LightAuthProvider = {
   providerName: "google",
@@ -20,7 +20,7 @@ const microsoftProvider: LightAuthProvider = {
   scopes: ["offline_access"],
 };
 
-export const { providers, handlers, signIn, signOut, lightAuth } = CreateLightAuth({
+export const { providers, handlers, signIn, signOut, getSession, getUser } = CreateLightAuth({
   providers: [googleProvider, microsoftProvider],
   basePath: "/api/auth", // Optional: specify a custom base path for the handlers
 });

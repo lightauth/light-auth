@@ -13,7 +13,7 @@ export interface LightAuthConfig {
   onUserSaving?: (user: LightAuthUser, claims: OAuth2Tokens) => LightAuthUser | null | Promise<LightAuthUser | null>;
   onUserSaved?: (user: LightAuthUser) => void | Promise<void>;
   basePath?: string;
-  userStore?: LightAuthUserAdapter;
+  userAdapter?: LightAuthUserAdapter;
   cookieStore?: LightAuthCookieStore;
-  navigatoreStore?: LightAuthRouter;
+  router?: LightAuthRouter;
 }

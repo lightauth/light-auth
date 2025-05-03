@@ -27,6 +27,14 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
     async getUser({ id }: { id: string }): Promise<LightAuthUser | null> {
       const safeId = sanitizeKey(id);
       const filePath = resolve(base, safeId + ".json");
+
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+
+      if (!exists) return null;
+
       try {
         const data = await fs.readFile(filePath, "utf-8");
         if (isEncrypted) {
@@ -61,6 +69,14 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       if (!user?.id) return;
       const safeId = sanitizeKey(user.id);
       const filePath = resolve(base, safeId + ".json");
+
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+
+      if (!exists) return;
+
       try {
         await fs.unlink(filePath);
       } catch {
