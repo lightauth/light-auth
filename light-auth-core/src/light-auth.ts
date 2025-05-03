@@ -1,10 +1,12 @@
 import { OAuth2Tokens } from "arctic";
 import { logoutAndRevokeToken, providerCallback, redirectToProviderLogin, sessionHandler } from "./services/handlers";
-import { DEFAULT_BASE_PATH } from "./constants";
+import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME } from "./constants";
 import { LightAuthConfig } from "./models/ligth-auth-config";
-import { LightAuthSession } from "./models/light-auth-session";
+import { LightAuthSession, LightAuthUser } from "./models/light-auth-session";
 import { LightAuthComponents } from "./models/light-auth-components";
-import { BaseRequest, BaseResponse } from "./models/base";
+import { BaseRequest, BaseResponse } from "./models/light-auth-base";
+import { jwtDecrypt } from "jose";
+import { decryptJwt } from "./services/jwt";
 
 export function createSigninFunction(
   config: LightAuthConfig
@@ -28,15 +30,37 @@ export function createSignoutFunction(
   };
 }
 
-export function createLightAuthFunction(
+export function createLightAuthSessionFunction(
   config: LightAuthConfig
-): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthSession | null | undefined> {
+): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined> {
   return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
-    if (!config.sessionStore) throw new Error("sessionStore is required");
     if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
+    if (!config.cookieStore) throw new Error("cookieStore is required");
 
-    const session = await config.sessionStore?.getSession({ req: args?.req, res: args?.res });
+    const cookiesSession = await config.cookieStore.getCookies({ req: args?.req, res: args?.res, search: DEFAULT_SESSION_COOKIE_NAME });
+    if (cookiesSession == null || cookiesSession.length <= 0) return null;
+
+    const session = (await decryptJwt(cookiesSession[0].value)) as LightAuthSession;
     return session;
+  };
+}
+
+export function createLightAuthUserFunction(
+  config: LightAuthConfig
+): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined> {
+  return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
+    if (!config.userStore) throw new Error("userStore is required");
+    if (!config.navigatoreStore) throw new Error("navigatoreStore is required");
+    if (!config.cookieStore) throw new Error("cookieStore is required");
+
+    const cookiesSession = await config.cookieStore.getCookies({ req: args?.req, res: args?.res, search: DEFAULT_SESSION_COOKIE_NAME });
+
+    if (cookiesSession == null || cookiesSession.length <= 0) return null;
+    const session = (await decryptJwt(cookiesSession[0].value)) as LightAuthSession;
+    // get the user from the session store
+    const user = await config.userStore.getUser({ req: args?.req, res: args?.res, id: session.id });
+
+    return user;
   };
 }
 
@@ -86,8 +110,9 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
 export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.sessionStore = config.sessionStore;
+  config.userStore = config.userStore;
   config.navigatoreStore = config.navigatoreStore;
+  config.cookieStore = config.cookieStore;
 
   return {
     providers: config.providers,
@@ -98,6 +123,7 @@ export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
     basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
     signIn: createSigninFunction(config),
     signOut: createSignoutFunction(config),
-    lightAuth: createLightAuthFunction(config),
+    getSession: createLightAuthSessionFunction(config),
+    getUser: createLightAuthUserFunction(config),
   };
 }

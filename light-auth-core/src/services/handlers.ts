@@ -1,12 +1,12 @@
 import { generateState, generateCodeVerifier, OAuth2Tokens, decodeIdToken } from "arctic";
 
 import { LightAuthProvider } from "../models/light-auth-provider";
-import { LightAuthSession } from "../models/light-auth-session";
-import { Cookie } from "../models/cookie";
+import { LightAuthUser, LightAuthSession } from "../models/light-auth-session";
+import { LightAuthCookie } from "../models/light-auth-cookie";
 import { LightAuthConfig } from "../models/ligth-auth-config";
-import { BaseRequest, BaseResponse } from "../models/base";
-import * as encoding from "@oslojs/encoding";
+import { BaseRequest, BaseResponse } from "../models/light-auth-base";
 import { DEFAULT_SESSION_COOKIE_NAME } from "../constants";
+import { decryptJwt, encryptJwt } from "./jwt";
 /**
  * Checks the configuration and throws an error if any required fields are missing.
  * @param config The configuration object to check.
@@ -15,8 +15,9 @@ import { DEFAULT_SESSION_COOKIE_NAME } from "../constants";
  */
 function checkConfig(config: LightAuthConfig, providerName?: string): Required<LightAuthConfig> & { provider: LightAuthProvider } {
   if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("At least one provider is required");
-  if (config.sessionStore == null) throw new Error("sessionStore is required");
+  if (config.userStore == null) throw new Error("sessionStore is required");
   if (config.navigatoreStore == null) throw new Error("navigatoreStore is required");
+  if (config.cookieStore == null) throw new Error("cookieStore is required");
 
   // if providerName is provider, check if the provider is in the config
   if (providerName && !config.providers.some((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase()))
@@ -45,7 +46,7 @@ export async function redirectToProviderLogin({
   res?: BaseResponse;
   providerName?: string;
 }): Promise<BaseResponse> {
-  const { provider, navigatoreStore } = checkConfig(config, providerName);
+  const { provider, navigatoreStore, cookieStore } = checkConfig(config, providerName);
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
@@ -72,8 +73,8 @@ export async function redirectToProviderLogin({
     await navigatoreStore.setHeaders({ req, res, headers: provider.headers });
   }
 
-  const stateCookie: Cookie = {
-    name: `${DEFAULT_SESSION_COOKIE_NAME}.${provider.providerName}_oauth_state`,
+  const stateCookie: LightAuthCookie = {
+    name: `${provider.providerName}_light_auth_state`,
     path: "/",
     value: state,
     httpOnly: true,
@@ -82,8 +83,8 @@ export async function redirectToProviderLogin({
     maxAge: 60 * 10, // 10 minutes
   };
 
-  const codeVerifierCookie: Cookie = {
-    name: `${DEFAULT_SESSION_COOKIE_NAME}.${provider.providerName}_code_verifier`,
+  const codeVerifierCookie: LightAuthCookie = {
+    name: `${provider.providerName}_light_auth_code_verifier`,
     path: "/",
     value: codeVerifier,
     httpOnly: true,
@@ -92,7 +93,7 @@ export async function redirectToProviderLogin({
     maxAge: 60 * 10, // 10 minutes
   };
 
-  await navigatoreStore.setCookies({ req, res, cookies: [stateCookie, codeVerifierCookie] });
+  await cookieStore.setCookies({ req, res, cookies: [stateCookie, codeVerifierCookie] });
 
   const redirect = await navigatoreStore.redirectTo({ req, res, url: url.toString() });
 
@@ -112,7 +113,7 @@ export async function providerCallback({
   providerName?: string;
   callbackUrl: string;
 }): Promise<Response> {
-  const { navigatoreStore, sessionStore, provider } = checkConfig(config, providerName);
+  const { navigatoreStore, userStore: sessionStore, cookieStore, provider } = checkConfig(config, providerName);
 
   const url = await navigatoreStore.getUrl({ req });
   const code = url.searchParams.get("code");
@@ -120,16 +121,16 @@ export async function providerCallback({
 
   if (code === null || state === null) throw new Error("state or code are missing from the request");
 
-  const cookies = await navigatoreStore.getCookies({
+  const cookies = await cookieStore.getCookies({
     req,
     res,
-    search: new RegExp(`^${provider.providerName}_(oauth_state|code_verifier)$`),
+    search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
   });
 
   if (cookies === null) throw new Error("Failed to get cookies");
 
-  const storedStateCookie = cookies.find((cookie) => cookie.name === `${DEFAULT_SESSION_COOKIE_NAME}.${provider.providerName}_oauth_state`);
-  const codeVerifierCookie = cookies.find((cookie) => cookie.name === `${DEFAULT_SESSION_COOKIE_NAME}.${provider.providerName}_code_verifier`);
+  const storedStateCookie = cookies.find((cookie) => cookie.name === `${provider.providerName}_light_auth_state`);
+  const codeVerifierCookie = cookies.find((cookie) => cookie.name === `${provider.providerName}_light_auth_code_verifier`);
 
   if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("Invalid state or code verifier");
 
@@ -155,30 +156,60 @@ export async function providerCallback({
   let refresh_token: string | undefined;
   if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
 
-  // create a new session
+  const id = sessionStore.generateStoreId();
+  const maxAge = 60 * 60 * 24 * 30; // 30 days
+  const expiresAt = new Date(Date.now() + maxAge * 1000); // 30 days
+
   let session: LightAuthSession = {
-    id: sessionStore.generateSessionId(),
-    user_id: claims.sub,
+    id: id,
+    userId: claims.sub,
     email: claims.email,
     name: claims.name,
-    picture: claims.picture,
-    expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 days
-    access_token: access_token,
-    refresh_token: refresh_token,
+    expiresAt: expiresAt, // 30 days
     providerName: provider.providerName,
   };
 
   if (config.onSessionSaving) {
-    const sessionSaving = await config.onSessionSaving(session);
-
-    // if the session is not null, use it
-    // if the session is null, use the original session
+    const sessionSaving = await config.onSessionSaving(session, tokens);
     session = sessionSaving ?? session;
   }
 
-  await sessionStore.setSession({ req, res, session });
+  const encryptedSession = await encryptJwt(session);
+  cookieStore.setCookies({
+    req,
+    res,
+    cookies: [
+      {
+        name: DEFAULT_SESSION_COOKIE_NAME,
+        value: encryptedSession,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 30, // 30 days,
+        path: "/",
+      },
+    ],
+  });
 
   if (config.onSessionSaved) await config.onSessionSaved(session);
+
+  let user: LightAuthUser = {
+    ...session,
+    picture: claims.picture,
+    accessToken: access_token,
+    refreshToken: refresh_token,
+  };
+
+  if (config.onUserSaving) {
+    const userSaving = await config.onUserSaving(user, tokens);
+    // if the user is not null, use it
+    // if the user is null, use the original user
+    user = userSaving ?? user;
+  }
+
+  await sessionStore.setUser({ req, res, user });
+
+  if (config.onUserSaved) await config.onUserSaved(user);
 
   const redirectResponse = await navigatoreStore.redirectTo({ req, res, url: callbackUrl });
   return redirectResponse;
@@ -197,9 +228,17 @@ export async function logoutAndRevokeToken({
   revokeToken?: boolean;
   callbackUrl?: string;
 }): Promise<Response> {
-  const { sessionStore, navigatoreStore } = checkConfig(config);
+  const { userStore, navigatoreStore, cookieStore } = checkConfig(config);
 
-  const session = await sessionStore.getSession({ req, res });
+  const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+  if (cookiesSession == null) return res;
+  // get the session from the cookie
+  const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
+  if (cookieSession == null) return res;
+  const session = JSON.parse(cookieSession.value) as LightAuthSession;
+
+  // get the user from the session store
+  const user = await userStore.getUser({ req, res, id: session.id });
 
   if (session) {
     // get the provider name from the session
@@ -207,7 +246,7 @@ export async function logoutAndRevokeToken({
     // get the provider from the config
     const provider = config.providers.find((p) => p.providerName === providerName);
 
-    var token = session?.access_token;
+    var token = user?.accessToken;
     if (token && provider && revokeToken) {
       // Revoke the token if the provider supports it
       if (typeof provider.artic.revokeToken === "function") {
@@ -221,18 +260,18 @@ export async function logoutAndRevokeToken({
 
     if (provider) {
       // delete the state cookie
-      await navigatoreStore.deleteCookies({
+      await cookieStore.deleteCookies({
         req,
         res,
-        cookiesNames: [
-          `${DEFAULT_SESSION_COOKIE_NAME}.${provider.providerName}_oauth_state`,
-          `${DEFAULT_SESSION_COOKIE_NAME}.${provider.providerName}_code_verifier`,
-        ],
+        search: new RegExp(`^${provider.providerName}_(state|code_verifier)$`),
       });
     }
 
     // delete the session
-    await sessionStore.deleteSession({ req, res });
+    if (user) await userStore.deleteUser({ req, res, user });
+
+    // delete the session cookie
+    await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
   }
 
   const redirectResponse = await navigatoreStore.redirectTo({ req, res, url: callbackUrl });
@@ -241,9 +280,14 @@ export async function logoutAndRevokeToken({
 
 export async function sessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
   try {
-    if (config.sessionStore == null) throw new Error("sessionStore is required");
+    const { cookieStore } = checkConfig(config);
 
-    const session = await config.sessionStore.getSession({ req, res });
+    const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+    if (cookiesSession == null) return res;
+    // get the session from the cookie
+    const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
+    if (cookieSession == null) return res;
+    const session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
 
     if (session) {
       return new Response(JSON.stringify(session), { status: 200 });

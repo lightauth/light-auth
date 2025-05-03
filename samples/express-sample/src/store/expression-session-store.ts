@@ -4,12 +4,12 @@
  */
 
 import { Cookie, decryptJwt, DEFAULT_SESSION_COOKIE_NAME, encryptJwt, LightAuthSession, SessionStore, splitCookieValue } from "@light-auth/core";
-import { expressNavigatoreStore } from "./express-navigatore-store";
+import { expressNavigatorStore } from "./express-navigatore-store";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 
 export const expressSessionStore: SessionStore = {
   async getSession({ req, res }: { req?: ExpressRequest; res?: ExpressResponse }): Promise<LightAuthSession | null> {
-    const cookies = await expressNavigatoreStore.getCookies({ req, res, search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.`) });
+    const cookies = await expressNavigatorStore.getCookies({ req, res, search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.`) });
     if (!cookies || cookies.length === 0) return null;
 
     // Filter out cookies that don't start with the default session cookie name
@@ -66,11 +66,11 @@ export const expressSessionStore: SessionStore = {
       };
       cookies.push(chunkCookie);
     }
-    await expressNavigatoreStore.setCookies({ req, res, cookies });
+    await expressNavigatorStore.setCookies({ req, res, cookies });
   },
 
   async deleteSession({ req, res }: { req?: ExpressRequest; res?: ExpressResponse }): Promise<void> {
-    await expressNavigatoreStore.deleteCookies({ req, res, cookiesNames: [DEFAULT_SESSION_COOKIE_NAME] });
+    await expressNavigatorStore.deleteCookies({ req, res, cookiesNames: [DEFAULT_SESSION_COOKIE_NAME] });
   },
 
   generateSessionId(): string {

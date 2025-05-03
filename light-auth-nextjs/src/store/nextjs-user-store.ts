@@ -1,5 +1,5 @@
-import { Cookie, decryptJwt, DEFAULT_SESSION_COOKIE_NAME, encryptJwt, LightAuthSession, SessionStore } from "@light-auth/core";
-import { nextJsNavigatoreStore } from "./navigatore-store";
+import { Cookie, decryptJwt, DEFAULT_SESSION_COOKIE_NAME, encryptJwt, LightAuthSession, LightAuthUser, UserStore } from "@light-auth/core";
+import { nextJsCookieStore } from "./nextjs-cookie-store";
 
 /**
  * A concrete SessionStore implementation for Node.js server-side,
@@ -27,9 +27,9 @@ export function splitCookieValue(value: string): Map<number, string> {
   return values;
 }
 
-export const nextJsSessionStore: SessionStore = {
-  async getSession({ req, res }: { req?: Request; res?: Response }): Promise<LightAuthSession | null> {
-    const cookies = await nextJsNavigatoreStore.getCookies({ req, res, search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.`) });
+export const nextJsUserCookieStore: UserStore = {
+  async getUser(): Promise<LightAuthUser | null> {
+    const cookies = await nextJsCookieStore.getCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.`) });
 
     if (!cookies) return null;
 
@@ -51,14 +51,14 @@ export const nextJsSessionStore: SessionStore = {
 
     try {
       var session = await decryptJwt(jwt);
-      return session as LightAuthSession;
+      return session as LightAuthUser;
     } catch {
       return null;
     }
   },
 
-  async setSession({ req, res, session }: { req?: Request; res?: Response; session: LightAuthSession }): Promise<void> {
-    const jwt = await encryptJwt(session);
+  async setUser({ user }: { user: LightAuthUser }): Promise<void> {
+    const jwt = await encryptJwt(user);
 
     // template for the cookie
 
@@ -69,7 +69,7 @@ export const nextJsSessionStore: SessionStore = {
       path: "/",
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      expires: session.expires_at,
+      expires: user.expires_at,
     };
 
     // create chunks if needed (ie if the jwt is too long > 4096 bytes)
@@ -87,14 +87,14 @@ export const nextJsSessionStore: SessionStore = {
       };
       cookies.push(chunkCookie);
     }
-    await nextJsNavigatoreStore.setCookies({ req, res, cookies });
+    await nextJsCookieStore.setCookies({ cookies });
   },
 
-  async deleteSession({ req, res }: { req?: Request; res?: Response }): Promise<void> {
-    await nextJsNavigatoreStore.deleteCookies({ req, res, cookiesNames: [DEFAULT_SESSION_COOKIE_NAME] });
+  async deleteUser({ user }: { user: LightAuthUser }): Promise<void> {
+    await nextJsCookieStore.deleteCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.\\d+$`) });
   },
 
-  generateSessionId(): string {
+  generateStoreId(): string {
     return Math.random().toString(36).slice(2);
   },
 };

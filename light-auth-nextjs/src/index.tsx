@@ -1,5 +1,6 @@
-import { nextJsSessionStore } from "./store/session-store";
-import { nextJsNavigatoreStore } from "./store/navigatore-store";
+import { nextJsUserCookieStore } from "./store/nextjs-user-store";
+import { nextJsNavigatorStore } from "./store/nextjs-navigator-store";
 import { CreateLightAuth } from "./light-auth";
+import { nextJsCookieStore } from "./store/nextjs-cookie-store";
 
-export { nextJsSessionStore, nextJsNavigatoreStore as nextJsCookieStore, CreateLightAuth };
+export { nextJsUserCookieStore as nextJsUserStore, nextJsNavigatorStore, nextJsCookieStore, CreateLightAuth };

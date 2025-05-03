@@ -1,4 +1,4 @@
-import { lightAuth, signOut } from "@/lib/auth";
+import { getUser, signOut } from "@/lib/auth";
 import { Avatar, AvatarImage } from "./ui/avatar";
 import { Button } from "./ui/button";
 
@@ -16,9 +16,9 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function UserButton() {
-  const session = await lightAuth();
+  const user = await getUser();
 
-  if (!session)
+  if (!user)
     return (
       <div className="flex items-center gap-2">
         <Link
@@ -31,19 +31,19 @@ export default async function UserButton() {
     );
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden text-sm sm:inline-flex">{session.email}</span>
+      <span className="hidden text-sm sm:inline-flex">{user.email}</span>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage
                 src={
-                  session.picture ??
+                  user.picture ??
                   `https://api.dicebear.com/9.x/thumbs/svg?seed=${
                     Math.floor(Math.random() * 100000) + 1
                   }&randomizeIds=true`
                 }
-                alt={session.name ?? ""}
+                alt={user.name ?? ""}
               />
             </Avatar>
           </Button>
@@ -51,9 +51,9 @@ export default async function UserButton() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{session.name}</p>
+              <p className="text-sm font-medium leading-none">{user.name}</p>
               <p className="text-muted-foreground text-xs leading-none">
-                {session.email}
+                {user.email}
               </p>
             </div>
           </DropdownMenuLabel>

@@ -1,8 +1,8 @@
-import { Cookie, NavigatoreStore } from "@light-auth/core";
+import { Cookie, NavigatorStore } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
 
-export const expressNavigatoreStore: NavigatoreStore = {
+export const expressNavigatorStore: NavigatorStore = {
   getUrl: function ({ req, res }: { req?: ExpressRequest; res?: ExpressResponse }): URL {
     if (!req) throw new Error("Request is required in getUrl function of expressNavigatoreStore");
 

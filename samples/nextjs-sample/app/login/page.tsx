@@ -32,7 +32,6 @@ export default function LoginPage() {
             <input type="hidden" name="provider" value="credentials" />
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              {/* <input name="email" id="email" /> */}
               <Input
                 id="email"
                 name="email"

@@ -1,14 +1,19 @@
+/**
+ * LightAuthSession interface represents a session in the LightAuth system.
+ *
+ */
 export interface LightAuthSession {
   id: string;
-  user_id: string | number;
+  userId: string | number;
   email: string;
   name: string;
-  picture?: string;
-  expires_at: Date;
-  access_token?: string;
-  refresh_token?: string;
-  // additional properties depending on the provider
+  expiresAt: Date;
   providerName: string;
-  // additional properties
   [key: string]: any;
+}
+
+export interface LightAuthUser extends LightAuthSession {
+  picture?: string;
+  accessToken?: string;
+  refreshToken?: string;
 }

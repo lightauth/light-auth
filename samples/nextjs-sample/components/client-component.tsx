@@ -1,5 +1,6 @@
 "use client";
-import { SessionProvider } from "light-auth/client";
+
+import { SessionProvider } from "@light-auth/nextjs/client";
 
 export default function ClientComponent() {
   return (

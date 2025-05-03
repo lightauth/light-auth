@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Header from "@/components/header";
-import { lightAuth } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 
 export default async function Home() {
-  const session = await lightAuth();
+  const session = await getSession();
   console.log("userSession", session);
   // Check if user is logged in from cookies
 

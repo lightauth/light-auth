@@ -34,7 +34,9 @@ export default
         external: [
             ...Object.keys(pkg.dependencies || {}),
             ...Object.keys(pkg.peerDependencies || {}),
-            "react/jsx-runtime"
+            "react/jsx-runtime",
+            "node:fs",
+            "node:path",
         ],
 
     };

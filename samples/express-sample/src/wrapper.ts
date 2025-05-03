@@ -10,7 +10,7 @@ import {
   LightAuthSession,
 } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
-import { expressNavigatoreStore } from "./store/express-navigatore-store";
+import { expressNavigatorStore } from "./store/express-navigatore-store";
 import { expressSessionStore } from "./store/express-session-store";
 
 export interface LightAuthExpressComponents {
@@ -30,7 +30,7 @@ export function CreateLightAuth(config: LightAuthConfig): LightAuthExpressCompon
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
   config.sessionStore = expressSessionStore;
-  config.navigatoreStore = expressNavigatoreStore;
+  config.navigatoreStore = expressNavigatorStore;
 
   return {
     providers: config.providers,
