@@ -15,5 +15,6 @@ export interface LightAuthSession {
 export interface LightAuthUser extends LightAuthSession {
   picture?: string;
   accessToken?: string;
+  accessTokenExpiresAt?: Date;
   refreshToken?: string;
 }

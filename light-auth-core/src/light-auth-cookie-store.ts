@@ -9,7 +9,7 @@ export interface LightAuthCookieStore {
   }: {
     req?: BaseRequest;
     res?: BaseResponse;
-    search: string | RegExp;
+    search?: string | RegExp;
   }) => LightAuthCookie[] | null | Promise<LightAuthCookie[] | null>;
   setCookies: ({ req, res, cookies }: { req?: BaseRequest; res?: BaseResponse; cookies: LightAuthCookie[] }) => Promise<BaseResponse> | BaseResponse;
   deleteCookies: ({ req, res, search }: { req?: BaseRequest; res?: BaseResponse; search: string | RegExp }) => Promise<BaseResponse> | BaseResponse;
@@ -17,7 +17,7 @@ export interface LightAuthCookieStore {
 
 export const createLightAuthCookieStore = (): LightAuthCookieStore => {
   return {
-    getCookies: async ({ req, res, search }: { req?: Request; res?: Response; search: string | RegExp }): Promise<LightAuthCookie[] | null> => {
+    getCookies: async ({ req, res, search }: { req?: Request; res?: Response; search?: string | RegExp }): Promise<LightAuthCookie[] | null> => {
       if (!req) throw new Error("Request is required in getCookies function of cookieStore");
 
       const cookieHeader = req.headers.get("cookie");
@@ -27,7 +27,7 @@ export const createLightAuthCookieStore = (): LightAuthCookieStore => {
       const cookies: LightAuthCookie[] = [];
 
       for (const [cookieName, cookieValue] of Object.entries(requestCookies)) {
-        if ((typeof search === "string" && cookieName === search) || (search instanceof RegExp && search.test(cookieName))) {
+        if (search == null || (typeof search === "string" && cookieName === search) || (search instanceof RegExp && search.test(cookieName))) {
           cookies.push({
             name: cookieName,
             value: cookieValue || "",

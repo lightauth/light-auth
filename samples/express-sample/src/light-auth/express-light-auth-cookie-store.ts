@@ -5,7 +5,7 @@ import * as cookieParser from "cookie";
  * A concrete CookieStore implementation for express,
  */
 export const expressLightAuthCookieStore: LightAuthCookieStore = {
-  getCookies: function ({ req, search }: { req?: ExpressRequest; search: string | RegExp }): LightAuthCookie[] | null | Promise<LightAuthCookie[] | null> {
+  getCookies: function ({ req, search }: { req?: ExpressRequest; search?: string | RegExp }): LightAuthCookie[] | null | Promise<LightAuthCookie[] | null> {
     if (!req) throw new Error("Request is required in getCookies function of expressLightAuthCookieStore");
 
     const reqCookies = req?.headers?.cookie;

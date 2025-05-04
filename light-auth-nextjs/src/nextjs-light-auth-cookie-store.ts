@@ -7,16 +7,17 @@ import { cookies as nextCookies } from "next/headers";
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthCookieStore: LightAuthCookieStore = {
-  async getCookies({ search }: { search: string | RegExp }): Promise<LightAuthCookie[] | null> {
+  async getCookies({ search }: { search?: string | RegExp }): Promise<LightAuthCookie[] | null> {
     const cookieStore = await nextCookies();
     const requestCookies = cookieStore.getAll();
+
     if (!requestCookies) return null;
 
     // Convert search to RegExp if it's a string
     const regex = typeof search === "string" ? new RegExp(search) : search;
 
     // Filter cookies whose names match the regex
-    const filteredCookies = requestCookies.filter((c) => regex.test(c.name));
+    const filteredCookies = regex instanceof RegExp ? requestCookies.filter((c) => regex.test(c.name)) : requestCookies;
 
     return filteredCookies as LightAuthCookie[];
   },

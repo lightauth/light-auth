@@ -17,3 +17,16 @@ You can also combine both approaches. For example, you can set the expiration to
 ## Encrypt decrypt
 
 if decrypt a session fail, remove the session cookie
+
+## User Adapter
+
+Let user adapter to be optional, and check is user adapter exists or not
+dont break if not exists
+
+## Token response
+
+handle errors when tokens back from provider
+
+## callback
+
+handle callback correctly

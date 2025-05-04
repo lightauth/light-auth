@@ -1,9 +1,11 @@
 import Link from "next/link";
 import Header from "@/components/header";
-import { getSession } from "@/lib/auth";
+import { getSession, getUser } from "@/lib/auth";
 
 export default async function Home() {
   const session = await getSession();
+  const user = await getUser();
+
   // Check if user is logged in from cookies
 
   return (
@@ -23,10 +25,18 @@ export default async function Home() {
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-medium">User Information:</h3>
+                <h3 className="font-medium">Session:</h3>
                 <div className="bg-gray-50 p-4 rounded-md">
                   <pre className="whitespace-pre-wrap text-sm break-all ">
                     {JSON.stringify(session, null, 2)}
+                  </pre>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium">User:</h3>
+                <div className="bg-gray-50 p-4 rounded-md">
+                  <pre className="whitespace-pre-wrap text-sm break-all ">
+                    {JSON.stringify(user, null, 2)}
                   </pre>
                 </div>
               </div>

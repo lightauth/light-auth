@@ -38,7 +38,7 @@ function checkConfig(config: LightAuthConfig, providerName?: string): Required<L
 /**
  * Redirects the user to the provider login page.
  */
-export async function redirectToProviderLogin({
+export async function redirectToProviderLoginHandler({
   config,
   req,
   res,
@@ -103,7 +103,7 @@ export async function redirectToProviderLogin({
   return redirect;
 }
 
-export async function providerCallback({
+export async function providerCallbackHandler({
   config,
   req,
   res,
@@ -145,8 +145,18 @@ export async function providerCallback({
 
   if (tokens === null) throw new Error("Failed to fetch tokens");
 
+  // Calculate the access token expiration time
+  // The access token expiration time is the number of seconds until the token expires
+  // The default expiration time is 3600 seconds (1 hour)
+  // https://www.ietf.org/rfc/rfc6749.html#section-4.2.2
+  let accessTokenExpiresIn: number = 3600; // default to 1 hour
+  if ("expires_in" in tokens.data && typeof tokens.data.expires_in === "number") {
+    accessTokenExpiresIn = Number(tokens.data.expires_in);
+  }
+  const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000); // 1 hour
+
   // get the access token
-  const access_token = tokens.accessToken();
+  const accessToken = tokens.accessToken();
 
   // get the claims from the id token
   const claims = decodeIdToken(tokens.idToken()) as {
@@ -199,7 +209,8 @@ export async function providerCallback({
   let user: LightAuthUser = {
     ...session,
     picture: claims.picture,
-    accessToken: access_token,
+    accessToken: accessToken,
+    accessTokenExpiresAt: accessTokenExpiresAt,
     refreshToken: refresh_token,
   };
 
@@ -218,7 +229,7 @@ export async function providerCallback({
   return redirectResponse;
 }
 
-export async function logoutAndRevokeToken({
+export async function logoutAndRevokeTokenHandler({
   config,
   req,
   res,
@@ -284,7 +295,7 @@ export async function logoutAndRevokeToken({
   return redirectResponse;
 }
 
-export async function sessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
+export async function getSessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
   const { cookieStore, router } = checkConfig(config);
 
   const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
@@ -294,10 +305,70 @@ export async function sessionHandler({ config, req, res }: { config: LightAuthCo
   if (cookieSession == null) return res;
 
   const session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+
+  const sessionIsValid = await validateSession({ req: req, res: res, config, session });
+
+  if (!sessionIsValid) {
+    // delete the session cookie
+    await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+    return res;
+  }
+
   if (session) {
     const response = await router.writeJson({ req, res, data: session });
     return response;
   } else {
     throw new Error("Session not found");
   }
+}
+
+export async function getUserHandler({
+  config,
+  req,
+  res,
+  id,
+}: {
+  config: LightAuthConfig;
+  req?: BaseRequest;
+  res?: BaseResponse;
+  id: string;
+}): Promise<Response> {
+  const { router, userAdapter } = checkConfig(config);
+
+  const user = await userAdapter.getUser({ req, res, id });
+
+  if (user == null) return res;
+
+  const response = await router.writeJson({ req, res, data: user });
+  return response;
+}
+
+/**
+ * Validates the session by checking if it is expired or not.
+ * @returns True if the session is valid, false otherwise.
+ */
+export async function validateSession({
+  req,
+  res,
+  config,
+  session,
+}: {
+  req?: BaseRequest;
+  res?: BaseResponse;
+  config: LightAuthConfig;
+  session: LightAuthSession;
+}): Promise<boolean> {
+  if (!session) return false;
+
+  // check if session is expired
+  if (session.expiresAt && new Date(session.expiresAt) < new Date()) return false;
+
+  // check if session is expired in 5 minutes
+  // This is to avoid the case where the session is expired but the user is still logged in
+  // and the session is not yet expired
+  if (session.expiresAt && new Date(session.expiresAt) < new Date(Date.now() + 5 * 60 * 1000)) {
+    return true;
+  }
+
+  return true;
 }

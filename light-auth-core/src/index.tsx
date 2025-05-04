@@ -15,7 +15,6 @@ import {
   createSigninFunction,
   createSignoutFunction,
 } from "./light-auth";
-import { logoutAndRevokeToken, providerCallback, redirectToProviderLogin, sessionHandler } from "./services/handlers";
 import { decryptJwt, encryptJwt } from "./services/jwt";
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME, DEFAULT_SESSION_EXPIRATION } from "./constants";
 export {
@@ -38,10 +37,6 @@ export {
   createSigninFunction,
   createSignoutFunction,
   createHttpHandlerFunction,
-  logoutAndRevokeToken,
-  providerCallback,
-  redirectToProviderLogin,
-  sessionHandler,
   decryptJwt,
   encryptJwt,
   DEFAULT_BASE_PATH,
