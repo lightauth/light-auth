@@ -5,8 +5,9 @@ import { LightAuthUser, LightAuthSession } from "../models/light-auth-session";
 import { LightAuthCookie } from "../models/light-auth-cookie";
 import { LightAuthConfig } from "../models/ligth-auth-config";
 import { BaseRequest, BaseResponse } from "../models/light-auth-base";
-import { DEFAULT_SESSION_COOKIE_NAME } from "../constants";
+import { DEFAULT_SESSION_COOKIE_NAME, DEFAULT_SESSION_EXPIRATION } from "../constants";
 import { decryptJwt, encryptJwt } from "./jwt";
+import { getSessionExpirationMaxAge } from "./utils";
 /**
  * Checks the configuration and throws an error if any required fields are missing.
  * @param config The configuration object to check.
@@ -170,8 +171,9 @@ export async function providerCallbackHandler({
   if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
 
   const id = userAdapter.generateStoreId();
-  const maxAge = process.env.DEFAULT_SESSION_EXPIRATION ? parseInt(process.env.DEFAULT_SESSION_EXPIRATION, 10) : 60 * 60 * 24 * 30;
-  const expiresAt = new Date(Date.now() + maxAge * 1000); // 30 days
+  const maxAge = getSessionExpirationMaxAge();
+
+  const expiresAt = new Date(Date.now() + maxAge * 1000);
 
   let session: LightAuthSession = {
     id: id,
@@ -198,7 +200,7 @@ export async function providerCallbackHandler({
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 30, // 30 days,
+        maxAge: maxAge, // 30 days,
         path: "/",
       },
     ],
@@ -206,8 +208,10 @@ export async function providerCallbackHandler({
 
   if (config.onSessionSaved) await config.onSessionSaved(session);
 
+  // Omit expiresAt from session when creating user
+  const { expiresAt: sessionExpiresAt, ...sessionWithoutExpiresAt } = session;
   let user: LightAuthUser = {
-    ...session,
+    ...sessionWithoutExpiresAt,
     picture: claims.picture,
     accessToken: accessToken,
     accessTokenExpiresAt: accessTokenExpiresAt,
@@ -298,20 +302,48 @@ export async function logoutAndRevokeTokenHandler({
 export async function getSessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
   const { cookieStore, router } = checkConfig(config);
 
-  const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
-  if (cookiesSession == null) return res;
-  // get the session from the cookie
-  const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
-  if (cookieSession == null) return res;
+  const cookieSession = (await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME }))?.find(
+    (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
+  );
+  if (!cookieSession) return res;
 
   const session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
 
-  const sessionIsValid = await validateSession({ req: req, res: res, config, session });
-
-  if (!sessionIsValid) {
+  // check if session is expired
+  if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
     // delete the session cookie
     await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
     return res;
+  }
+
+  // get the max age from the environment variable or use the default value
+
+  let maxAge = getSessionExpirationMaxAge();
+  const lowerLimitSessionRevalidationDate = new Date(Date.now() + (maxAge * 1000) / 2);
+  const now = new Date();
+  const expiresAt = new Date(session.expiresAt);
+  console.log(now, expiresAt, now < expiresAt);
+
+  if (now > lowerLimitSessionRevalidationDate && now < expiresAt) {
+    // we can update the session expiration time
+    session.expiresAt = new Date(Date.now() + maxAge * 1000);
+    // update the session cookie
+    const encryptedSession = await encryptJwt(session);
+    cookieStore.setCookies({
+      req,
+      res,
+      cookies: [
+        {
+          name: DEFAULT_SESSION_COOKIE_NAME,
+          value: encryptedSession,
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: maxAge, // 30 days,
+          path: "/",
+        },
+      ],
+    });
   }
 
   if (session) {
@@ -341,34 +373,4 @@ export async function getUserHandler({
 
   const response = await router.writeJson({ req, res, data: user });
   return response;
-}
-
-/**
- * Validates the session by checking if it is expired or not.
- * @returns True if the session is valid, false otherwise.
- */
-export async function validateSession({
-  req,
-  res,
-  config,
-  session,
-}: {
-  req?: BaseRequest;
-  res?: BaseResponse;
-  config: LightAuthConfig;
-  session: LightAuthSession;
-}): Promise<boolean> {
-  if (!session) return false;
-
-  // check if session is expired
-  if (session.expiresAt && new Date(session.expiresAt) < new Date()) return false;
-
-  // check if session is expired in 5 minutes
-  // This is to avoid the case where the session is expired but the user is still logged in
-  // and the session is not yet expired
-  if (session.expiresAt && new Date(session.expiresAt) < new Date(Date.now() + 5 * 60 * 1000)) {
-    return true;
-  }
-
-  return true;
 }

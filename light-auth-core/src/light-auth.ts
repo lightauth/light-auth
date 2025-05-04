@@ -1,22 +1,11 @@
 import { OAuth2Tokens } from "arctic";
-import {
-  logoutAndRevokeTokenHandler,
-  providerCallbackHandler,
-  redirectToProviderLoginHandler,
-  getSessionHandler,
-  validateSession,
-  getUserHandler,
-} from "./services/handlers";
+import { logoutAndRevokeTokenHandler, providerCallbackHandler, redirectToProviderLoginHandler, getSessionHandler, getUserHandler } from "./services/handlers";
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME } from "./constants";
 import { LightAuthConfig } from "./models/ligth-auth-config";
 import { LightAuthSession, LightAuthUser } from "./models/light-auth-session";
 import { LightAuthComponents } from "./models/light-auth-components";
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
-import { jwtDecrypt } from "jose";
-import { decryptJwt, encryptJwt } from "./services/jwt";
 import * as cookieParser from "cookie";
-
-export type ResponseType<T> = T | Record<string, string> | string | Blob | null | undefined;
 
 /**
  * this function is used to make a server request to the light auth server
@@ -148,19 +137,17 @@ export function createSignoutFunction(
 
 export function createLightAuthSessionFunction(
   config: LightAuthConfig
-): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined> {
+): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthSession | null | undefined> {
   return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
     if (!config.router) throw new Error("router is required");
     if (!config.cookieStore) throw new Error("cookieStore is required");
 
     try {
-      // get the session from the cookie store
-      const cookiesSession = await config.cookieStore.getCookies({ req: args?.req, res: args?.res, search: DEFAULT_SESSION_COOKIE_NAME });
-      if (cookiesSession == null || cookiesSession.length <= 0) return null;
-
+      // get the session from the server using the api endpoint, because
+      // the session is stored in the cookie store and we may need to delete / update it
       const session = await serverRequest<LightAuthSession>({
         config,
-        endpoint: `http://localhost:3000${config.basePath}/session`,
+        endpoint: `${config.basePath}/session`,
         req: args?.req,
         res: args?.res,
       });
@@ -181,20 +168,16 @@ export function createLightAuthUserFunction(
     if (!config.cookieStore) throw new Error("cookieStore is required");
 
     try {
-      const cookiesSession = await config.cookieStore.getCookies({ req: args?.req, res: args?.res, search: DEFAULT_SESSION_COOKIE_NAME });
-      if (cookiesSession == null || cookiesSession.length <= 0) return null;
-
+      // get the user from the server using the api endpoint, because
+      // to get user we need the session that is stored in the cookie store and we may need to delete / update it
       const session = await serverRequest<LightAuthSession>({
         config,
         endpoint: `${config.basePath}/session`,
         req: args?.req,
         res: args?.res,
       });
-      if (!session) return null;
-
-      // get the user from the session store
-      // const user = await config.userAdapter.getUser({ req: args?.req, res: args?.res, id: session.id });
-
+      if (!session || !session.id) return null;
+      // get the user from the user adapter      // get the user from the session store
       const user = await serverRequest<LightAuthUser>({
         config,
         endpoint: `${config.basePath}/user/${session.id}`,
