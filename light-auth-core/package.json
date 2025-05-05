@@ -45,6 +45,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "rollup": "^4.40.1",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",
