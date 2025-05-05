@@ -1,12 +1,12 @@
 name: Publish light-auth-core to npm
 
 on:
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - "light-auth-core/**"
-  #     - ".github/workflows/publish-core.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "light-auth-core/**"
+      - ".github/workflows/publish-core.yml"
   workflow_dispatch:
 
 jobs:
@@ -31,7 +31,7 @@ jobs:
         working-directory: light-auth-core
 
       - name: "Publish to npm"
-        run: npm publish --access public
+        run: npm publish
         working-directory: light-auth-core
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
