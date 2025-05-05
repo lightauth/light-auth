@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/core",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "light auth core framework agnostic, using artic",
   "author": {
     "name": "Sébastien Pertus",
@@ -42,7 +42,8 @@
   },
   "peerDependencies": {
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "arctic": "^3.6.0"
   },
   "devDependencies": {
     "rollup": "^4.40.1",
