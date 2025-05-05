@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Header from "@/components/header";
 import { getSession, getUser } from "@/lib/auth";
 
 export default async function Home() {
@@ -10,8 +9,6 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen flex flex-col">
-      <Header />
-
       <div className="flex-1 container mx-auto p-8 max-w-4xl">
         <h1 className="text-3xl font-bold mb-6">Authentication Test Page</h1>
 

@@ -401,8 +401,7 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
 
     const reqUrl = new URL(url);
 
-    const basePath = config.basePath || "/"; // Default base path for the handlers
-    const basePathSegments = basePath.split("/").filter((segment) => segment !== "");
+    const basePathSegments = config.basePath?.split("/").filter((segment) => segment !== "") || [];
 
     // Get the auth segments from the URL
     let pathname = reqUrl.pathname;

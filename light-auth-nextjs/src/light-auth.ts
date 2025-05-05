@@ -10,6 +10,7 @@ import {
   LightAuthProvider,
   LightAuthSession,
   LightAuthUser,
+  resolveBasePath,
 } from "@light-auth/core";
 import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
 import { nextJsLightAuthCookieStore } from "./nextjs-light-auth-cookie-store";
@@ -84,14 +85,14 @@ export function CreateLightAuth(config: LightAuthConfig): LightAuthNextJsCompone
   config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false });
   config.router = config.router ?? nextJsLightAuthRouter;
   config.cookieStore = config.cookieStore ?? nextJsLightAuthCookieStore;
-
+  config.basePath = resolveBasePath(config.basePath);
   return {
     providers: config.providers,
     handlers: {
       GET: createHttpHandlerFunction(config),
       POST: createHttpHandlerFunction(config),
     },
-    basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
+    basePath: config.basePath,
     signIn: createNextJsSignIn(config),
     signOut: createNextJsSignOut(config),
     getSession: createNextJsLightAuthSessionFunction(config),

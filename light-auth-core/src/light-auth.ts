@@ -1,11 +1,19 @@
 import { OAuth2Tokens } from "arctic";
-import { logoutAndRevokeTokenHandler, providerCallbackHandler, redirectToProviderLoginHandler, getSessionHandler, getUserHandler, createHttpHandlerFunction } from "./services/handlers";
+import {
+  logoutAndRevokeTokenHandler,
+  providerCallbackHandler,
+  redirectToProviderLoginHandler,
+  getSessionHandler,
+  getUserHandler,
+  createHttpHandlerFunction,
+} from "./services/handlers";
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME } from "./constants";
 import { LightAuthConfig } from "./models/ligth-auth-config";
 import { LightAuthSession, LightAuthUser } from "./models/light-auth-session";
 import { LightAuthComponents } from "./models/light-auth-components";
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
 import * as cookieParser from "cookie";
+import { resolveBasePath } from "./services/utils";
 
 /**
  * this function is used to make a server request to the light auth server
@@ -79,17 +87,23 @@ async function serverRequest<T extends Record<string, string> | string | Blob>({
       protocol = "https";
     }
 
-    const sanitizeHost = host.endsWith("/") ? host.slice(0, -1) : host;
-    url = new URL(sanitizeEndpoint, `${protocol}://${sanitizeHost}`);
+    const sanitizedHost = host.endsWith("/") ? host.slice(0, -1) : host;
+    url = new URL(sanitizeEndpoint, `${protocol}://${sanitizedHost}`);
   }
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: "POST", headers: requestHeaders, body: bodyBytes })
     : new Request(url.toString(), { method: "GET", headers: requestHeaders });
 
-  const response = await fetch(request);
-  if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+  let response: Response | null = null;
+  try {
+    response = await fetch(request);
+  } catch (error) {
+    console.error("Error:", error);
+    throw new Error(`Request failed with error ${error}`);
+  }
+  if (!response || !response.ok) {
+    throw new Error(`Request failed with status ${response?.status}`);
   }
   const contentType = response.headers.get("Content-Type");
 
@@ -176,6 +190,7 @@ export function createLightAuthUserFunction(
         req: args?.req,
         res: args?.res,
       });
+
       if (!session || !session.id) return null;
       // get the user from the user adapter      // get the user from the session store
       const user = await serverRequest<LightAuthUser>({
@@ -193,14 +208,13 @@ export function createLightAuthUserFunction(
   };
 }
 
-
-
 export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
   config.userAdapter = config.userAdapter;
   config.router = config.router;
   config.cookieStore = config.cookieStore;
+  config.basePath = resolveBasePath(config.basePath);
 
   return {
     providers: config.providers,
@@ -208,7 +222,7 @@ export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
       GET: createHttpHandlerFunction(config),
       POST: createHttpHandlerFunction(config),
     },
-    basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
+    basePath: config.basePath,
     signIn: createSigninFunction(config),
     signOut: createSignoutFunction(config),
     getSession: createLightAuthSessionFunction(config),
