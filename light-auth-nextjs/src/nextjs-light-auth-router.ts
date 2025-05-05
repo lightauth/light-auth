@@ -10,7 +10,6 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export const nextJsLightAuthRouter: LightAuthRouter = {
   writeJson({ data }: { data: {} | null }): NextResponse {
-    console.log("Writing JSON response", data);
     return NextResponse.json(data);
   },
 

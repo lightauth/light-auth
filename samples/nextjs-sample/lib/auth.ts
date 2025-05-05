@@ -1,7 +1,6 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { CreateLightAuth } from "@light-auth/nextjs";
 import { LightAuthProvider } from "@light-auth/core";
-
 const googleProvider: LightAuthProvider = {
   providerName: "google",
   artic: new Google(
@@ -25,7 +24,23 @@ const microsoftProvider: LightAuthProvider = {
 
 export const { providers, handlers, signIn, signOut, getSession, getUser } =
   CreateLightAuth({
-    // userAdapter: nextJsLightAuthUserAdapterCookie,
-
     providers: [googleProvider, microsoftProvider],
+    onSessionSaving: async (session, tokens) => {
+      if (!tokens) return session;
+      if (!tokens.idToken()) return session;
+
+      // optional: Add custom claims to the session
+      // This example adds the first and last name from the idToken to the session
+      const idToken = JSON.parse(
+        Buffer.from(tokens.idToken().split(".")[1], "base64").toString()
+      );
+
+      if ("given_name" in idToken && typeof idToken.given_name === "string")
+        session["firstName"] = idToken.given_name;
+
+      if ("family_name" in idToken && typeof idToken.family_name === "string")
+        session["lastName"] = idToken.family_name;
+
+      return session;
+    },
   });
