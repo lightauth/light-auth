@@ -44,7 +44,7 @@
   "dependencies": {
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
-    "@light-auth/core": "workspace:*"
+    "@light-auth/core": "latest"
   },
   "peerDependencies": {
     "next": "^15.3.1",
