@@ -1,12 +1,12 @@
 name: Publish light-auth-core to npm
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "packages/light-auth-core/**"
-      - ".github/workflows/publish-core.yml"
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "packages/light-auth-core/**"
+  #     - ".github/workflows/publish-core.yml"
   workflow_dispatch:
 
 jobs:
