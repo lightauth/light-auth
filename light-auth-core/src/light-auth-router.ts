@@ -5,7 +5,7 @@ export interface LightAuthRouter {
   getHeaders: ({ req, res, search }: { req?: BaseRequest; res?: BaseResponse; search: string | RegExp }) => Headers | Promise<Headers>;
   setHeaders: ({ req, res, headers }: { req?: BaseRequest; res?: BaseResponse; headers: Map<string, string> }) => Promise<BaseResponse> | BaseResponse;
   getUrl: ({ req, res }: { req?: BaseRequest; res?: BaseResponse }) => URL | Promise<URL>;
-  writeJson: ({ req, res, data }: { req?: BaseRequest; res?: BaseResponse; data: {} }) => Promise<BaseResponse> | BaseResponse;
+  writeJson: ({ req, res, data }: { req?: BaseRequest; res?: BaseResponse; data: {} | null }) => Promise<BaseResponse> | BaseResponse;
 }
 
 export const createLightAuthRouter = (): LightAuthRouter => {

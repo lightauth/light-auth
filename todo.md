@@ -2,7 +2,7 @@
 
 ## Checking expration
 
-Check expiration of the session everytime it's accessed
+Check expiration of the session everytime it's accessed: **DONE**
 
 ## Session lifetime
 

@@ -2,7 +2,7 @@ import { LightAuthRouter } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 
 export const expressLightAuthRouter: LightAuthRouter = {
-  writeJson: function ({ res, data }: { res?: ExpressResponse; data: any }): ExpressResponse {
+  writeJson: function ({ res, data }: { res?: ExpressResponse; data: {} | null }): ExpressResponse {
     if (!res) throw new Error("Response is required in writeJson function of expressLightAuthRouter");
     res.json(data);
     return res;

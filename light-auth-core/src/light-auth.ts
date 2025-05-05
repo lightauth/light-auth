@@ -1,5 +1,5 @@
 import { OAuth2Tokens } from "arctic";
-import { logoutAndRevokeTokenHandler, providerCallbackHandler, redirectToProviderLoginHandler, getSessionHandler, getUserHandler } from "./services/handlers";
+import { logoutAndRevokeTokenHandler, providerCallbackHandler, redirectToProviderLoginHandler, getSessionHandler, getUserHandler, createHttpHandlerFunction } from "./services/handlers";
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME } from "./constants";
 import { LightAuthConfig } from "./models/ligth-auth-config";
 import { LightAuthSession, LightAuthUser } from "./models/light-auth-session";
@@ -193,50 +193,7 @@ export function createLightAuthUserFunction(
   };
 }
 
-export function createHttpHandlerFunction(config: LightAuthConfig) {
-  const httpHandler = async (req: BaseRequest, res: BaseResponse): Promise<BaseResponse> => {
-    if (!req) throw new Error("request is required");
-    if (!config.router) throw new Error("router is required");
 
-    const url = await config.router.getUrl({ req });
-
-    const reqUrl = new URL(url);
-
-    const basePath = config.basePath || "/"; // Default base path for the handlers
-    const basePathSegments = basePath.split("/").filter((segment) => segment !== "");
-
-    // Get the auth segments from the URL
-    let pathname = reqUrl.pathname;
-
-    let pathSegments = pathname.split("/").filter((segment) => segment !== "");
-    // Remove all segments from basePathSegments, regardless of their index
-    pathSegments = pathSegments.filter((segment) => !basePathSegments.includes(segment));
-
-    // search callBack url
-    const callbackUrl = reqUrl.searchParams.get("callbackUrl") ?? "/";
-
-    let newResponse: BaseResponse | null = null;
-
-    if (pathSegments.length < 1) throw new Error("Not enough path segments found");
-
-    const providerName = pathSegments.length > 1 ? pathSegments[1] : null;
-
-    if (pathSegments[0] === "session") {
-      newResponse = await getSessionHandler({ req, res, config });
-    } else if (pathSegments[0] === "user") {
-      newResponse = await getUserHandler({ req, res, config, id: pathSegments[1] });
-    } else if (pathSegments[0] === "login" && providerName) {
-      newResponse = await redirectToProviderLoginHandler({ req, res, config, providerName });
-    } else if (pathSegments[0] === "logout") {
-      newResponse = await logoutAndRevokeTokenHandler({ req, res, config, revokeToken: false, callbackUrl });
-    } else if (pathSegments[0] === "callback" && providerName) {
-      newResponse = await providerCallbackHandler({ req, res, config, providerName, callbackUrl });
-    }
-
-    return newResponse ?? res;
-  };
-  return httpHandler;
-}
 
 export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");

@@ -77,12 +77,10 @@ export default function LoginPage() {
                   GitHub
                 </Link>
 
-                <form
-                  action={async () => {
+                <form action={async () => {
                     "use server";
                     await signIn("google");
-                  }}
-                >
+                  }}>
                   <Button type="submit" variant="outline" className="w-full">
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                       <path

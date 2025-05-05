@@ -9,9 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthRouter: LightAuthRouter = {
-  writeJson({ res, data }: { res?: NextResponse; data: any }): NextResponse {
-    if (!res) throw new Error("Response is required in writeJson function of nextJsLightAuthRouter");
-
+  writeJson({ data }: { data: {} | null }): NextResponse {
+    console.log("Writing JSON response", data);
     return NextResponse.json(data);
   },
 

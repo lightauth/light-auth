@@ -248,11 +248,11 @@ export async function logoutAndRevokeTokenHandler({
 }): Promise<Response> {
   const { userAdapter, router, cookieStore } = checkConfig(config);
 
-  const cookiesSession = await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
-  if (cookiesSession == null) return res;
-  // get the session from the cookie
-  const cookieSession = cookiesSession.find((cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME);
-  if (cookieSession == null) return res;
+  // get the session cookie
+  const cookieSession = (await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME }))?.find(
+    (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
+  );
+  if (!cookieSession) return await router.redirectTo({ req, res, url: callbackUrl });
 
   let session: LightAuthSession | null = null;
   try {
@@ -279,50 +279,66 @@ export async function logoutAndRevokeTokenHandler({
       }
     }
 
-    if (provider) {
-      // delete the state cookie
-      await cookieStore.deleteCookies({
-        req,
-        res,
-        search: new RegExp(`^${provider.providerName}_(state|code_verifier)$`),
-      });
-    }
+    try {
+      if (provider) {
+        // delete the state cookie
+        await cookieStore.deleteCookies({
+          req,
+          res,
+          search: new RegExp(`^${provider.providerName}_(state|code_verifier)$`),
+        });
+      }
 
-    // delete the session
-    if (user) await userAdapter.deleteUser({ req, res, user });
-
-    // delete the session cookie
-    await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+      // delete the user
+      if (user) await userAdapter.deleteUser({ req, res, user });
+      // delete the session cookie
+      await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+    } catch {}
   }
 
-  const redirectResponse = await router.redirectTo({ req, res, url: callbackUrl });
-  return redirectResponse;
+  return await router.redirectTo({ req, res, url: callbackUrl });
 }
 
+/**
+ * get session handler available on endpoint /${basePath}/session
+ */
 export async function getSessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
   const { cookieStore, router } = checkConfig(config);
 
   const cookieSession = (await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME }))?.find(
     (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
   );
-  if (!cookieSession) return res;
+  if (!cookieSession) return await router.writeJson({ req, res, data: null });
 
-  const session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+  let session: LightAuthSession | null = null;
+
+  try {
+    session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+  } catch (error) {
+    console.error("Failed to decrypt session cookie:", error);
+    return await router.writeJson({ req, res, data: null });
+  }
+
+  if (!session || !session.id || !session.userId) {
+    console.error("Unable to read session:", session);
+    return await router.writeJson({ req, res, data: null });
+  }
 
   // check if session is expired
   if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+    console.error("Session expired:", session.expiresAt);
     // delete the session cookie
-    await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
-    return res;
+    try {
+      await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+    } catch {}
+    return await router.writeJson({ req, res, data: null });
   }
 
   // get the max age from the environment variable or use the default value
-
   let maxAge = getSessionExpirationMaxAge();
   const lowerLimitSessionRevalidationDate = new Date(Date.now() + (maxAge * 1000) / 2);
   const now = new Date();
   const expiresAt = new Date(session.expiresAt);
-  console.log(now, expiresAt, now < expiresAt);
 
   if (now > lowerLimitSessionRevalidationDate && now < expiresAt) {
     // we can update the session expiration time
@@ -346,12 +362,7 @@ export async function getSessionHandler({ config, req, res }: { config: LightAut
     });
   }
 
-  if (session) {
-    const response = await router.writeJson({ req, res, data: session });
-    return response;
-  } else {
-    throw new Error("Session not found");
-  }
+  return await router.writeJson({ req, res, data: session });
 }
 
 export async function getUserHandler({
@@ -366,11 +377,62 @@ export async function getUserHandler({
   id: string;
 }): Promise<Response> {
   const { router, userAdapter } = checkConfig(config);
+  try {
+    const user = await userAdapter.getUser({ req, res, id });
+    if (user == null) return await router.writeJson({ req, res, data: null });
+    return await router.writeJson({ req, res, data: user });
+  } catch (error) {
+    console.error("Failed to get user:", error);
+    return await router.writeJson({ req, res, data: null });
+  }
+}
 
-  const user = await userAdapter.getUser({ req, res, id });
+/**
+ * Creates the HTTP handlers (get, set) function for LightAuth.
+ * @param config The LightAuth configuration object.
+ * @returns An HTTP handler function that processes requests and responses.
+ */
+export function createHttpHandlerFunction(config: LightAuthConfig) {
+  const httpHandler = async (req: BaseRequest, res: BaseResponse): Promise<BaseResponse> => {
+    if (!req) throw new Error("request is required");
+    if (!config.router) throw new Error("router is required");
 
-  if (user == null) return res;
+    const url = await config.router.getUrl({ req });
 
-  const response = await router.writeJson({ req, res, data: user });
-  return response;
+    const reqUrl = new URL(url);
+
+    const basePath = config.basePath || "/"; // Default base path for the handlers
+    const basePathSegments = basePath.split("/").filter((segment) => segment !== "");
+
+    // Get the auth segments from the URL
+    let pathname = reqUrl.pathname;
+
+    let pathSegments = pathname.split("/").filter((segment) => segment !== "");
+    // Remove all segments from basePathSegments, regardless of their index
+    pathSegments = pathSegments.filter((segment) => !basePathSegments.includes(segment));
+
+    // search callBack url
+    const callbackUrl = reqUrl.searchParams.get("callbackUrl") ?? "/";
+
+    let newResponse: BaseResponse | null = null;
+
+    if (pathSegments.length < 1) throw new Error("Not enough path segments found");
+
+    const providerName = pathSegments.length > 1 ? pathSegments[1] : null;
+
+    if (pathSegments[0] === "session") {
+      newResponse = await getSessionHandler({ req, res, config });
+    } else if (pathSegments[0] === "user") {
+      newResponse = await getUserHandler({ req, res, config, id: pathSegments[1] });
+    } else if (pathSegments[0] === "login" && providerName) {
+      newResponse = await redirectToProviderLoginHandler({ req, res, config, providerName });
+    } else if (pathSegments[0] === "logout") {
+      newResponse = await logoutAndRevokeTokenHandler({ req, res, config, revokeToken: false, callbackUrl });
+    } else if (pathSegments[0] === "callback" && providerName) {
+      newResponse = await providerCallbackHandler({ req, res, config, providerName, callbackUrl });
+    }
+
+    return newResponse ?? res;
+  };
+  return httpHandler;
 }
