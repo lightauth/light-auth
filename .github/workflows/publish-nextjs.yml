@@ -1,12 +1,12 @@
 name: Publish light-auth-nextjs to npm
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "light-auth-nextjs/**"
-      - ".github/workflows/publish-nextjs.yml"
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "light-auth-nextjs/**"
+  #     - ".github/workflows/publish-nextjs.yml"
   workflow_dispatch:
 
 jobs:
