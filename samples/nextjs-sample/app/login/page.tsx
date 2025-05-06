@@ -8,10 +8,9 @@ import {
 } from "@/components/ui/card";
 import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Github } from "lucide-react";
 import { signIn } from "@/lib/auth";
+import { ClientLoginButton } from "@/components/client-login-button";
 
 export default function LoginPage() {
   return (
@@ -29,58 +28,23 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <input type="hidden" name="provider" value="credentials" />
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="name@example.com"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <Input id="password" name="password" type="password" required />
-            </div>
-
-            <Button type="submit" className="w-full" disabled></Button>
-
-            <div className="mt-4 relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
             <div>
               <div className="mt-4 flex flex-col space-y-2">
                 <input type="hidden" name="provider" value="github" />
-                <Link
-                  href={"/api/auth/login/github"}
+                <a
+                  href={"/api/auth/login/google"}
                   className={buttonVariants({ variant: "outline" })}
                 >
                   <Github className="mr-2 h-4 w-4" />
                   GitHub
-                </Link>
+                </a>
 
-                <form action={async () => {
+                <form
+                  action={async () => {
                     "use server";
                     await signIn("google");
-                  }}>
+                  }}
+                >
                   <Button type="submit" variant="outline" className="w-full">
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                       <path
@@ -104,6 +68,8 @@ export default function LoginPage() {
                     Google
                   </Button>
                 </form>
+
+                <ClientLoginButton />
 
                 <form
                   action={async () => {

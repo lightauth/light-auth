@@ -11,12 +11,14 @@ import { CreateLightAuth, createLightAuthSessionFunction, createLightAuthUserFun
 import { decryptJwt, encryptJwt } from "./services/jwt";
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME, DEFAULT_SESSION_EXPIRATION } from "./constants";
 import { createHttpHandlerFunction } from "./services/handlers";
-import { resolveBasePath } from "./services/utils";
+import { resolveBasePath, buildSecret, buildFullUrl } from "./services/utils";
 export {
   ArticProvider,
   LightAuthConfig,
   LightAuthCookieStore,
   resolveBasePath,
+  buildSecret,
+  buildFullUrl,
   createLightAuthCookieStore,
   CreateLightAuth,
   createLightAuthUserAdapter,

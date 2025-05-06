@@ -14,6 +14,9 @@ import { LightAuthComponents } from "./models/light-auth-components";
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
 import * as cookieParser from "cookie";
 import { resolveBasePath } from "./services/utils";
+import { createLightAuthUserAdapter } from "./light-auth-user-adapter";
+import { createLightAuthRouter } from "./light-auth-router";
+import { createLightAuthCookieStore } from "./light-auth-cookie-store";
 
 /**
  * this function is used to make a server request to the light auth server
@@ -22,26 +25,27 @@ import { resolveBasePath } from "./services/utils";
  * @param param0
  * @returns
  */
-async function serverRequest<T extends Record<string, string> | string | Blob>({
-  config,
-  endpoint,
-  body,
-  req,
-  res,
-}: {
+async function serverRequest<T extends Record<string, string> | string | Blob>(args: {
   config: LightAuthConfig;
   endpoint: string;
   body?: any;
-  req?: BaseRequest;
-  res?: BaseResponse;
+  [key: string]: unknown;
 }): Promise<T | null | undefined> {
+  const { config, endpoint, body, ...ctx } = args;
+  const { cookieStore, router } = config;
+
+  console.log("ctx", ctx);
+
+  if (!cookieStore) throw new Error("light-auth: cookieStore is required");
+  if (!router) throw new Error("light-auth: router is required");
+
   const bodyBytes = body ? new TextEncoder().encode(body.toString()) : undefined;
 
   // check we are on the server side
   if (typeof window !== "undefined") {
-    throw new Error("serverRequest can only be used on the server side");
+    throw new Error("light-auth: serverRequest can only be used on the server side");
   }
-  const cookies = await config.cookieStore?.getCookies({ req, res });
+  const cookies = await cookieStore?.getCookies({ args });
 
   // build the request
   const requestHeaders = new Headers();
@@ -66,30 +70,7 @@ async function serverRequest<T extends Record<string, string> | string | Blob>({
     }
   }
 
-  let url: URL | null = null;
-  if (endpoint.startsWith("http")) {
-    url = new URL(endpoint);
-  } else {
-    const sanitizeEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-
-    const host: string = req && req.headers && typeof req.headers.get === "function" && req.headers.get("host") ? req.headers.get("host") : "localhost:3000";
-
-    // Check if we are on https
-    let protocol = "http";
-    if (
-      req &&
-      req.headers &&
-      typeof req.headers.get === "function" &&
-      (req.headers.get("x-forwarded-proto") === "https" ||
-        req.headers.get("x-forwarded-protocol") === "https" ||
-        req.headers.get("x-forwarded-proto")?.split(",")[0] === "https")
-    ) {
-      protocol = "https";
-    }
-
-    const sanitizedHost = host.endsWith("/") ? host.slice(0, -1) : host;
-    url = new URL(sanitizeEndpoint, `${protocol}://${sanitizedHost}`);
-  }
+  let url = await router.getUrl({ ...args, endpoint });
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: "POST", headers: requestHeaders, body: bodyBytes })
@@ -100,10 +81,10 @@ async function serverRequest<T extends Record<string, string> | string | Blob>({
     response = await fetch(request);
   } catch (error) {
     console.error("Error:", error);
-    throw new Error(`Request failed with error ${error}`);
+    throw new Error(`light-auth: Request failed with error ${error}`);
   }
   if (!response || !response.ok) {
-    throw new Error(`Request failed with status ${response?.status}`);
+    throw new Error(`light-auth: Request failed with status ${response?.status}`);
   }
   const contentType = response.headers.get("Content-Type");
 
@@ -131,30 +112,32 @@ async function serverRequest<T extends Record<string, string> | string | Blob>({
   return null;
 }
 
-export function createSigninFunction(
-  config: LightAuthConfig
-): ({ req, res, providerName }: { req?: BaseRequest; res?: BaseResponse; providerName?: string }) => Promise<BaseResponse> {
-  return async ({ req, res, providerName }) => {
-    const redirectResponse = await redirectToProviderLoginHandler({ config, res, req, providerName });
-    return redirectResponse;
+export function createSigninFunction(config: LightAuthConfig): (args: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+  return async ({ providerName, ...args }) => {
+    if (typeof window !== "undefined") {
+      window.location.href = `${config.basePath}/login/${providerName}`;
+    } else {
+      const redirectResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
+      return redirectResponse;
+    }
   };
 }
 
-export function createSignoutFunction(
-  config: LightAuthConfig
-): ({ req, res, revokeToken }: { req?: BaseRequest; res?: BaseResponse; revokeToken?: boolean }) => Promise<BaseResponse> {
-  return async ({ req, res, revokeToken }) => {
-    const redirectResponse = await logoutAndRevokeTokenHandler({ config, req, revokeToken });
-    return redirectResponse;
+export function createSignoutFunction(config: LightAuthConfig): (args: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
+  return async ({ revokeToken, ...args }) => {
+    if (typeof window !== "undefined") {
+      window.location.href = `${config.basePath}/logout`;
+    } else {
+      const redirectResponse = await logoutAndRevokeTokenHandler({ config, revokeToken, ...args });
+      return redirectResponse;
+    }
   };
 }
 
-export function createLightAuthSessionFunction(
-  config: LightAuthConfig
-): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthSession | null | undefined> {
-  return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
-    if (!config.router) throw new Error("router is required");
-    if (!config.cookieStore) throw new Error("cookieStore is required");
+export function createLightAuthSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
+  return async (...args) => {
+    if (!config.router) throw new Error("light-auth router is required");
+    if (!config.cookieStore) throw new Error("light-auth cookieStore is required");
 
     try {
       // get the session from the server using the api endpoint, because
@@ -162,24 +145,22 @@ export function createLightAuthSessionFunction(
       const session = await serverRequest<LightAuthSession>({
         config,
         endpoint: `${config.basePath}/session`,
-        req: args?.req,
-        res: args?.res,
+        ...args,
       });
 
       return session;
     } catch (error) {
+      console.error("Error:", error);
       return null;
     }
   };
 }
 
-export function createLightAuthUserFunction(
-  config: LightAuthConfig
-): (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined> {
-  return async (args?: { req?: BaseRequest; res?: BaseResponse }) => {
-    if (!config.userAdapter) throw new Error("userAdapter is required");
-    if (!config.router) throw new Error("router is required");
-    if (!config.cookieStore) throw new Error("cookieStore is required");
+export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
+  return async (args?: { [key: string]: unknown }) => {
+    if (!config.userAdapter) throw new Error("light-auth: userAdapter is required");
+    if (!config.router) throw new Error("light-auth: router is required");
+    if (!config.cookieStore) throw new Error("light-auth: cookieStore is required");
 
     try {
       // get the user from the server using the api endpoint, because
@@ -187,8 +168,7 @@ export function createLightAuthUserFunction(
       const session = await serverRequest<LightAuthSession>({
         config,
         endpoint: `${config.basePath}/session`,
-        req: args?.req,
-        res: args?.res,
+        ...args,
       });
 
       if (!session || !session.id) return null;
@@ -196,8 +176,7 @@ export function createLightAuthUserFunction(
       const user = await serverRequest<LightAuthUser>({
         config,
         endpoint: `${config.basePath}/user/${session.id}`,
-        req: args?.req,
-        res: args?.res,
+        ...args,
       });
       if (!user) return null;
 
@@ -209,12 +188,13 @@ export function createLightAuthUserFunction(
 }
 
 export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
-  if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
+  if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
-  config.userAdapter = config.userAdapter;
-  config.router = config.router;
-  config.cookieStore = config.cookieStore;
-  config.basePath = resolveBasePath(config.basePath);
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false, config });
+  config.router = config.router ?? createLightAuthRouter();
+  config.cookieStore = config.cookieStore ?? createLightAuthCookieStore();
+  config.basePath = resolveBasePath(config);
+  config.env = config.env || process.env;
 
   return {
     providers: config.providers,

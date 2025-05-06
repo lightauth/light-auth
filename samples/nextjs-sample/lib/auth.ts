@@ -24,6 +24,7 @@ const microsoftProvider: LightAuthProvider = {
 
 export const { providers, handlers, signIn, signOut, getSession, getUser } =
   CreateLightAuth({
+    
     providers: [googleProvider, microsoftProvider],
     onSessionSaving: async (session, tokens) => {
       if (!tokens) return session;

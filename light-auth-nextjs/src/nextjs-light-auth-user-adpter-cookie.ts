@@ -1,4 +1,13 @@
-import { LightAuthCookie, decryptJwt, DEFAULT_SESSION_COOKIE_NAME, encryptJwt, LightAuthSession, LightAuthUser, LightAuthUserAdapter } from "@light-auth/core";
+import {
+  LightAuthCookie,
+  decryptJwt,
+  DEFAULT_SESSION_COOKIE_NAME,
+  encryptJwt,
+  LightAuthSession,
+  LightAuthUser,
+  LightAuthUserAdapter,
+  buildSecret,
+} from "@light-auth/core";
 import { nextJsLightAuthCookieStore } from "./nextjs-light-auth-cookie-store";
 
 /**
@@ -50,7 +59,7 @@ export const nextJsLightAuthUserAdapterCookie: LightAuthUserAdapter = {
     if (!jwt) return null;
 
     try {
-      var session = await decryptJwt(jwt);
+      var session = await decryptJwt(jwt, buildSecret(process.env));
       return session as LightAuthUser;
     } catch {
       return null;
@@ -58,7 +67,7 @@ export const nextJsLightAuthUserAdapterCookie: LightAuthUserAdapter = {
   },
 
   async setUser({ user }: { user: LightAuthUser }): Promise<void> {
-    const jwt = await encryptJwt(user);
+    const jwt = await encryptJwt(user, buildSecret(process.env));
 
     // template for the cookie
 

@@ -1,0 +1,32 @@
+---
+import "../styles/global.css";
+// Component Imports
+import Layout from "@/layouts/main.astro";
+import LoginButtons from "@/components/LoginButtons.astro";
+import FeedbackForm from "@/components/FeedbackForm";
+import GoogleLoginButton from "@/components/GoogleLoginButton";
+import { getAstroSession, getSession } from "@/lib/auth";
+
+export const prerender = false;
+
+const session = await getSession();
+
+console.log("Session:", session);
+
+const userLoggedIn = session ? true : false;
+---
+
+<Layout title="Astro Sample Page dazda">
+  <h1>Welcome to Astro!</h1>
+  <p>This is a sample page using Astro. You can use it to build static sites and web applications.</p>
+  <div class="flex flex-col items-center justify-center">
+    {userLoggedIn ? <p>Welcome back!</p> : <GoogleLoginButton client:load />}
+  </div>
+  <div>
+    <LoginButtons />
+  </div>
+  <p>
+    You can learn more about Astro by visiting the{" "}
+    <a href="https://astro.build">Astro website</a>.
+  </p>
+</Layout>

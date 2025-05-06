@@ -16,4 +16,5 @@ export interface LightAuthConfig {
   userAdapter?: LightAuthUserAdapter;
   cookieStore?: LightAuthCookieStore;
   router?: LightAuthRouter;
+  env?: { [key: string]: string | undefined };
 }

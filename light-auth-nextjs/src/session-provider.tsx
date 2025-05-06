@@ -1,7 +1,7 @@
 "use client";
 
 import { DEFAULT_BASE_PATH, LightAuthSession } from "@light-auth/core";
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
 interface SessionContextProps {
   session: LightAuthSession | null;
@@ -13,14 +13,14 @@ export const SessionContext = createContext?.<SessionContextProps | undefined>(u
 
 export const useSession = (is_required = false) => {
   if (!SessionContext) {
-    throw new Error("React Context is unavailable in Server Components");
+    throw new Error("light-auth: React Context is unavailable in Server Components");
   }
 
   const context = useContext(SessionContext);
 
   console.log("Session context:", context);
   if (!context) {
-    throw new Error("`useSession` must be wrapped in a <SessionProvider />");
+    throw new Error("light-auth: `useSession` must be wrapped in a <SessionProvider />");
   }
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export const SessionProvider = ({
   base_path = DEFAULT_BASE_PATH,
 }: SessionProviderProps) => {
   if (!SessionContext) {
-    throw new Error("React Context is unavailable in Server Components");
+    throw new Error("light-auth: React Context is unavailable in Server Components");
   }
 
   const [sessionState, setSessionState] = useState<LightAuthSession | null>(null);

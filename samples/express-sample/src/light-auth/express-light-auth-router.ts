@@ -8,7 +8,7 @@ export const expressLightAuthRouter: LightAuthRouter = {
     return res;
   },
 
-  getUrl: function ({ req }: { req?: ExpressRequest }): URL {
+  getUrl: function ({ endpoint, req }: { endpoint?: string; req?: ExpressRequest }): string {
     if (!req) throw new Error("Request is required in getUrl function of expressLightAuthRouter");
 
     const url = req?.protocol + "://" + req?.get("host") + req.originalUrl;
@@ -18,16 +18,25 @@ export const expressLightAuthRouter: LightAuthRouter = {
     return parsedUrl;
   },
 
-  getHeaders: function ({ req }: { req?: ExpressRequest }): Headers {
+  getHeaders: function ({ search, req }: { search?: string | RegExp; req?: ExpressRequest }): Headers {
     if (!req) throw new Error("Request is required in getHeaders function of expressLightAuthRouter");
 
-    const incomingHeadrs = req.headers;
+    const incomingHeaders = req.headers;
+    if (!incomingHeaders) return new Headers();
 
+    const searchRegex = typeof search === "string" ? new RegExp(search, "i") : search;
+
+    incomingHeaders;
     const headers = new Headers();
-    if (incomingHeadrs) {
-      for (const [key, value] of Object.entries(incomingHeadrs)) {
-        if (value) {
-          headers.set(key, value.toString());
+    if (incomingHeaders) {
+      for (const [key, value] of Object.entries(incomingHeaders)) {
+        if (!value) continue;
+        const vals = Array.isArray(value) ? value : [value];
+        for (const val of vals) {
+          if (!search || !searchRegex) headers.append(key, val);
+          else if (searchRegex.test(key)) {
+            headers.append(key, val);
+          }
         }
       }
     }

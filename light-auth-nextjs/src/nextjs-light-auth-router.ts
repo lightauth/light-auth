@@ -1,4 +1,4 @@
-import { LightAuthRouter } from "@light-auth/core";
+import { buildFullUrl, LightAuthRouter } from "@light-auth/core";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
@@ -13,18 +13,42 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return NextResponse.json(data);
   },
 
-  async redirectTo({ url }: { url: string }) {
-    redirect(url);
+  async redirectTo({ url, req }: { url: string; req?: NextRequest }): Promise<NextResponse> {
+    const fullUrl = req ? buildFullUrl({ endpoint: url, req }) : url;
+    console.log("Redirecting to:", url, fullUrl.toString());
+    return redirect(fullUrl.toString());
   },
 
-  async getUrl({ req }: { req?: NextRequest }) {
-    if (!req) throw new Error("Request is required in nextJsLightAuthRouter");
+  async getUrl({ endpoint, req }: { endpoint?: string; req?: NextRequest }) {
+    let url = endpoint;
+    if (!url) url = req?.url;
 
-    const url = new URL(req.url);
-    return url;
+    if (!url) {
+      throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
+    }
+
+    if (url.startsWith("http")) return url;
+
+    const headersData = await headers();
+
+    const sanitizedEndpoint = url.startsWith("/") ? url : `/${url}`;
+    const reqHost = headersData.get("host");
+    const host: string = reqHost ?? "localhost:3000";
+
+    // Check if we are on https
+    let protocol = "http";
+    if (
+      headersData.get("x-forwarded-proto") === "https" ||
+      headersData.get("x-forwarded-protocol") === "https" ||
+      headersData.get("x-forwarded-proto")?.split(",")[0] === "https"
+    ) {
+      protocol = "https";
+    }
+    const sanitizedHost = host.endsWith("/") ? host.slice(0, -1) : host;
+    return new URL(sanitizedEndpoint, `${protocol}://${sanitizedHost}`).toString();
   },
 
-  async getHeaders({ search }: { search: string | RegExp }): Promise<Headers> {
+  async getHeaders({ search }: { search?: string | RegExp }): Promise<Headers> {
     const headersStore = await headers();
 
     // Convert search to RegExp if it's a string
@@ -35,7 +59,8 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
 
     // Iterate and filter headers whose names match the regex
     for (const [key, value] of headersStore.entries()) {
-      if (regex.test(key)) {
+      if (!search || !regex) filteredHeaders.append(key, value);
+      else if (regex.test(key)) {
         filteredHeaders.append(key, value);
       }
     }

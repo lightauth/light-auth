@@ -41,7 +41,13 @@ export interface LightAuthNextJsComponents {
  */
 export const createNextJsSignIn = (config: LightAuthConfig): ((providerName?: string) => Promise<void>) => {
   const signIn = createSigninFunction(config);
-  return async (providerName?: string) => await signIn({ providerName });
+  return async (providerName?: string) => {
+    if (typeof window !== "undefined") {
+      window.location.href = `${config.basePath}/login/${providerName}`;
+    } else {
+      await signIn({ providerName });
+    }
+  };
 };
 
 /**
@@ -74,24 +80,44 @@ export const createNextJsLightAuthUserFunction = (config: LightAuthConfig): (() 
   return async () => await lightAuthUser();
 };
 
+type NextJsLightAuthHandlerFunction = (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
+type NextJsLightAuthHandlerFullFunction = { GET: NextJsLightAuthHandlerFunction; POST: NextJsLightAuthHandlerFunction };
+
+/**
+ * createNextJsLightAuthHandlerFunction is a function that creates the light auth handler for Next.js.
+ * It takes the LightAuth createHttpHandlerFunction base function and returns a user friendly function by
+ * removing the req and res parameters, that are not needed in the Next.js context.
+ */
+export const createNextJsLightAuthHandlerFunction = (config: LightAuthConfig): NextJsLightAuthHandlerFullFunction => {
+  const lightAuthHandler = createHttpHandlerFunction(config);
+  return {
+    GET: async (req: NextRequest, res: NextResponse, ...params: any[]) => {
+      const response = await lightAuthHandler({ req, res, ...params });
+      return response;
+    },
+    POST: async (req: NextRequest, res: NextResponse, ...params: any[]) => {
+      const response = await lightAuthHandler({ req, res, ...params });
+      return response;
+    },
+  };
+};
+
 /**
  * CreateLightAuth is a function that creates the LightAuth components for Next.js.
  * It takes a LightAuthConfig object as a parameter and returns a LightAuthNextJsComponents object.
  * The function also sets default values for the userAdapter, router and cookieStore if they are not provided.
  */
 export function CreateLightAuth(config: LightAuthConfig): LightAuthNextJsComponents {
-  if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
+  if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false, config });
   config.router = config.router ?? nextJsLightAuthRouter;
   config.cookieStore = config.cookieStore ?? nextJsLightAuthCookieStore;
-  config.basePath = resolveBasePath(config.basePath);
+  config.basePath = resolveBasePath(config);
+  config.env = config.env || process.env;
   return {
     providers: config.providers,
-    handlers: {
-      GET: createHttpHandlerFunction(config),
-      POST: createHttpHandlerFunction(config),
-    },
+    handlers: createNextJsLightAuthHandlerFunction(config),
     basePath: config.basePath,
     signIn: createNextJsSignIn(config),
     signOut: createNextJsSignOut(config),

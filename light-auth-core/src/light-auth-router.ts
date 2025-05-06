@@ -1,11 +1,12 @@
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
+import { buildFullUrl } from "./services/utils";
 
 export interface LightAuthRouter {
-  redirectTo: ({ req, res, url }: { req?: BaseRequest; res?: BaseResponse; url: string }) => Promise<BaseResponse> | BaseResponse;
-  getHeaders: ({ req, res, search }: { req?: BaseRequest; res?: BaseResponse; search: string | RegExp }) => Headers | Promise<Headers>;
-  setHeaders: ({ req, res, headers }: { req?: BaseRequest; res?: BaseResponse; headers: Map<string, string> }) => Promise<BaseResponse> | BaseResponse;
-  getUrl: ({ req, res }: { req?: BaseRequest; res?: BaseResponse }) => URL | Promise<URL>;
-  writeJson: ({ req, res, data }: { req?: BaseRequest; res?: BaseResponse; data: {} | null }) => Promise<BaseResponse> | BaseResponse;
+  redirectTo: (args: { url: string; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
+  getHeaders: (args: { search?: string | RegExp; [key: string]: unknown }) => Headers | Promise<Headers>;
+  setHeaders: (args: { headers: Map<string, string>; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
+  getUrl: (args: { endpoint?: string; [key: string]: unknown }) => string | Promise<string>;
+  writeJson: (args: { data: {} | null; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
 }
 
 export const createLightAuthRouter = (): LightAuthRouter => {
@@ -21,7 +22,7 @@ export const createLightAuthRouter = (): LightAuthRouter => {
     },
 
     writeJson({ res, data }: { res?: Response; data: any }) {
-      if (!res) throw new Error("Response object is required to write JSON.");
+      if (!res) throw new Error("light-auth: Response object is required to write JSON.");
       const json = JSON.stringify(data);
       const response = new Response(json, {
         status: 200,
@@ -33,7 +34,7 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       return response;
     },
 
-    getHeaders({ req, res, search }: { req?: Request; res?: Response; search: string | RegExp }): Headers {
+    getHeaders({ req, res, search }: { req?: Request; res?: Response; search?: string | RegExp }): Headers {
       const headers = req?.headers || res?.headers;
       if (!headers) return new Headers();
 
@@ -41,7 +42,8 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       const searchRegex = typeof search === "string" ? new RegExp(search, "i") : search;
 
       for (const [key, value] of headers.entries()) {
-        if (searchRegex.test(key)) {
+        if (!search || !searchRegex) result.set(key, value);
+        else if (searchRegex.test(key)) {
           result.set(key, value);
         }
       }
@@ -49,7 +51,7 @@ export const createLightAuthRouter = (): LightAuthRouter => {
     },
 
     async setHeaders({ res, headers }: { res?: Response; headers: Map<string, string> }) {
-      if (!res) throw new Error("Response object is required to set headers.");
+      if (!res) throw new Error("light-auth: Response object is required to set headers.");
 
       for (const [key, value] of headers.entries()) {
         res.headers.set(key, value);
@@ -57,11 +59,19 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       return res;
     },
 
-    getUrl({ req }: { req?: Request }) {
-      if (req?.url) {
-        return new URL(req.url, req.headers?.get("host") ? `https://${req.headers.get("host")}` : undefined);
+    getUrl({ endpoint, req }: { endpoint?: string; req?: Request }) {
+      if (!req) throw new Error("light-auth: Request object is required to get URL.");
+      let url = endpoint;
+      if (!url) url = req.url;
+
+      if (!url) {
+        throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
       }
-      throw new Error("Request object with URL is required.");
+
+      if (url.startsWith("http")) return url;
+
+      const fullUrl = buildFullUrl({ endpoint, req });
+      return fullUrl.toString();
     },
   };
 };

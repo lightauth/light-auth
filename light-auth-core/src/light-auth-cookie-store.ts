@@ -1,24 +1,17 @@
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
 import { LightAuthCookie } from "./models/light-auth-cookie";
 import * as cookieParser from "cookie";
+
 export interface LightAuthCookieStore {
-  getCookies: ({
-    req,
-    res,
-    search,
-  }: {
-    req?: BaseRequest;
-    res?: BaseResponse;
-    search?: string | RegExp;
-  }) => LightAuthCookie[] | null | Promise<LightAuthCookie[] | null>;
-  setCookies: ({ req, res, cookies }: { req?: BaseRequest; res?: BaseResponse; cookies: LightAuthCookie[] }) => Promise<BaseResponse> | BaseResponse;
-  deleteCookies: ({ req, res, search }: { req?: BaseRequest; res?: BaseResponse; search: string | RegExp }) => Promise<BaseResponse> | BaseResponse;
+  getCookies: (args: { search?: string | RegExp; [key: string]: unknown }) => LightAuthCookie[] | null | Promise<LightAuthCookie[] | null>;
+  setCookies: (args: { cookies: LightAuthCookie[]; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
+  deleteCookies: (args: { search?: string | RegExp; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
 }
 
 export const createLightAuthCookieStore = (): LightAuthCookieStore => {
   return {
-    getCookies: async ({ req, res, search }: { req?: Request; res?: Response; search?: string | RegExp }): Promise<LightAuthCookie[] | null> => {
-      if (!req) throw new Error("Request is required in getCookies function of cookieStore");
+    getCookies: async ({ req, search }: { req?: Request; search?: string | RegExp }): Promise<LightAuthCookie[] | null> => {
+      if (!req) throw new Error("light-auth: Request is required in getCookies function of cookieStore");
 
       const cookieHeader = req.headers.get("cookie");
       if (!cookieHeader) return null;
@@ -43,8 +36,8 @@ export const createLightAuthCookieStore = (): LightAuthCookieStore => {
 
       return cookies.length ? cookies : null;
     },
-    setCookies: async ({ req, res, cookies }: { req?: Request; res?: Response; cookies: LightAuthCookie[] }) => {
-      if (!res) throw new Error("Response is required in setCookies of cookieStore");
+    setCookies: async ({ res, cookies }: { res?: Response; cookies: LightAuthCookie[] }) => {
+      if (!res) throw new Error("light-auth: Response is required in setCookies of cookieStore");
 
       const cookiesToSet = cookies.map((cookie) =>
         cookieParser.serialize(cookie.name, cookie.value, {
@@ -62,9 +55,9 @@ export const createLightAuthCookieStore = (): LightAuthCookieStore => {
 
       return res;
     },
-    deleteCookies: async ({ req, res, search }: { req?: Request; res?: Response; search: string | RegExp }) => {
-      if (!res) throw new Error("Response is required in deleteCookies of cookieStore");
-      if (!req) throw new Error("Request is required in deleteCookies of cookieStore");
+    deleteCookies: async ({ req, res, search }: { req?: Request; res?: Response; search?: string | RegExp }) => {
+      if (!res) throw new Error("light-auth: Response is required in deleteCookies of cookieStore");
+      if (!req) throw new Error("light-auth: Request is required in deleteCookies of cookieStore");
 
       const cookieHeader = req.headers.get("cookie");
       if (!cookieHeader) return null;
@@ -75,7 +68,7 @@ export const createLightAuthCookieStore = (): LightAuthCookieStore => {
       const cookies: LightAuthCookie[] = [];
       // Filter cookies based on the search criteria
       for (const [cookieName, cookieValue] of Object.entries(requestCookies)) {
-        if ((typeof search === "string" && cookieName === search) || (search instanceof RegExp && search.test(cookieName))) {
+        if (search == null || (typeof search === "string" && cookieName === search) || (search instanceof RegExp && search.test(cookieName))) {
           const serialized = cookieParser.serialize(cookieName, "", {
             httpOnly: true,
             path: "/",

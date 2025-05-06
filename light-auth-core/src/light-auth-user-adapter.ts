@@ -1,13 +1,15 @@
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
 import { LightAuthUser } from "./models/light-auth-session";
+import { LightAuthConfig } from "./models/ligth-auth-config";
 import { decryptJwt, encryptJwt } from "./services/jwt";
 import { promises as fs } from "node:fs";
 import { resolve } from "node:path";
+import { buildSecret } from "./services/utils";
 
 export interface LightAuthUserAdapter {
-  getUser: ({ req, res, id }: { req?: BaseRequest; res?: BaseResponse; id: string }) => LightAuthUser | null | Promise<LightAuthUser | null>;
-  setUser: ({ req, res, user }: { req?: BaseRequest; res?: BaseResponse; user: LightAuthUser }) => Promise<void>;
-  deleteUser: ({ req, res, user }: { req?: BaseRequest; res?: BaseResponse; user: LightAuthUser }) => Promise<void>;
+  getUser: (args: { id: string; [key: string]: unknown }) => LightAuthUser | null | Promise<LightAuthUser | null>;
+  setUser: (args: { user: LightAuthUser; [key: string]: unknown }) => Promise<void>;
+  deleteUser: (args: { user: LightAuthUser; [key: string]: unknown }) => Promise<void>;
   generateStoreId: () => string;
 }
 
@@ -17,7 +19,15 @@ export interface LightAuthUserAdapter {
  * Supports optional encryption of the session object.
  */
 
-export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base: string; isEncrypted: boolean }): LightAuthUserAdapter => {
+export const createLightAuthUserAdapter = ({
+  base,
+  isEncrypted = false,
+  config,
+}: {
+  base: string;
+  isEncrypted: boolean;
+  config: LightAuthConfig;
+}): LightAuthUserAdapter => {
   const sanitizeKey = (key: string): string => {
     // Only allow alphanumeric, dash, and underscore for file safety
     return key.replace(/[^a-zA-Z0-9-_]/g, "_");
@@ -39,7 +49,7 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
         const data = await fs.readFile(filePath, "utf-8");
         if (isEncrypted) {
           // Decrypt the stored JWT string to get the session object
-          const payload = await decryptJwt(data);
+          const payload = await decryptJwt(data, buildSecret(config.env));
           return payload as LightAuthUser;
         } else {
           // Parse the plain JSON session object
@@ -51,13 +61,13 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
     },
 
     async setUser({ user }: { user: LightAuthUser }): Promise<void> {
-      if (!user?.id) throw new Error("Session must have an id");
+      if (!user?.id) throw new Error("light-auth: Session must have an id");
       const safeId = sanitizeKey(user.id);
       const filePath = resolve(base, safeId + ".json");
       await fs.mkdir(base, { recursive: true });
       if (isEncrypted) {
         // Encrypt the session object and store as a JWT string
-        const jwt = await encryptJwt(user);
+        const jwt = await encryptJwt(user, buildSecret(config.env));
         await fs.writeFile(filePath, jwt, "utf-8");
       } else {
         // Store the session object as plain JSON

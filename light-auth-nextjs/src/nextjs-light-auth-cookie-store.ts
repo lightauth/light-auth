@@ -22,13 +22,14 @@ export const nextJsLightAuthCookieStore: LightAuthCookieStore = {
     return filteredCookies as LightAuthCookie[];
   },
 
-  async deleteCookies({ search }: { search: string | RegExp }): Promise<void> {
+  async deleteCookies({ search }: { search?: string | RegExp }): Promise<void> {
     const cookieStore = await nextCookies();
-    const regex = typeof search === "string" ? new RegExp(search) : search;
-    const cookiesNames = cookieStore
-      .getAll()
-      .filter((c) => regex.test(c.name))
-      .map((c) => c.name);
+    const cookiesNames = search
+      ? cookieStore
+          .getAll()
+          .filter((c) => (typeof search === "string" ? new RegExp(search).test(c.name) : search.test(c.name)))
+          .map((c) => c.name)
+      : cookieStore.getAll().map((c) => c.name);
     cookiesNames.forEach((name) => {
       cookieStore.delete(name);
     });
@@ -43,7 +44,7 @@ export const nextJsLightAuthCookieStore: LightAuthCookieStore = {
       const valueBytes = encoder.encode(cookie.value);
 
       if (valueBytes.length > 4096) {
-        throw new Error("Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
+        throw new Error("light-auth: Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
       }
 
       // maxAge:  Specifies the number (in seconds) to be the value for the `Max-Age`

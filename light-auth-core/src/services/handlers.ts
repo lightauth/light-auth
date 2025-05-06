@@ -7,7 +7,7 @@ import { LightAuthConfig } from "../models/ligth-auth-config";
 import { BaseRequest, BaseResponse } from "../models/light-auth-base";
 import { DEFAULT_SESSION_COOKIE_NAME, DEFAULT_SESSION_EXPIRATION } from "../constants";
 import { decryptJwt, encryptJwt } from "./jwt";
-import { getSessionExpirationMaxAge } from "./utils";
+import { buildFullUrl, buildSecret, getSessionExpirationMaxAge } from "./utils";
 /**
  * Checks the configuration and throws an error if any required fields are missing.
  * @param config The configuration object to check.
@@ -15,20 +15,21 @@ import { getSessionExpirationMaxAge } from "./utils";
  * @throws Error if any required fields are missing.
  */
 function checkConfig(config: LightAuthConfig, providerName?: string): Required<LightAuthConfig> & { provider: LightAuthProvider } {
-  if (!process.env.LIGHT_AUTH_SECRET_VALUE) {
+  if (!config.env) throw new Error("light-auth: env is required");
+  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) {
     throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
   }
-  if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("At least one provider is required");
-  if (config.userAdapter == null) throw new Error("userAdapter is required");
-  if (config.router == null) throw new Error("router is required");
-  if (config.cookieStore == null) throw new Error("cookieStore is required");
+  if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
+  if (config.userAdapter == null) throw new Error("light-auth: userAdapter is required");
+  if (config.router == null) throw new Error("light-auth: router is required");
+  if (config.cookieStore == null) throw new Error("light-auth: cookieStore is required");
 
   // if providerName is provider, check if the provider is in the config
   if (providerName && !config.providers.some((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase()))
-    throw new Error(`Provider ${providerName} not found`);
+    throw new Error(`light-auth: Provider ${providerName} not found`);
 
   const provider = !providerName ? config.providers[0] : config.providers.find((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase());
-  if (!provider) throw new Error(`Provider ${providerName} not found`);
+  if (!provider) throw new Error(`light-auth: Provider ${providerName} not found`);
 
   return {
     ...(config as Required<LightAuthConfig>),
@@ -39,18 +40,9 @@ function checkConfig(config: LightAuthConfig, providerName?: string): Required<L
 /**
  * Redirects the user to the provider login page.
  */
-export async function redirectToProviderLoginHandler({
-  config,
-  req,
-  res,
-  providerName,
-}: {
-  config: LightAuthConfig;
-  req?: BaseRequest;
-  res?: BaseResponse;
-  providerName?: string;
-}): Promise<BaseResponse> {
-  const { provider, router, cookieStore } = checkConfig(config, providerName);
+export async function redirectToProviderLoginHandler(args: { config: LightAuthConfig; providerName?: string; [key: string]: unknown }): Promise<BaseResponse> {
+  const { config, providerName } = args;
+  const { provider, router, cookieStore, env } = checkConfig(config, providerName);
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
@@ -74,7 +66,7 @@ export async function redirectToProviderLoginHandler({
 
   // add additional headers
   if (provider.headers) {
-    await router.setHeaders({ req, res, headers: provider.headers });
+    await router.setHeaders({ headers: provider.headers, ...args });
   }
 
   const stateCookie: LightAuthCookie = {
@@ -82,7 +74,7 @@ export async function redirectToProviderLoginHandler({
     path: "/",
     value: state,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env["NODE_ENV"] === "production",
     sameSite: "lax",
     maxAge: 60 * 10, // 10 minutes
   };
@@ -92,59 +84,53 @@ export async function redirectToProviderLoginHandler({
     path: "/",
     value: codeVerifier,
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env["NODE_ENV"] === "production",
     sameSite: "lax",
     maxAge: 60 * 10, // 10 minutes
   };
 
-  await cookieStore.setCookies({ req, res, cookies: [stateCookie, codeVerifierCookie] });
+  await cookieStore.setCookies({ cookies: [stateCookie, codeVerifierCookie], ...args });
 
-  const redirect = await router.redirectTo({ req, res, url: url.toString() });
+  const redirect = await router.redirectTo({ url: url.toString(), ...args });
 
   return redirect;
 }
 
-export async function providerCallbackHandler({
-  config,
-  req,
-  res,
-  providerName,
-  callbackUrl = "/",
-}: {
+export async function providerCallbackHandler(args: {
   config: LightAuthConfig;
-  req?: BaseRequest;
-  res?: BaseResponse;
   providerName?: string;
   callbackUrl: string;
+  [key: string]: unknown;
 }): Promise<Response> {
+  const { config, providerName, callbackUrl } = args;
   const { router, userAdapter, cookieStore, provider } = checkConfig(config, providerName);
 
-  const url = await router.getUrl({ req });
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
+  const url = await router.getUrl({ ...args });
+  const reqUrl = new URL(url);
+  const code = reqUrl.searchParams.get("code");
+  const state = reqUrl.searchParams.get("state");
 
-  if (code === null || state === null) throw new Error("state or code are missing from the request");
+  if (code === null || state === null) throw new Error("light-auth: state or code are missing from the request");
 
   const cookies = await cookieStore.getCookies({
-    req,
-    res,
     search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
+    ...args,
   });
 
-  if (cookies === null) throw new Error("Failed to get cookies");
+  if (cookies === null) throw new Error("light-auth: Failed to get cookies");
 
   const storedStateCookie = cookies.find((cookie) => cookie.name === `${provider.providerName}_light_auth_state`);
   const codeVerifierCookie = cookies.find((cookie) => cookie.name === `${provider.providerName}_light_auth_code_verifier`);
 
-  if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("Invalid state or code verifier");
+  if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("light-auth: Invalid state or code verifier");
 
   // validate the state
-  if (storedStateCookie.value !== state) throw new Error("Invalid state");
+  if (storedStateCookie.value !== state) throw new Error("light-auth: Invalid state");
 
   // validate the authorization code
   let tokens = await provider.artic.validateAuthorizationCode(code, codeVerifierCookie.value);
 
-  if (tokens === null) throw new Error("Failed to fetch tokens");
+  if (tokens === null) throw new Error("light-auth: Failed to fetch tokens");
 
   // Calculate the access token expiration time
   // The access token expiration time is the number of seconds until the token expires
@@ -189,10 +175,8 @@ export async function providerCallbackHandler({
     session = sessionSaving ?? session;
   }
 
-  const encryptedSession = await encryptJwt(session);
+  const encryptedSession = await encryptJwt(session, buildSecret(config.env));
   cookieStore.setCookies({
-    req,
-    res,
     cookies: [
       {
         name: DEFAULT_SESSION_COOKIE_NAME,
@@ -204,6 +188,7 @@ export async function providerCallbackHandler({
         path: "/",
       },
     ],
+    ...args,
   });
 
   if (config.onSessionSaved) await config.onSessionSaved(session);
@@ -225,50 +210,47 @@ export async function providerCallbackHandler({
     user = userSaving ?? user;
   }
 
-  await userAdapter.setUser({ req, res, user });
+  await userAdapter.setUser({ user, ...args });
 
   if (config.onUserSaved) await config.onUserSaved(user);
 
-  const redirectResponse = await router.redirectTo({ req, res, url: callbackUrl });
+  const redirectResponse = await router.redirectTo({ url: callbackUrl, ...args });
   return redirectResponse;
 }
 
-export async function logoutAndRevokeTokenHandler({
-  config,
-  req,
-  res,
-  revokeToken = true,
-  callbackUrl = "/",
-}: {
+export async function logoutAndRevokeTokenHandler(args: {
   config: LightAuthConfig;
-  req?: BaseRequest;
-  res?: BaseResponse;
   revokeToken?: boolean;
   callbackUrl?: string;
+  [key: string]: unknown;
 }): Promise<Response> {
+  const { config, revokeToken = true, callbackUrl = "/" } = args;
   const { userAdapter, router, cookieStore } = checkConfig(config);
 
   // get the session cookie
-  const cookieSession = (await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME }))?.find(
+  const cookieSession = (await cookieStore.getCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args }))?.find(
     (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
   );
-  if (!cookieSession) return await router.redirectTo({ req, res, url: callbackUrl });
+  if (!cookieSession) return await router.redirectTo({ url: callbackUrl, ...args });
 
   let session: LightAuthSession | null = null;
   try {
-    session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+    session = (await decryptJwt(cookieSession.value, buildSecret(config.env))) as LightAuthSession;
   } catch (error) {}
 
   if (session) {
     // get the user from the session store
-    const user = await userAdapter.getUser({ req, res, id: session.id });
+    const user = await userAdapter.getUser({ id: session.id, ...args });
     // get the provider name from the session
     const providerName = session?.providerName;
     // get the provider from the config
     const provider = config.providers.find((p) => p.providerName === providerName);
 
     var token = user?.accessToken;
+
+    console.log("Logging out user:", revokeToken);
     if (token && provider && revokeToken) {
+      console.log("Revoking token:", token);
       // Revoke the token if the provider supports it
       if (typeof provider.artic.revokeToken === "function") {
         try {
@@ -283,45 +265,47 @@ export async function logoutAndRevokeTokenHandler({
       if (provider) {
         // delete the state cookie
         await cookieStore.deleteCookies({
-          req,
-          res,
           search: new RegExp(`^${provider.providerName}_(state|code_verifier)$`),
+          ...args,
         });
       }
 
       // delete the user
-      if (user) await userAdapter.deleteUser({ req, res, user });
+      if (user) await userAdapter.deleteUser({ user, ...args });
       // delete the session cookie
-      await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+      await cookieStore.deleteCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args });
     } catch {}
   }
 
-  return await router.redirectTo({ req, res, url: callbackUrl });
+  return await router.redirectTo({ url: callbackUrl, ...args });
 }
 
 /**
  * get session handler available on endpoint /${basePath}/session
  */
-export async function getSessionHandler({ config, req, res }: { config: LightAuthConfig; req?: BaseRequest; res?: BaseResponse }): Promise<Response> {
+export async function getSessionHandler(args: { config: LightAuthConfig; [key: string]: unknown }): Promise<Response> {
+  const { config } = args;
   const { cookieStore, router } = checkConfig(config);
 
-  const cookieSession = (await cookieStore.getCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME }))?.find(
+  console.log("getSessionHandler", args);
+
+  const cookieSession = (await cookieStore.getCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args }))?.find(
     (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
   );
-  if (!cookieSession) return await router.writeJson({ req, res, data: null });
+  if (!cookieSession) return await router.writeJson({ data: null, ...args });
 
   let session: LightAuthSession | null = null;
 
   try {
-    session = (await decryptJwt(cookieSession.value)) as LightAuthSession;
+    session = (await decryptJwt(cookieSession.value, buildSecret(config.env))) as LightAuthSession;
   } catch (error) {
     console.error("Failed to decrypt session cookie:", error);
-    return await router.writeJson({ req, res, data: null });
+    return await router.writeJson({ data: null, ...args });
   }
 
   if (!session || !session.id || !session.userId) {
     console.error("Unable to read session:", session);
-    return await router.writeJson({ req, res, data: null });
+    return await router.writeJson({ data: null, ...args });
   }
 
   // check if session is expired
@@ -329,9 +313,9 @@ export async function getSessionHandler({ config, req, res }: { config: LightAut
     console.error("Session expired:", session.expiresAt);
     // delete the session cookie
     try {
-      await cookieStore.deleteCookies({ req, res, search: DEFAULT_SESSION_COOKIE_NAME });
+      await cookieStore.deleteCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args });
     } catch {}
-    return await router.writeJson({ req, res, data: null });
+    return await router.writeJson({ data: null, ...args });
   }
 
   // get the max age from the environment variable or use the default value
@@ -344,10 +328,8 @@ export async function getSessionHandler({ config, req, res }: { config: LightAut
     // we can update the session expiration time
     session.expiresAt = new Date(Date.now() + maxAge * 1000);
     // update the session cookie
-    const encryptedSession = await encryptJwt(session);
+    const encryptedSession = await encryptJwt(session, buildSecret(config.env));
     cookieStore.setCookies({
-      req,
-      res,
       cookies: [
         {
           name: DEFAULT_SESSION_COOKIE_NAME,
@@ -359,31 +341,23 @@ export async function getSessionHandler({ config, req, res }: { config: LightAut
           path: "/",
         },
       ],
+      ...args,
     });
   }
 
-  return await router.writeJson({ req, res, data: session });
+  return await router.writeJson({ data: session, args });
 }
 
-export async function getUserHandler({
-  config,
-  req,
-  res,
-  id,
-}: {
-  config: LightAuthConfig;
-  req?: BaseRequest;
-  res?: BaseResponse;
-  id: string;
-}): Promise<Response> {
+export async function getUserHandler(args: { config: LightAuthConfig; id: string; [key: string]: unknown }): Promise<Response> {
+  const { config, id } = args;
   const { router, userAdapter } = checkConfig(config);
   try {
-    const user = await userAdapter.getUser({ req, res, id });
-    if (user == null) return await router.writeJson({ req, res, data: null });
-    return await router.writeJson({ req, res, data: user });
+    const user = await userAdapter.getUser({ ...args });
+    if (user == null) return await router.writeJson({ data: null, ...args });
+    return await router.writeJson({ data: user, ...args });
   } catch (error) {
     console.error("Failed to get user:", error);
-    return await router.writeJson({ req, res, data: null });
+    return await router.writeJson({ data: null, ...args });
   }
 }
 
@@ -393,11 +367,10 @@ export async function getUserHandler({
  * @returns An HTTP handler function that processes requests and responses.
  */
 export function createHttpHandlerFunction(config: LightAuthConfig) {
-  const httpHandler = async (req: BaseRequest, res: BaseResponse): Promise<BaseResponse> => {
-    if (!req) throw new Error("request is required");
-    if (!config.router) throw new Error("router is required");
+  const httpHandler = async (args: { [key: string]: unknown }): Promise<BaseResponse> => {
+    if (!config.router) throw new Error("light-auth: router is required");
 
-    const url = await config.router.getUrl({ req });
+    const url = await config.router.getUrl({ ...args });
 
     const reqUrl = new URL(url);
 
@@ -415,23 +388,23 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
 
     let newResponse: BaseResponse | null = null;
 
-    if (pathSegments.length < 1) throw new Error("Not enough path segments found");
+    if (pathSegments.length < 1) throw new Error("light-auth: Not enough path segments found");
 
     const providerName = pathSegments.length > 1 ? pathSegments[1] : null;
 
     if (pathSegments[0] === "session") {
-      newResponse = await getSessionHandler({ req, res, config });
+      newResponse = await getSessionHandler({ config, ...args });
     } else if (pathSegments[0] === "user") {
-      newResponse = await getUserHandler({ req, res, config, id: pathSegments[1] });
+      newResponse = await getUserHandler({ config, id: pathSegments[1], ...args });
     } else if (pathSegments[0] === "login" && providerName) {
-      newResponse = await redirectToProviderLoginHandler({ req, res, config, providerName });
+      newResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
     } else if (pathSegments[0] === "logout") {
-      newResponse = await logoutAndRevokeTokenHandler({ req, res, config, revokeToken: false, callbackUrl });
+      newResponse = await logoutAndRevokeTokenHandler({ config, revokeToken: false, callbackUrl, ...args });
     } else if (pathSegments[0] === "callback" && providerName) {
-      newResponse = await providerCallbackHandler({ req, res, config, providerName, callbackUrl });
+      newResponse = await providerCallbackHandler({ config, providerName, callbackUrl, ...args });
     }
 
-    return newResponse ?? res;
+    return newResponse;
   };
   return httpHandler;
 }

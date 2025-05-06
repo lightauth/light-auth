@@ -1,7 +1,5 @@
 import { EncryptJWT, jwtDecrypt, JWTPayload, jwtVerify, SignJWT } from "jose";
-import { ENCRYPT_SECRET_VALUE } from "../constants";
 
-const SECRET = new TextEncoder().encode(ENCRYPT_SECRET_VALUE);
 
 // export async function createJwt(payload: JWTPayload): Promise<JWTPayload> {
 //   const token = await new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).setExpirationTime("30 days").setIssuedAt().sign(SECRET);
@@ -21,12 +19,12 @@ const SECRET = new TextEncoder().encode(ENCRYPT_SECRET_VALUE);
 //   return payload;
 // }
 
-export async function encryptJwt(payload: JWTPayload) {
-  const token = await new EncryptJWT(payload).setProtectedHeader({ alg: "dir", enc: "A128CBC-HS256" }).encrypt(SECRET);
+export async function encryptJwt(payload: JWTPayload, secret: string): Promise<string> {
+  const token = await new EncryptJWT(payload).setProtectedHeader({ alg: "dir", enc: "A128CBC-HS256" }).encrypt(new TextEncoder().encode(secret));
   return token;
 }
 
-export async function decryptJwt(token: string): Promise<JWTPayload> {
-  const { payload } = await jwtDecrypt(token, SECRET);
+export async function decryptJwt(token: string, secret: string): Promise<JWTPayload> {
+  const { payload } = await jwtDecrypt(token, new TextEncoder().encode(secret));
   return payload;
 }
