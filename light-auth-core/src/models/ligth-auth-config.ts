@@ -1,10 +1,9 @@
 import { OAuth2Tokens } from "arctic";
-import { LightAuthSession } from "..";
-import { LightAuthCookieStore } from "../light-auth-cookie-store";
 import { LightAuthRouter } from "../light-auth-router";
-import { LightAuthUserAdapter } from "../light-auth-user-adapter";
 import { LightAuthProvider } from "./light-auth-provider";
-import { LightAuthUser } from "./light-auth-session";
+import { LightAuthSession, LightAuthUser } from "./light-auth-session";
+import { LightAuthUserAdapter } from "./light-auth-user-adapter";
+import { LightAuthCookieStore } from "./light-auth-cookie-store";
 
 export interface LightAuthConfig {
   providers: LightAuthProvider[];
@@ -12,7 +11,7 @@ export interface LightAuthConfig {
   onSessionSaved?: (session: LightAuthSession) => void | Promise<void>;
   onUserSaving?: (user: LightAuthUser, claims: OAuth2Tokens) => LightAuthUser | null | Promise<LightAuthUser | null>;
   onUserSaved?: (user: LightAuthUser) => void | Promise<void>;
-  basePath?: string;
+  basePath: string;
   userAdapter?: LightAuthUserAdapter;
   cookieStore?: LightAuthCookieStore;
   router?: LightAuthRouter;

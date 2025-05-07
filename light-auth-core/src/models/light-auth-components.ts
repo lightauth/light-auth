@@ -9,14 +9,14 @@ import { LightAuthSession, LightAuthUser } from "./light-auth-session";
  * It also provides methods for managing user sessions and authentication states.
  */
 export interface LightAuthComponents {
-  providers: LightAuthProvider[];
-  handlers: {
-    GET: (...args: any[]) => BaseResponse | Promise<BaseResponse>;
-    POST: (...args: any[]) => BaseResponse | Promise<BaseResponse>;
+  providers?: LightAuthProvider[];
+  handlers?: {
+    GET: (...args: any[]) => any;
+    POST: (...args: any[]) => any;
   };
-  signIn: (...args: any[]) => Promise<BaseResponse>;
-  signOut: (...args: any[]) => Promise<BaseResponse>;
-  basePath: string;
-  getSession: (...args: any[]) => Promise<LightAuthSession | null | undefined>;
-  getUser: (...args: any[]) => Promise<LightAuthUser | null | undefined>;
+  signIn?: (args: any) => any;
+  signOut?: (args: any) => any;
+  basePath?: string;
+  getSession?: (args: any) => any;
+  getUser?: (args: any) => any;
 }

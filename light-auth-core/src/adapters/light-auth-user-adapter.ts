@@ -1,17 +1,10 @@
-import { BaseRequest, BaseResponse } from "./models/light-auth-base";
-import { LightAuthUser } from "./models/light-auth-session";
-import { LightAuthConfig } from "./models/ligth-auth-config";
-import { decryptJwt, encryptJwt } from "./services/jwt";
+import { LightAuthUser } from "../models/light-auth-session";
+import { LightAuthConfig } from "../models/ligth-auth-config";
+import { decryptJwt, encryptJwt } from "../services/jwt";
 import { promises as fs } from "node:fs";
 import { resolve } from "node:path";
-import { buildSecret } from "./services/utils";
-
-export interface LightAuthUserAdapter {
-  getUser: (args: { id: string; [key: string]: unknown }) => LightAuthUser | null | Promise<LightAuthUser | null>;
-  setUser: (args: { user: LightAuthUser; [key: string]: unknown }) => Promise<void>;
-  deleteUser: (args: { user: LightAuthUser; [key: string]: unknown }) => Promise<void>;
-  generateStoreId: () => string;
-}
+import { buildSecret } from "../services/utils";
+import { LightAuthUserAdapter } from "../models/light-auth-user-adapter";
 
 /**
  * A concrete SessionStore implementation for Node.js server-side,
@@ -92,10 +85,6 @@ export const createLightAuthUserAdapter = ({
       } catch {
         // Ignore if file does not exist
       }
-    },
-
-    generateStoreId(): string {
-      return Math.random().toString(36).slice(2);
     },
   } satisfies LightAuthUserAdapter;
 };

@@ -20,7 +20,6 @@ function checkConfig(config: LightAuthConfig, providerName?: string): Required<L
     throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
   }
   if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
-  if (config.userAdapter == null) throw new Error("light-auth: userAdapter is required");
   if (config.router == null) throw new Error("light-auth: router is required");
   if (config.cookieStore == null) throw new Error("light-auth: cookieStore is required");
 
@@ -156,7 +155,7 @@ export async function providerCallbackHandler(args: {
   let refresh_token: string | undefined;
   if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
 
-  const id = userAdapter.generateStoreId();
+  const id = cookieStore.generateStoreId();
   const maxAge = getSessionExpirationMaxAge();
 
   const expiresAt = new Date(Date.now() + maxAge * 1000);
@@ -210,7 +209,7 @@ export async function providerCallbackHandler(args: {
     user = userSaving ?? user;
   }
 
-  await userAdapter.setUser({ user, ...args });
+  if (userAdapter) await userAdapter.setUser({ user, ...args });
 
   if (config.onUserSaved) await config.onUserSaved(user);
 
@@ -239,43 +238,52 @@ export async function logoutAndRevokeTokenHandler(args: {
     session = (await decryptJwt(cookieSession.value, buildSecret(config.env))) as LightAuthSession;
   } catch (error) {}
 
-  if (session) {
-    // get the user from the session store
+  if (!session || !session.id || !session.userId) {
+    return await router.redirectTo({ url: callbackUrl, ...args });
+  }
+
+  // get the provider name from the session
+  const providerName = session?.providerName;
+  // get the provider from the config
+  const provider = config.providers.find((p) => p.providerName === providerName);
+
+  // get the user from the session store
+  if (userAdapter) {
     const user = await userAdapter.getUser({ id: session.id, ...args });
-    // get the provider name from the session
-    const providerName = session?.providerName;
-    // get the provider from the config
-    const provider = config.providers.find((p) => p.providerName === providerName);
 
-    var token = user?.accessToken;
+    if (user) {
+      // delete the user
+      if (user) await userAdapter.deleteUser({ user, ...args });
 
-    if (token && provider && revokeToken) {
-      console.log("Revoking token:", token);
-      // Revoke the token if the provider supports it
-      if (typeof provider.artic.revokeToken === "function") {
-        try {
-          await provider.artic.revokeToken(token);
-        } catch (e) {
-          console.warn("Failed to revoke token:", e);
+      var token = user?.accessToken;
+
+      // revoke the token if the provider supports it
+      if (token && provider && revokeToken) {
+        console.log("Revoking token:", token);
+        // Revoke the token if the provider supports it
+        if (typeof provider.artic.revokeToken === "function") {
+          try {
+            await provider.artic.revokeToken(token);
+          } catch (e) {
+            console.warn("Failed to revoke token:", e);
+          }
         }
       }
     }
-
-    try {
-      if (provider) {
-        // delete the state cookie
-        await cookieStore.deleteCookies({
-          search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
-          ...args,
-        });
-      }
-
-      // delete the user
-      if (user) await userAdapter.deleteUser({ user, ...args });
-      // delete the session cookie
-      await cookieStore.deleteCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args });
-    } catch {}
   }
+
+  try {
+    if (provider) {
+      // delete the state cookie
+      await cookieStore.deleteCookies({
+        search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
+        ...args,
+      });
+    }
+
+    // delete the session cookie
+    await cookieStore.deleteCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args });
+  } catch {}
 
   return await router.redirectTo({ url: callbackUrl, ...args });
 }

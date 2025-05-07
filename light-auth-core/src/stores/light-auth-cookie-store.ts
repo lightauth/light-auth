@@ -1,12 +1,6 @@
-import { BaseRequest, BaseResponse } from "./models/light-auth-base";
-import { LightAuthCookie } from "./models/light-auth-cookie";
+import { LightAuthCookie } from "../models/light-auth-cookie";
 import * as cookieParser from "cookie";
-
-export interface LightAuthCookieStore {
-  getCookies: (args: { search?: string | RegExp; [key: string]: unknown }) => LightAuthCookie[] | null | Promise<LightAuthCookie[] | null>;
-  setCookies: (args: { cookies: LightAuthCookie[]; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
-  deleteCookies: (args: { search?: string | RegExp; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
-}
+import { LightAuthCookieStore } from "../models/light-auth-cookie-store";
 
 export const createLightAuthCookieStore = (): LightAuthCookieStore => {
   return {
@@ -79,6 +73,9 @@ export const createLightAuthCookieStore = (): LightAuthCookieStore => {
       }
 
       return res;
+    },
+    generateStoreId(): string {
+      return Math.random().toString(36).slice(2);
     },
   };
 };

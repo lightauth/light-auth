@@ -86,4 +86,7 @@ export const astroLightAuthCookieStore: LightAuthCookieStore = {
       });
     }
   },
+  generateStoreId(): string {
+    return Math.random().toString(36).slice(2);
+  },
 };
