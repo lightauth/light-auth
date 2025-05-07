@@ -29,7 +29,7 @@ export interface LightAuthExpressComponents {
 export function CreateLightAuth(config: LightAuthConfig): LightAuthExpressComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false, config });
   config.router = expressLightAuthRouter;
   config.cookieStore = config.cookieStore ?? expressLightAuthCookieStore;
 

@@ -231,6 +231,7 @@ export async function logoutAndRevokeTokenHandler(args: {
   const cookieSession = (await cookieStore.getCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args }))?.find(
     (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
   );
+
   if (!cookieSession) return await router.redirectTo({ url: callbackUrl, ...args });
 
   let session: LightAuthSession | null = null;
@@ -248,7 +249,6 @@ export async function logoutAndRevokeTokenHandler(args: {
 
     var token = user?.accessToken;
 
-    console.log("Logging out user:", revokeToken);
     if (token && provider && revokeToken) {
       console.log("Revoking token:", token);
       // Revoke the token if the provider supports it
@@ -265,7 +265,7 @@ export async function logoutAndRevokeTokenHandler(args: {
       if (provider) {
         // delete the state cookie
         await cookieStore.deleteCookies({
-          search: new RegExp(`^${provider.providerName}_(state|code_verifier)$`),
+          search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
           ...args,
         });
       }
@@ -287,11 +287,10 @@ export async function getSessionHandler(args: { config: LightAuthConfig; [key: s
   const { config } = args;
   const { cookieStore, router } = checkConfig(config);
 
-  console.log("getSessionHandler", args);
-
   const cookieSession = (await cookieStore.getCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args }))?.find(
     (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
   );
+
   if (!cookieSession) return await router.writeJson({ data: null, ...args });
 
   let session: LightAuthSession | null = null;
@@ -367,7 +366,7 @@ export async function getUserHandler(args: { config: LightAuthConfig; id: string
  * @returns An HTTP handler function that processes requests and responses.
  */
 export function createHttpHandlerFunction(config: LightAuthConfig) {
-  const httpHandler = async (args: { [key: string]: unknown }): Promise<BaseResponse> => {
+  const httpHandler = async (args?: { [key: string]: unknown }): Promise<BaseResponse> => {
     if (!config.router) throw new Error("light-auth: router is required");
 
     const url = await config.router.getUrl({ ...args });

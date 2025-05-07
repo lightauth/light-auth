@@ -14,7 +14,7 @@ export default
             format: "es",
             entryFileNames: "[name].mjs",
             banner: libraryHeader,
-            sourcemap: true,
+            // sourcemap: true,
             intro: "'use strict';"
         },
 

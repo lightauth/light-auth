@@ -110,7 +110,7 @@ export const createNextJsLightAuthHandlerFunction = (config: LightAuthConfig): N
 export function CreateLightAuth(config: LightAuthConfig): LightAuthNextJsComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false, config });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false, config });
   config.router = config.router ?? nextJsLightAuthRouter;
   config.cookieStore = config.cookieStore ?? nextJsLightAuthCookieStore;
   config.basePath = resolveBasePath(config);

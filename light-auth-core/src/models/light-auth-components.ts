@@ -11,12 +11,12 @@ import { LightAuthSession, LightAuthUser } from "./light-auth-session";
 export interface LightAuthComponents {
   providers: LightAuthProvider[];
   handlers: {
-    GET: (req: BaseRequest, res: BaseResponse, ...params: any[]) => Promise<BaseResponse>;
-    POST: (req: BaseRequest, res: BaseResponse, ...params: any[]) => Promise<BaseResponse>;
+    GET: (...args: any[]) => BaseResponse | Promise<BaseResponse>;
+    POST: (...args: any[]) => BaseResponse | Promise<BaseResponse>;
   };
-  signIn: ({ req, res, providerName }: { req?: BaseRequest; res?: BaseResponse; providerName: string }) => Promise<BaseResponse>;
-  signOut: ({ req, res }: { req?: BaseRequest; res?: BaseResponse }) => Promise<BaseResponse>;
+  signIn: (...args: any[]) => Promise<BaseResponse>;
+  signOut: (...args: any[]) => Promise<BaseResponse>;
   basePath: string;
-  getSession: (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthSession | null | undefined>;
-  getUser: (args?: { req?: BaseRequest; res?: BaseResponse }) => Promise<LightAuthUser | null | undefined>;
+  getSession: (...args: any[]) => Promise<LightAuthSession | null | undefined>;
+  getUser: (...args: any[]) => Promise<LightAuthUser | null | undefined>;
 }

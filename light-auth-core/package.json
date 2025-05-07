@@ -19,16 +19,12 @@
   ],
   "type": "module",
   "main": "dist/index.mjs",
+  "module": "dist/index.mjs",
+  "types": "src/index.tsx",
   "files": [
+    "src",
     "dist"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "default": "./dist/index.mjs"
-    }
-  },
   "scripts": {
     "build": "npm run clean && rollup -c --bundleConfigAsCjs",
     "dev": "rollup -cw --bundleConfigAsCjs",
@@ -41,15 +37,15 @@
     "jose": "^6.0.10"
   },
   "peerDependencies": {
+    "arctic": "^3.6.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "arctic": "^3.6.0"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "rollup": "^4.40.1",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",
+    "rollup": "^4.40.1",
     "shx": "^0.4.0",
     "tslib": "^2.8.1"
   }

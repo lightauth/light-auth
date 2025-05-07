@@ -10,16 +10,17 @@ type AstroContext = APIContext<Record<string, any>, Record<string, string | unde
  * with appropriate Set-Cookie headers.
  */
 export const astroLightAuthCookieStore: LightAuthCookieStore = {
-  async getCookies({ context, search }: { context?: AstroContext; search?: string | RegExp }): Promise<LightAuthCookie[] | null> {
-    if (!context) return null;
+  async getCookies(args: { context?: AstroContext; search?: string | RegExp; req?: Request }): Promise<LightAuthCookie[] | null> {
+    const { context, search, req } = args;
 
-    const cookieHeader = context.request.headers.get("cookie");
+    const request = context?.request || req;
+    if (!request) throw new Error("light-auth: Request is required in getCookies of astroLightAuthCookieStore");
+
+    const cookieHeader = request.headers.get("cookie");
     if (!cookieHeader) return null;
 
     const requestCookies = cookieParser.parse(cookieHeader);
     const cookies: LightAuthCookie[] = [];
-
-    console.log("astroLightAuthCookieStore: getCookies", requestCookies);
 
     for (const [cookieName, cookieValue] of Object.entries(requestCookies)) {
       if (search == null || (typeof search === "string" && cookieName === search) || (search instanceof RegExp && search.test(cookieName))) {
@@ -42,24 +43,22 @@ export const astroLightAuthCookieStore: LightAuthCookieStore = {
   async deleteCookies({ context, search }: { context?: AstroContext; search?: string | RegExp }): Promise<void> {
     if (!context) throw new Error("light-auth: Context is required in deleteCookies of astroLightAuthCookieStore");
 
-    const cookies = context.cookies.headers();
-    const requestCookies = Object.keys(cookies).map((name) => ({ name, value: context.cookies.get(name) }));
+    const cookieHeader = context.request.headers.get("cookie");
+    if (!cookieHeader) return;
 
-    // Convert search to RegExp if it's a string
-    const regex = typeof search === "string" ? new RegExp(search) : search;
+    const requestCookies = cookieParser.parse(cookieHeader);
+    if (!requestCookies) return;
 
-    // Filter cookies whose names match the regex
-    const filteredCookies = regex instanceof RegExp ? requestCookies.filter((c) => regex.test(c.name)) : requestCookies;
-
-    if (!filteredCookies.length) return;
-
-    // Delete cookies
-    for (const cookie of filteredCookies) {
-      context.cookies.delete(cookie.name, {
-        httpOnly: true,
-        path: "/",
-        sameSite: "lax",
-      });
+    const cookies: LightAuthCookie[] = [];
+    // Filter cookies based on the search criteria
+    for (const [cookieName, cookieValue] of Object.entries(requestCookies)) {
+      if (search == null || (typeof search === "string" && cookieName === search) || (search instanceof RegExp && search.test(cookieName))) {
+        context.cookies.set(cookieName, "", {
+          httpOnly: true,
+          path: "/",
+          maxAge: 0,
+        });
+      }
     }
   },
 

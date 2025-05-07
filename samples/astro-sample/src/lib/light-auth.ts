@@ -12,23 +12,12 @@ import {
   type LightAuthUser,
   createLightAuthUserAdapter,
   createLightAuthCookieStore,
+  type LightAuthComponents,
+  createSigninFunction2,
 } from "@light-auth/core";
 import { astroLightAuthRouter } from "./astro-light-auth-router";
 import type { APIContext, APIRoute, AstroSharedContext } from "astro";
 import { astroLightAuthCookieStore } from "./astro-light-auth-cookie-store";
-
-export interface LightAuthExpressComponents {
-  providers: LightAuthProvider[];
-  handlers: {
-    GET: APIRoute;
-    POST: APIRoute;
-  };
-  signIn: ({ req, res, providerName }: { req?: Request; res?: Response; providerName: string }) => Promise<Response>;
-  signOut: ({ req, res }: { req?: Request; res: Response }) => Promise<Response>;
-  basePath: string;
-  getSession: () => Promise<LightAuthSession | null | undefined>;
-  getUser: () => Promise<LightAuthUser | null | undefined>;
-}
 
 /**
  * createAstroLightAuthHandlerFunction is a function that creates the light auth handler for Astro.
@@ -37,11 +26,11 @@ export const createAstroLightAuthHandlerFunction = (config: LightAuthConfig): { 
   const lightAuthHandler = createHttpHandlerFunction(config);
 
   return {
-    GET: async (context: APIContext) => {
+    GET: async (context?: APIContext) => {
       const response = await lightAuthHandler({ context });
       return response;
     },
-    POST: async (context: APIContext) => {
+    POST: async (context?: APIContext) => {
       const response = await lightAuthHandler({ context });
       return response;
     },
@@ -50,17 +39,22 @@ export const createAstroLightAuthHandlerFunction = (config: LightAuthConfig): { 
 
 const createAstroLightAuthSessionFunction = (config: LightAuthConfig) => {
   const sessionFunction = createLightAuthSessionFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await sessionFunction({ context });
+  return async (req?: Request) => {
+    return await sessionFunction({ req });
   };
 };
 
-export function CreateLightAuth(
-  config: LightAuthConfig
-): LightAuthExpressComponents & { getAstroSession: (ctx: AstroSharedContext) => Promise<LightAuthSession | null | undefined> } {
+const createAstroLightAuthUserFunction = (config: LightAuthConfig) => {
+  const userFunction = createLightAuthUserFunction(config);
+  return async (req?: Request) => {
+    return await userFunction({ req });
+  };
+};
+
+export function CreateLightAuth(config: LightAuthConfig) {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false, config });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false, config });
   config.router = astroLightAuthRouter;
   config.cookieStore = astroLightAuthCookieStore;
   config.env = config.env || import.meta.env;
@@ -69,10 +63,7 @@ export function CreateLightAuth(
     providers: config.providers,
     handlers: createAstroLightAuthHandlerFunction(config),
     basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
-    signIn: createSigninFunction(config),
-    signOut: createSignoutFunction(config),
-    getSession: createLightAuthSessionFunction(config),
-    getUser: createLightAuthUserFunction(config),
-    getAstroSession: createAstroLightAuthSessionFunction(config),
+    getSession: createAstroLightAuthSessionFunction(config),
+    getUser: createAstroLightAuthUserFunction(config),
   };
 }

@@ -3,30 +3,54 @@ import "../styles/global.css";
 // Component Imports
 import Layout from "@/layouts/main.astro";
 import LoginButtons from "@/components/LoginButtons.astro";
-import FeedbackForm from "@/components/FeedbackForm";
-import GoogleLoginButton from "@/components/GoogleLoginButton";
-import { getAstroSession, getSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
+import LogoutButton from "@/components/LogoutButton.astro";
+import { getUser } from "@/lib/auth";
 
 export const prerender = false;
 
-const session = await getSession();
-
-console.log("Session:", session);
-
-const userLoggedIn = session ? true : false;
+const session = await getSession(Astro.request);
+const user = await getUser(Astro.request);
 ---
 
-<Layout title="Astro Sample Page dazda">
-  <h1>Welcome to Astro!</h1>
-  <p>This is a sample page using Astro. You can use it to build static sites and web applications.</p>
-  <div class="flex flex-col items-center justify-center">
-    {userLoggedIn ? <p>Welcome back!</p> : <GoogleLoginButton client:load />}
+<Layout title="Astro Authentication using light-auth">
+  <div class="min-h-screen flex flex-col container mx-auto p-8 max-w-4xl">
+    <h1 class="text-3xl font-bold mb-6">Authentication Test Page</h1>
+
+    <div class="bg-white shadow-md rounded-lg p-6 border border-gray-200">
+      <h2 class="text-xl font-semibold mb-4">Login Status</h2>
+
+      {
+        session != null ? (
+          <div class="space-y-4">
+            <div class="p-4 bg-green-50 text-green-700 rounded-md">
+              <p class="font-medium">✅ You are logged in!</p>
+            </div>
+
+            <div class="space-y-2">
+              <h3 class="font-medium">Session:</h3>
+              <div class="bg-gray-50 p-4 rounded-md">
+                <pre class="whitespace-pre-wrap text-sm break-all ">{JSON.stringify(session, null, 2)}</pre>
+              </div>
+            </div>
+
+            {user != null && (
+              <div class="space-y-2">
+                <h3 class="font-medium">User:</h3>
+                <div class="bg-gray-50 p-4 rounded-md">
+                  <pre class="whitespace-pre-wrap text-sm break-all ">{JSON.stringify(user, null, 2)}</pre>
+                </div>
+              </div>
+            )}
+
+            <LogoutButton />
+          </div>
+        ) : (
+          <div class="flex flex-row justify-center items-center ">
+            <LoginButtons />
+          </div>
+        )
+      }
+    </div>
   </div>
-  <div>
-    <LoginButtons />
-  </div>
-  <p>
-    You can learn more about Astro by visiting the{" "}
-    <a href="https://astro.build">Astro website</a>.
-  </p>
 </Layout>

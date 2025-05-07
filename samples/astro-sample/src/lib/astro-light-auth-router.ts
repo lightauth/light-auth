@@ -6,12 +6,11 @@ export const astroLightAuthRouter: LightAuthRouter = {
     return new Response(JSON.stringify(data));
   },
 
-  getUrl: function ({ endpoint, context }: { endpoint?: string; context?: APIContext }): string {
-    console.log("astroLightAuthRouter getUrl", endpoint, context);
-    if (!context) return endpoint || "/";
+  getUrl: function ({ endpoint, context, req }: { endpoint?: string; context?: APIContext; req?: Request }): string {
+    const request = context?.request ?? req;
 
     let url = endpoint;
-    if (!url) url = context?.request.url;
+    if (!url) url = context?.request?.url || req?.url;
 
     if (!url) {
       throw new Error("light-auth: No url provided and no request object available in getUrl of astroLightAuthRouter.");
@@ -19,7 +18,9 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
     if (url.startsWith("http")) return url;
 
-    const parsedUrl = buildFullUrl({ endpoint, req: context.request });
+    if (!request) return url;
+
+    const parsedUrl = buildFullUrl({ endpoint, req: request });
     return parsedUrl.toString();
   },
 

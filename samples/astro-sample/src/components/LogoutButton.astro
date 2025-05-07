@@ -1,0 +1,11 @@
+---
+import { buttonVariants } from "./ui/button";
+import { Github, LogOut } from "lucide-react";
+---
+
+<div class="flex flex-col gap-2 w-80">
+  <a href={"/api/auth/logout"} class={buttonVariants({ variant: "outline" })}>
+    <LogOut className="mr-2 h-4 w-4" />
+    Logout
+  </a>
+</div>

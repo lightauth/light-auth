@@ -31,10 +31,8 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   body?: any;
   [key: string]: unknown;
 }): Promise<T | null | undefined> {
-  const { config, endpoint, body, ...ctx } = args;
+  const { config, endpoint, body } = args;
   const { cookieStore, router } = config;
-
-  console.log("ctx", ctx);
 
   if (!cookieStore) throw new Error("light-auth: cookieStore is required");
   if (!router) throw new Error("light-auth: router is required");
@@ -45,7 +43,8 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   if (typeof window !== "undefined") {
     throw new Error("light-auth: serverRequest can only be used on the server side");
   }
-  const cookies = await cookieStore?.getCookies({ args });
+
+  const cookies = await cookieStore?.getCookies(args);
 
   // build the request
   const requestHeaders = new Headers();
@@ -53,7 +52,6 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   requestHeaders.set("User-Agent", "light-auth");
   requestHeaders.set("Content-Type", "application/json");
   requestHeaders.set("Content-Length", bodyBytes ? bodyBytes.byteLength.toString() : "0");
-  requestHeaders.set("Accept", "application/json");
 
   // add all cookies to the request
   if (cookies && cookies.length > 0) {
@@ -70,7 +68,7 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
     }
   }
 
-  let url = await router.getUrl({ ...args, endpoint });
+  let url = await router.getUrl(args);
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: "POST", headers: requestHeaders, body: bodyBytes })
@@ -97,13 +95,9 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
     }
     return result as T;
   }
-  if (contentType && contentType.includes("application/json")) {
+  if (contentType && (contentType.includes("application/json") || contentType.includes("text/plain"))) {
     const jsonResponse = await response.json();
     return jsonResponse as T;
-  }
-  if (contentType && contentType.includes("text/plain")) {
-    const textResponse = await response.text();
-    return textResponse as T;
   }
   if (contentType && contentType.includes("application/octet-stream")) {
     const blobResponse = await response.blob();
@@ -112,30 +106,39 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   return null;
 }
 
-export function createSigninFunction(config: LightAuthConfig): (args: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
-  return async ({ providerName, ...args }) => {
-    if (typeof window !== "undefined") {
-      window.location.href = `${config.basePath}/login/${providerName}`;
-    } else {
-      const redirectResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
-      return redirectResponse;
-    }
+export function createSigninFunction(config: LightAuthConfig): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+  return async (args = {}) => {
+    const { providerName } = args;
+    const redirectResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
+    return redirectResponse;
   };
 }
 
-export function createSignoutFunction(config: LightAuthConfig): (args: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
-  return async ({ revokeToken, ...args }) => {
-    if (typeof window !== "undefined") {
-      window.location.href = `${config.basePath}/logout`;
-    } else {
-      const redirectResponse = await logoutAndRevokeTokenHandler({ config, revokeToken, ...args });
-      return redirectResponse;
-    }
+export type SigninOfT<T extends Record<string, unknown>> = { providerName?: string; args?: T };
+
+// export function createSigninFunction2<T extends Record<string, unknown>>(config: LightAuthConfig): (args?: SigninOfT<T>) => Promise<BaseResponse> {
+//   return async (args: SigninOfT<T> = {}) => {
+//     const { providerName } = args;
+//     const redirectResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
+//     return redirectResponse;
+//   };
+// }
+
+export function createSigninFunction2<T extends any[]>(config: LightAuthConfig) {
+  return async (...args: T) => {
+    return null;
+  };
+}
+
+export function createSignoutFunction(config: LightAuthConfig): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
+  return async (args = {}) => {
+    const redirectResponse = await logoutAndRevokeTokenHandler({ config, ...args });
+    return redirectResponse;
   };
 }
 
 export function createLightAuthSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
-  return async (...args) => {
+  return async (args) => {
     if (!config.router) throw new Error("light-auth router is required");
     if (!config.cookieStore) throw new Error("light-auth cookieStore is required");
 
@@ -157,7 +160,7 @@ export function createLightAuthSessionFunction(config: LightAuthConfig): (args?:
 }
 
 export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
-  return async (args?: { [key: string]: unknown }) => {
+  return async (args) => {
     if (!config.userAdapter) throw new Error("light-auth: userAdapter is required");
     if (!config.router) throw new Error("light-auth: router is required");
     if (!config.cookieStore) throw new Error("light-auth: cookieStore is required");
@@ -182,6 +185,7 @@ export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { 
 
       return user;
     } catch (error) {
+      console.error("light-auth: Error in createLightAuthUserFunction:", error);
       return null;
     }
   };
@@ -190,7 +194,7 @@ export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { 
 export function CreateLightAuth(config: LightAuthConfig): LightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users", isEncrypted: false, config });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false, config });
   config.router = config.router ?? createLightAuthRouter();
   config.cookieStore = config.cookieStore ?? createLightAuthCookieStore();
   config.basePath = resolveBasePath(config);

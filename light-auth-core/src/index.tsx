@@ -7,7 +7,14 @@ import { LightAuthUserAdapter, createLightAuthUserAdapter } from "./light-auth-u
 import { LightAuthRouter, createLightAuthRouter } from "./light-auth-router";
 import { LightAuthCookie } from "./models/light-auth-cookie";
 import { LightAuthCookieStore, createLightAuthCookieStore } from "./light-auth-cookie-store";
-import { CreateLightAuth, createLightAuthSessionFunction, createLightAuthUserFunction, createSigninFunction, createSignoutFunction } from "./light-auth";
+import {
+  CreateLightAuth,
+  createLightAuthSessionFunction,
+  createLightAuthUserFunction,
+  createSigninFunction,
+  createSigninFunction2,
+  createSignoutFunction,
+} from "./light-auth";
 import { decryptJwt, encryptJwt } from "./services/jwt";
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME, DEFAULT_SESSION_EXPIRATION } from "./constants";
 import { createHttpHandlerFunction } from "./services/handlers";
@@ -33,6 +40,7 @@ export {
   createLightAuthSessionFunction,
   createLightAuthUserFunction,
   createSigninFunction,
+  createSigninFunction2,
   createSignoutFunction,
   createHttpHandlerFunction,
   decryptJwt,
