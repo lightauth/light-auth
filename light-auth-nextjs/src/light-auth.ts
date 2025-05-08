@@ -1,9 +1,8 @@
 import {
-  createLightAuthSessionFunction,
   createHttpHandlerFunction,
+  createLightAuthSessionFunction,
   createLightAuthUserFunction,
   createSigninFunction,
-  DEFAULT_BASE_PATH,
   createSignoutFunction,
   LightAuthConfig,
   LightAuthProvider,
@@ -13,7 +12,7 @@ import {
 } from "@light-auth/core";
 import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
 import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
-import { nextJsLightAuthCookieStore } from "./nextjs-light-auth-cookie-store";
+import { nextJsLightAuthSessionStore } from "./nextjs-light-auth-session-store";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -41,13 +40,7 @@ export interface LightAuthNextJsComponents {
  */
 export const createNextJsSignIn = (config: LightAuthConfig): ((providerName?: string) => Promise<void>) => {
   const signIn = createSigninFunction(config);
-  return async (providerName?: string) => {
-    if (typeof window !== "undefined") {
-      window.location.href = `${config.basePath}/login/${providerName}`;
-    } else {
-      await signIn({ providerName });
-    }
-  };
+  return async (providerName?: string) => await signIn({ providerName });
 };
 
 /**
@@ -66,45 +59,8 @@ export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: bo
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (() => Promise<LightAuthSession | null | undefined>) => {
-  // const lightAuthSession = createLightAuthSessionFunction(config);
-  // return async () => await lightAuthSession();
-  return async () => {
-    try {
-      // build the request
-      const requestHeaders = new Headers();
-      requestHeaders.set("Accept", "application/json");
-      requestHeaders.set("User-Agent", "light-auth");
-      requestHeaders.set("Content-Type", "application/json");
-
-      let url = "http://localhost:3000/api/auth/session";
-
-      const request = new Request(url.toString(), { method: "GET", headers: requestHeaders, credentials: "same-origin" });
-
-      console.log("request", request);
-
-      let response: Response | null = null;
-      try {
-        response = await fetch(request);
-      } catch (error) {
-        console.error("Error:", error);
-        throw new Error(`light-auth: Request failed with error ${error}`);
-      }
-
-      if (!response || !response.ok) {
-        throw new Error(`light-auth: Request failed with status ${response?.status}`);
-      }
-      console.log("response", response);
-      const session = await response.json();
-      console.log("session", session);
-
-      if (!session) return null;
-
-      return session;
-    } catch (error) {
-      console.error("Error:", error);
-      return null;
-    }
-  };
+  const lightAuthSession = createLightAuthSessionFunction(config);
+  return async () => await lightAuthSession();
 };
 
 /**
@@ -147,9 +103,9 @@ export const createNextJsLightAuthHandlerFunction = (config: LightAuthConfig): N
 export function CreateLightAuth(config: LightAuthConfig): LightAuthNextJsComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false, config });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
   config.router = config.router ?? nextJsLightAuthRouter;
-  config.cookieStore = config.cookieStore ?? nextJsLightAuthCookieStore;
+  config.sessionStore = config.sessionStore ?? nextJsLightAuthSessionStore;
   config.basePath = resolveBasePath(config);
   config.env = config.env || process.env;
   return {

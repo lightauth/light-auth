@@ -1,1 +1,1 @@
-export * from "./light-auth-router";
+export * from "./light-auth-router-factory";

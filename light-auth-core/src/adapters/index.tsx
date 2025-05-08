@@ -1,3 +1,1 @@
-import { createLightAuthUserAdapter } from "./light-auth-user-adapter";
-
-export { createLightAuthUserAdapter };
+export * from "./light-auth-user-adapter-factory";

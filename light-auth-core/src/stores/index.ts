@@ -1,3 +1,1 @@
-import { createLightAuthCookieStore } from "./light-auth-cookie-store";
-
-export { createLightAuthCookieStore };
+export * from "./light-auth-session-store-factory";

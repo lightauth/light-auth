@@ -1,21 +1,6 @@
-import { OAuth2Tokens } from "arctic";
-import {
-  logoutAndRevokeTokenHandler,
-  providerCallbackHandler,
-  redirectToProviderLoginHandler,
-  getSessionHandler,
-  getUserHandler,
-  createHttpHandlerFunction,
-} from "./services/handlers";
-import { DEFAULT_BASE_PATH, DEFAULT_SESSION_COOKIE_NAME } from "./constants";
-import { LightAuthConfig } from "./models/ligth-auth-config";
-import { LightAuthSession, LightAuthUser } from "./models/light-auth-session";
-import { LightAuthComponents } from "./models/light-auth-components";
-import { BaseRequest, BaseResponse } from "./models/light-auth-base";
-import * as cookieParser from "cookie";
-import { resolveBasePath } from "./services/utils";
-import { createLightAuthRouter } from "./routers/light-auth-router";
-import { createLightAuthCookieStore } from "./stores/light-auth-cookie-store";
+import { logoutAndRevokeTokenHandler } from "./handlers/logout";
+import { redirectToProviderLoginHandler } from "./handlers/redirect-to-provider";
+import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "./models";
 
 /**
  * this function is used to make a server request to the light auth server
@@ -30,43 +15,20 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   body?: any;
   [key: string]: unknown;
 }): Promise<T | null | undefined> {
-  const { config, endpoint, body } = args;
-  const { cookieStore, router } = config;
+  const { config, body } = args;
+  const { router } = config;
 
-  if (!cookieStore) throw new Error("light-auth: cookieStore is required");
   if (!router) throw new Error("light-auth: router is required");
 
   const bodyBytes = body ? new TextEncoder().encode(body.toString()) : undefined;
 
   // check we are on the server side
-  if (typeof window !== "undefined") {
-    throw new Error("light-auth: serverRequest can only be used on the server side");
-  }
+  if (typeof window !== "undefined") throw new Error("light-auth: serverRequest can only be used on the server side");
 
-  const cookies = await cookieStore?.getCookies(args);
+  // get all the headers from the request
+  let requestHeaders: Headers = await router.getHeaders(args);
 
-  // build the request
-  const requestHeaders = new Headers();
-  requestHeaders.set("Accept", "application/json");
-  requestHeaders.set("User-Agent", "light-auth");
-  requestHeaders.set("Content-Type", "application/json");
-  requestHeaders.set("Content-Length", bodyBytes ? bodyBytes.byteLength.toString() : "0");
-
-  // add all cookies to the request
-  if (cookies && cookies.length > 0) {
-    for (const cookie of cookies) {
-      const serialized = cookieParser.serialize(cookie.name, cookie.value, {
-        httpOnly: cookie.httpOnly,
-        secure: cookie.secure,
-        sameSite: cookie.sameSite,
-        path: cookie.path,
-        maxAge: cookie.maxAge,
-        domain: cookie.domain,
-      });
-      requestHeaders.append("Cookie", serialized);
-    }
-  }
-
+  // get the session from the session store
   let url = await router.getUrl(args);
 
   const request = bodyBytes
@@ -143,7 +105,7 @@ export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { 
   return async (args) => {
     if (!config.userAdapter) return null; // user adapter is not required
     if (!config.router) throw new Error("light-auth: router is required");
-    if (!config.cookieStore) throw new Error("light-auth: cookieStore is required");
+    if (!config.sessionStore) throw new Error("light-auth: sessionStore is required");
 
     try {
       // get the user from the server using the api endpoint, because

@@ -1,7 +1,7 @@
 /**
  * LightAuthSession interface represents a session in the LightAuth system.
  *
- * The session instance is saved in a server cookie using the cookieStore.
+ * The session instance is saved using the sessionStore.
  */
 export interface LightAuthSession {
   id: string;

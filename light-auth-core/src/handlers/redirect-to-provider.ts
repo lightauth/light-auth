@@ -1,18 +1,14 @@
-
 import { generateState, generateCodeVerifier } from "arctic";
-
-import { LightAuthCookie } from "../models/light-auth-cookie";
-import { LightAuthConfig } from "../models/ligth-auth-config";
-import { BaseResponse } from "../models/light-auth-base";
+import { LightAuthConfig, BaseResponse } from "../models";
 import { checkConfig } from "../services/utils";
-
+import * as cookieParser from "cookie";
 
 /**
  * Redirects the user to the provider login page.
  */
 export async function redirectToProviderLoginHandler(args: { config: LightAuthConfig; providerName?: string; [key: string]: unknown }): Promise<BaseResponse> {
   const { config, providerName } = args;
-  const { provider, router, cookieStore, env } = checkConfig(config, providerName);
+  const { provider, router, env } = checkConfig(config, providerName);
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
@@ -36,32 +32,33 @@ export async function redirectToProviderLoginHandler(args: { config: LightAuthCo
 
   // add additional headers
   if (provider.headers) {
-    await router.setHeaders({ headers: provider.headers, ...args });
+    const providersHeaders = new Headers();
+    for (const [key, value] of provider.headers) {
+      providersHeaders.append(key, value);
+    }
+    await router.setHeaders({ headers: providersHeaders, ...args });
   }
 
-  const stateCookie: LightAuthCookie = {
-    name: `${provider.providerName}_light_auth_state`,
+  const cookiesHeaders = new Headers();
+  const stateCookie = cookieParser.serialize(`${provider.providerName}_light_auth_state`, state, {
     path: "/",
-    value: state,
     httpOnly: true,
     secure: env["NODE_ENV"] === "production",
     sameSite: "lax",
     maxAge: 60 * 10, // 10 minutes
-  };
+  });
 
-  const codeVerifierCookie: LightAuthCookie = {
-    name: `${provider.providerName}_light_auth_code_verifier`,
+  cookiesHeaders.append("Set-Cookie", stateCookie);
+  const codeVerifierCookie = cookieParser.serialize(`${provider.providerName}_light_auth_code_verifier`, codeVerifier, {
     path: "/",
-    value: codeVerifier,
     httpOnly: true,
     secure: env["NODE_ENV"] === "production",
     sameSite: "lax",
     maxAge: 60 * 10, // 10 minutes
-  };
+  });
+  cookiesHeaders.append("Set-Cookie", codeVerifierCookie);
 
-  await cookieStore.setCookies({ cookies: [stateCookie, codeVerifierCookie], ...args });
+  await router.setHeaders({ headers: cookiesHeaders, ...args });
 
-  const redirect = await router.redirectTo({ url: url.toString(), ...args });
-
-  return redirect;
+  return await router.redirectTo({ url: url.toString(), ...args });
 }

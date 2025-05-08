@@ -1,4 +1,4 @@
-import { LightAuthConfig } from "../models/ligth-auth-config";
+import { LightAuthConfig } from "../models";
 import { checkConfig } from "../services/utils";
 
 export async function getUserHandler(args: { config: LightAuthConfig; id: string; [key: string]: unknown }): Promise<Response> {

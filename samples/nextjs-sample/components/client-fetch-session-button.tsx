@@ -2,21 +2,17 @@
 
 import { Button } from "./ui/button";
 
-
-
 const fetchSession = async () => {
   try {
     // build the request
-    const requestHeaders = new Headers();
-    requestHeaders.set("Accept", "application/json");
-    requestHeaders.set("User-Agent", "light-auth");
-    requestHeaders.set("Content-Type", "application/json");
 
-    const url = "http://localhost:3000/api/auth/session";
+    const url = `${location.origin}/api/auth/session`;
 
     const request = new Request(url.toString(), {
       method: "GET",
-      headers: requestHeaders,
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     console.log("request", request);

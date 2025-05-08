@@ -20,7 +20,7 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
     if (!request) return url;
 
-    const parsedUrl = buildFullUrl({ endpoint, req: request });
+    const parsedUrl = buildFullUrl({ url, incomingHeaders: request.headers });
     return parsedUrl.toString();
   },
 

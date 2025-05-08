@@ -1,17 +1,9 @@
-import { generateState, generateCodeVerifier, decodeIdToken } from "arctic";
-
-import { LightAuthCookie } from "../models/light-auth-cookie";
-import { LightAuthConfig } from "../models/ligth-auth-config";
-import { BaseResponse } from "../models/light-auth-base";
-import { buildSecret, checkConfig, getSessionExpirationMaxAge } from "../services/utils";
-import { LightAuthSession, LightAuthUser } from "../models/light-auth-session";
-import { decryptJwt, encryptJwt } from "../services/jwt";
-import { DEFAULT_SESSION_COOKIE_NAME } from "../constants";
-import { getSessionHandler } from "./retrieve-session";
-import { getUserHandler } from "./retrieve-user";
-import { redirectToProviderLoginHandler } from "./redirect-to-provider";
+import { LightAuthConfig, BaseResponse } from "../models";
 import { logoutAndRevokeTokenHandler } from "./logout";
 import { providerCallbackHandler } from "./provider-callback";
+import { redirectToProviderLoginHandler } from "./redirect-to-provider";
+import { getSessionHandler } from "./retrieve-session";
+import { getUserHandler } from "./retrieve-user";
 
 /**
  * Creates the HTTP handlers (get, set) function for LightAuth.
@@ -22,27 +14,22 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
   const httpHandler = async (args?: { [key: string]: unknown }): Promise<BaseResponse> => {
     if (!config.router) throw new Error("light-auth: router is required");
 
-    const url = await config.router.getUrl({ ...args });
-
+    const url = await config.router.getUrl({ config, ...args });
     const reqUrl = new URL(url);
-
-    const basePathSegments = config.basePath?.split("/").filter((segment) => segment !== "") || [];
 
     // Get the auth segments from the URL
     let pathname = reqUrl.pathname;
-
     let pathSegments = pathname.split("/").filter((segment) => segment !== "");
     // Remove all segments from basePathSegments, regardless of their index
+    const basePathSegments = config.basePath?.split("/").filter((segment) => segment !== "") || [];
     pathSegments = pathSegments.filter((segment) => !basePathSegments.includes(segment));
-
-    // search callBack url
-    const callbackUrl = reqUrl.searchParams.get("callbackUrl") ?? "/";
-
-    let newResponse: BaseResponse | null = null;
 
     if (pathSegments.length < 1) throw new Error("light-auth: Not enough path segments found");
 
     const providerName = pathSegments.length > 1 ? pathSegments[1] : null;
+    const callbackUrl = reqUrl.searchParams.get("callbackUrl") ?? "/";
+
+    let newResponse: BaseResponse | null = null;
 
     if (pathSegments[0] === "session") {
       newResponse = await getSessionHandler({ config, ...args });

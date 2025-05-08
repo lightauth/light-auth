@@ -1,5 +1,4 @@
-import { EncryptJWT, jwtDecrypt, JWTPayload, jwtVerify, SignJWT } from "jose";
-
+import { EncryptJWT, jwtDecrypt, JWTPayload } from "jose";
 
 // export async function createJwt(payload: JWTPayload): Promise<JWTPayload> {
 //   const token = await new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).setExpirationTime("30 days").setIssuedAt().sign(SECRET);

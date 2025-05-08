@@ -1,10 +1,8 @@
-import { LightAuthUser } from "../models/light-auth-session";
-import { LightAuthConfig } from "../models/ligth-auth-config";
+import { LightAuthConfig, LightAuthUserAdapter, LightAuthUser } from "../models";
 import { decryptJwt, encryptJwt } from "../services/jwt";
+import { buildSecret } from "../services/utils";
 import { promises as fs } from "node:fs";
 import { resolve } from "node:path";
-import { buildSecret } from "../services/utils";
-import { LightAuthUserAdapter } from "../models/light-auth-user-adapter";
 
 /**
  * A concrete SessionStore implementation for Node.js server-side,
@@ -12,22 +10,13 @@ import { LightAuthUserAdapter } from "../models/light-auth-user-adapter";
  * Supports optional encryption of the session object.
  */
 
-export const createLightAuthUserAdapter = ({
-  base,
-  isEncrypted = false,
-  config,
-}: {
-  base: string;
-  isEncrypted: boolean;
-  config: LightAuthConfig;
-}): LightAuthUserAdapter => {
+export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base: string; isEncrypted: boolean }): LightAuthUserAdapter => {
   const sanitizeKey = (key: string): string => {
-    // Only allow alphanumeric, dash, and underscore for file safety
-    return key.replace(/[^a-zA-Z0-9-_]/g, "_");
+    return key.replace(/[^a-zA-Z0-9-_]/g, "_"); // Only allow alphanumeric, dash, and underscore for file safety
   };
   base = base || "./";
   return {
-    async getUser({ id }: { id: string }): Promise<LightAuthUser | null> {
+    async getUser({ config, id }: { config: LightAuthConfig; id: string }): Promise<LightAuthUser | null> {
       const safeId = sanitizeKey(id);
       const filePath = resolve(base, safeId + ".json");
 
@@ -53,7 +42,7 @@ export const createLightAuthUserAdapter = ({
       }
     },
 
-    async setUser({ user }: { user: LightAuthUser }): Promise<void> {
+    async setUser({ config, user }: { config: LightAuthConfig; user: LightAuthUser }): Promise<void> {
       if (!user?.id) throw new Error("light-auth: Session must have an id");
       const safeId = sanitizeKey(user.id);
       const filePath = resolve(base, safeId + ".json");
@@ -68,7 +57,7 @@ export const createLightAuthUserAdapter = ({
       }
     },
 
-    async deleteUser({ user }: { user: LightAuthUser }): Promise<void> {
+    async deleteUser({ config, user }: { config: LightAuthConfig; user: LightAuthUser }): Promise<void> {
       if (!user?.id) return;
       const safeId = sanitizeKey(user.id);
       const filePath = resolve(base, safeId + ".json");

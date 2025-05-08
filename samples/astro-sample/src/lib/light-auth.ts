@@ -42,9 +42,9 @@ export interface AstroLightAuthComponents extends LightAuthComponents {
 export function CreateLightAuth(config: LightAuthConfig): AstroLightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false, config });
+  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
   config.router = astroLightAuthRouter;
-  config.cookieStore = astroLightAuthCookieStore;
+  config.sessionStore = astroLightAuthCookieStore;
   config.env = config.env || import.meta.env;
 
   return {

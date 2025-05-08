@@ -10,7 +10,7 @@ type AstroContext = APIContext<Record<string, any>, Record<string, string | unde
  * with appropriate Set-Cookie headers.
  */
 export const astroLightAuthCookieStore: LightAuthCookieStore = {
-  async getCookies(args: { context?: AstroContext; search?: string | RegExp; req?: Request }): Promise<LightAuthCookie[] | null> {
+  async getSession(args: { context?: AstroContext; search?: string | RegExp; req?: Request }): Promise<LightAuthCookie[] | null> {
     const { context, search, req } = args;
 
     const request = context?.request || req;
@@ -40,7 +40,7 @@ export const astroLightAuthCookieStore: LightAuthCookieStore = {
     return cookies.length ? cookies : null;
   },
 
-  async deleteCookies({ context, search }: { context?: AstroContext; search?: string | RegExp }): Promise<void> {
+  async deleteSessions({ context, search }: { context?: AstroContext; search?: string | RegExp }): Promise<void> {
     if (!context) throw new Error("light-auth: Context is required in deleteCookies of astroLightAuthCookieStore");
 
     const cookieHeader = context.request.headers.get("cookie");
@@ -62,7 +62,7 @@ export const astroLightAuthCookieStore: LightAuthCookieStore = {
     }
   },
 
-  async setCookies({ context, cookies }: { context?: AstroContext; cookies: LightAuthCookie[] }): Promise<void> {
+  async setSession({ context, cookies }: { context?: AstroContext; cookies: LightAuthCookie[] }): Promise<void> {
     if (!context) throw new Error("light-auth: Context is required in setCookies of astroLightAuthCookieStore");
     if (!cookies) throw new Error("light-auth: Cookies are required in setCookies of astroLightAuthCookieStore");
 
@@ -86,7 +86,7 @@ export const astroLightAuthCookieStore: LightAuthCookieStore = {
       });
     }
   },
-  generateStoreId(): string {
+  generateSessionId(): string {
     return Math.random().toString(36).slice(2);
   },
 };

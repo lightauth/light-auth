@@ -26,8 +26,8 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       return response;
     },
 
-    getHeaders({ req, res, search }: { req?: Request; res?: Response; search?: string | RegExp }): Headers {
-      const headers = req?.headers || res?.headers;
+    getHeaders({ req, search }: { req?: Request; search?: string | RegExp }): Headers {
+      const headers = req?.headers;
       if (!headers) return new Headers();
 
       const result = new Headers();
@@ -35,15 +35,17 @@ export const createLightAuthRouter = (): LightAuthRouter => {
 
       for (const [key, value] of headers.entries()) {
         if (!search || !searchRegex) result.set(key, value);
-        else if (searchRegex.test(key)) {
-          result.set(key, value);
-        }
+        else if (searchRegex.test(key)) result.set(key, value);
       }
       return result;
     },
 
-    async setHeaders({ res, headers }: { res?: Response; headers: Map<string, string> }) {
+    setHeaders({ headers, res }: { headers?: Headers; res?: Response }) {
       if (!res) throw new Error("light-auth: Response object is required to set headers.");
+
+      if (!headers || headers.entries().next().done) {
+        return res;
+      }
 
       for (const [key, value] of headers.entries()) {
         res.headers.set(key, value);
@@ -53,16 +55,13 @@ export const createLightAuthRouter = (): LightAuthRouter => {
 
     getUrl({ endpoint, req }: { endpoint?: string; req?: Request }) {
       if (!req) throw new Error("light-auth: Request object is required to get URL.");
-      let url = endpoint;
-      if (!url) url = req.url;
+      const url = endpoint ?? req.url;
 
-      if (!url) {
-        throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
-      }
+      if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
 
       if (url.startsWith("http")) return url;
 
-      const fullUrl = buildFullUrl({ endpoint, req });
+      const fullUrl = buildFullUrl({ url, incomingHeaders: req.headers });
       return fullUrl.toString();
     },
   };

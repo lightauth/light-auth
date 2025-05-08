@@ -1,5 +1,4 @@
-import { BaseResponse } from "../models/light-auth-base";
-import { LightAuthConfig } from "../models/ligth-auth-config";
+import { LightAuthConfig, BaseResponse } from "../models";
 
 export function createSigninFunction(config: LightAuthConfig): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {

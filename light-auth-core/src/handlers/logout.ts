@@ -1,12 +1,5 @@
-import { generateState, generateCodeVerifier, decodeIdToken } from "arctic";
-
-import { LightAuthCookie } from "../models/light-auth-cookie";
-import { LightAuthConfig } from "../models/ligth-auth-config";
-import { BaseResponse } from "../models/light-auth-base";
-import { buildSecret, checkConfig, getSessionExpirationMaxAge } from "../services/utils";
-import { LightAuthSession, LightAuthUser } from "../models/light-auth-session";
-import { decryptJwt, encryptJwt } from "../services/jwt";
-import { DEFAULT_SESSION_COOKIE_NAME } from "../constants";
+import { LightAuthConfig } from "../models";
+import { checkConfig } from "../services/utils";
 
 export async function logoutAndRevokeTokenHandler(args: {
   config: LightAuthConfig;
@@ -15,23 +8,12 @@ export async function logoutAndRevokeTokenHandler(args: {
   [key: string]: unknown;
 }): Promise<Response> {
   const { config, revokeToken = true, callbackUrl = "/" } = args;
-  const { userAdapter, router, cookieStore } = checkConfig(config);
+  const { userAdapter, router, sessionStore } = checkConfig(config);
 
-  // get the session cookie
-  const cookieSession = (await cookieStore.getCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args }))?.find(
-    (cookie) => cookie.name === DEFAULT_SESSION_COOKIE_NAME
-  );
+  // get the session
+  const session = await sessionStore.getSession({ ...args });
 
-  if (!cookieSession) return await router.redirectTo({ url: callbackUrl, ...args });
-
-  let session: LightAuthSession | null = null;
-  try {
-    session = (await decryptJwt(cookieSession.value, buildSecret(config.env))) as LightAuthSession;
-  } catch (error) {}
-
-  if (!session || !session.id || !session.userId) {
-    return await router.redirectTo({ url: callbackUrl, ...args });
-  }
+  if (!session || !session.id) return await router.redirectTo({ url: callbackUrl, ...args });
 
   // get the provider name from the session
   const providerName = session?.providerName;
@@ -64,16 +46,8 @@ export async function logoutAndRevokeTokenHandler(args: {
   }
 
   try {
-    if (provider) {
-      // delete the state cookie
-      await cookieStore.deleteCookies({
-        search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
-        ...args,
-      });
-    }
-
     // delete the session cookie
-    await cookieStore.deleteCookies({ search: DEFAULT_SESSION_COOKIE_NAME, ...args });
+    await sessionStore.deleteSession({ ...args });
   } catch {}
 
   return await router.redirectTo({ url: callbackUrl, ...args });

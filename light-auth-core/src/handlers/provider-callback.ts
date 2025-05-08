@@ -1,12 +1,9 @@
-import { generateState, generateCodeVerifier, decodeIdToken } from "arctic";
-
-import { LightAuthCookie } from "../models/light-auth-cookie";
-import { LightAuthConfig } from "../models/ligth-auth-config";
-import { BaseResponse } from "../models/light-auth-base";
-import { buildSecret, checkConfig, getSessionExpirationMaxAge } from "../services/utils";
-import { LightAuthSession, LightAuthUser } from "../models/light-auth-session";
+import { decodeIdToken } from "arctic";
+import { DEFAULT_SESSION_NAME } from "../constants";
+import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
 import { encryptJwt } from "../services/jwt";
-import { DEFAULT_SESSION_COOKIE_NAME } from "../constants";
+import { checkConfig, getSessionExpirationMaxAge, buildSecret } from "../services/utils";
+import * as cookieParser from "cookie";
 
 export async function providerCallbackHandler(args: {
   config: LightAuthConfig;
@@ -15,7 +12,7 @@ export async function providerCallbackHandler(args: {
   [key: string]: unknown;
 }): Promise<Response> {
   const { config, providerName, callbackUrl } = args;
-  const { router, userAdapter, cookieStore, provider } = checkConfig(config, providerName);
+  const { router, userAdapter, provider, sessionStore } = checkConfig(config, providerName);
 
   const url = await router.getUrl({ ...args });
   const reqUrl = new URL(url);
@@ -24,23 +21,23 @@ export async function providerCallbackHandler(args: {
 
   if (code === null || state === null) throw new Error("light-auth: state or code are missing from the request");
 
-  const cookies = await cookieStore.getCookies({
-    search: new RegExp(`^${provider.providerName}_light_auth_(state|code_verifier)$`),
-    ...args,
-  });
+  // get the cookies from headers
+  const headers = await router.getHeaders({ search: "Cookie", ...args });
+  const cookieHeader = headers.get("Cookie");
+  if (cookieHeader === null) throw new Error("light-auth: Cookie header is missing from the request");
 
-  if (cookies === null) throw new Error("light-auth: Failed to get cookies");
+  const requestCookies = cookieParser.parse(cookieHeader);
 
-  const storedStateCookie = cookies.find((cookie) => cookie.name === `${provider.providerName}_light_auth_state`);
-  const codeVerifierCookie = cookies.find((cookie) => cookie.name === `${provider.providerName}_light_auth_code_verifier`);
+  const storedStateCookie = requestCookies[`${provider.providerName}_light_auth_state`];
+  const codeVerifierCookie = requestCookies[`${provider.providerName}_light_auth_code_verifier`];
 
   if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("light-auth: Invalid state or code verifier");
 
   // validate the state
-  if (storedStateCookie.value !== state) throw new Error("light-auth: Invalid state");
+  if (storedStateCookie !== state) throw new Error("light-auth: Invalid state");
 
   // validate the authorization code
-  let tokens = await provider.artic.validateAuthorizationCode(code, codeVerifierCookie.value);
+  let tokens = await provider.artic.validateAuthorizationCode(code, codeVerifierCookie);
 
   if (tokens === null) throw new Error("light-auth: Failed to fetch tokens");
 
@@ -52,7 +49,7 @@ export async function providerCallbackHandler(args: {
   if ("expires_in" in tokens.data && typeof tokens.data.expires_in === "number") {
     accessTokenExpiresIn = Number(tokens.data.expires_in);
   }
-  const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000); // 1 hour
+  const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000);
 
   // get the access token
   const accessToken = tokens.accessToken();
@@ -68,7 +65,7 @@ export async function providerCallbackHandler(args: {
   let refresh_token: string | undefined;
   if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
 
-  const id = cookieStore.generateStoreId();
+  const id = sessionStore.generateSessionId();
   const maxAge = getSessionExpirationMaxAge();
 
   const expiresAt = new Date(Date.now() + maxAge * 1000);
@@ -87,21 +84,7 @@ export async function providerCallbackHandler(args: {
     session = sessionSaving ?? session;
   }
 
-  const encryptedSession = await encryptJwt(session, buildSecret(config.env));
-  cookieStore.setCookies({
-    cookies: [
-      {
-        name: DEFAULT_SESSION_COOKIE_NAME,
-        value: encryptedSession,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: maxAge, // 30 days,
-        path: "/",
-      },
-    ],
-    ...args,
-  });
+  await sessionStore.setSession({ ...args, config: args.config, session });
 
   if (config.onSessionSaved) await config.onSessionSaved(session);
 

@@ -1,6 +1,6 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
 import { LightAuthProvider } from "../models/light-auth-provider";
-import { LightAuthConfig } from "../models/ligth-auth-config";
+import { LightAuthConfig } from "../models/light-auth-config";
 
 /**
  * Checks the configuration and throws an error if any required fields are missing.
@@ -15,7 +15,7 @@ export function checkConfig(config: LightAuthConfig, providerName?: string): Req
   }
   if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
   if (config.router == null) throw new Error("light-auth: router is required");
-  if (config.cookieStore == null) throw new Error("light-auth: cookieStore is required");
+  if (config.sessionStore == null) throw new Error("light-auth: sessionStore is required");
 
   // if providerName is provider, check if the provider is in the config
   if (providerName && !config.providers.some((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase()))
@@ -66,26 +66,20 @@ export function buildSecret(env?: { [key: string]: string | undefined }): string
   return secret;
 }
 
-export function buildFullUrl({ endpoint, req }: { endpoint?: string; req: Request }): URL {
-  let url = endpoint ?? req.url;
-
-  if (url.startsWith("http")) {
-    return new URL(url);
-  }
+export function buildFullUrl({ url, incomingHeaders }: { url: string; incomingHeaders: Headers }): URL {
+  if (url.startsWith("http")) return new URL(url);
 
   const sanitizedEndpoint = url.startsWith("/") ? url : `/${url}`;
-  const reqHost = req && req.headers && typeof req.headers.get === "function" && req.headers.get("host") != null ? req.headers.get("host") : null;
+  const reqHost = incomingHeaders && incomingHeaders.get("host") != null ? incomingHeaders.get("host") : null;
   const host: string = reqHost ?? "localhost:3000"; // todo : replace with env variable
 
   // Check if we are on https
   let protocol = "http";
   if (
-    req &&
-    req.headers &&
-    typeof req.headers.get === "function" &&
-    (req.headers.get("x-forwarded-proto") === "https" ||
-      req.headers.get("x-forwarded-protocol") === "https" ||
-      req.headers.get("x-forwarded-proto")?.split(",")[0] === "https")
+    incomingHeaders &&
+    (incomingHeaders.get("x-forwarded-proto") === "https" ||
+      incomingHeaders.get("x-forwarded-protocol") === "https" ||
+      incomingHeaders.get("x-forwarded-proto")?.split(",")[0] === "https")
   ) {
     protocol = "https";
   }
