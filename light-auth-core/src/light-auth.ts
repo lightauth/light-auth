@@ -14,7 +14,7 @@ import { LightAuthComponents } from "./models/light-auth-components";
 import { BaseRequest, BaseResponse } from "./models/light-auth-base";
 import * as cookieParser from "cookie";
 import { resolveBasePath } from "./services/utils";
-import { createLightAuthRouter } from "./light-auth-router";
+import { createLightAuthRouter } from "./routers/light-auth-router";
 import { createLightAuthCookieStore } from "./stores/light-auth-cookie-store";
 
 /**
@@ -122,9 +122,6 @@ export function createSignoutFunction(config: LightAuthConfig): (args?: { revoke
 
 export function createLightAuthSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
   return async (args) => {
-    if (!config.router) throw new Error("light-auth router is required");
-    if (!config.cookieStore) throw new Error("light-auth cookieStore is required");
-
     try {
       // get the session from the server using the api endpoint, because
       // the session is stored in the cookie store and we may need to delete / update it
@@ -173,4 +170,3 @@ export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { 
     }
   };
 }
-

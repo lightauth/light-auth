@@ -1,0 +1,5 @@
+### Test the session retrieval
+GET http://localhost:3000/api/auth/session HTTP/1.1
+Accept: application/json
+User-Agent: light-auth
+Content-Type: application/json

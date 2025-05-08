@@ -1,5 +1,34 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
+import { LightAuthProvider } from "../models/light-auth-provider";
 import { LightAuthConfig } from "../models/ligth-auth-config";
+
+/**
+ * Checks the configuration and throws an error if any required fields are missing.
+ * @param config The configuration object to check.
+ * @returns The checked configuration object.
+ * @throws Error if any required fields are missing.
+ */
+export function checkConfig(config: LightAuthConfig, providerName?: string): Required<LightAuthConfig> & { provider: LightAuthProvider } {
+  if (!config.env) throw new Error("light-auth: env is required");
+  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) {
+    throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+  }
+  if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
+  if (config.router == null) throw new Error("light-auth: router is required");
+  if (config.cookieStore == null) throw new Error("light-auth: cookieStore is required");
+
+  // if providerName is provider, check if the provider is in the config
+  if (providerName && !config.providers.some((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase()))
+    throw new Error(`light-auth: Provider ${providerName} not found`);
+
+  const provider = !providerName ? config.providers[0] : config.providers.find((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase());
+  if (!provider) throw new Error(`light-auth: Provider ${providerName} not found`);
+
+  return {
+    ...(config as Required<LightAuthConfig>),
+    provider,
+  };
+}
 
 /** get the max age from the environment variable or use the default value */
 export function getSessionExpirationMaxAge() {
@@ -46,7 +75,7 @@ export function buildFullUrl({ endpoint, req }: { endpoint?: string; req: Reques
 
   const sanitizedEndpoint = url.startsWith("/") ? url : `/${url}`;
   const reqHost = req && req.headers && typeof req.headers.get === "function" && req.headers.get("host") != null ? req.headers.get("host") : null;
-  const host: string = reqHost ?? "localhost:3000";
+  const host: string = reqHost ?? "localhost:3000"; // todo : replace with env variable
 
   // Check if we are on https
   let protocol = "http";

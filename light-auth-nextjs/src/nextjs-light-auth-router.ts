@@ -33,7 +33,7 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
 
     const sanitizedEndpoint = url.startsWith("/") ? url : `/${url}`;
     const reqHost = headersData.get("host");
-    const host: string = reqHost ?? "localhost:3000";
+    const host: string = reqHost ?? "localhost:3000"; // TODO : replace with env variable
 
     // Check if we are on https
     let protocol = "http";

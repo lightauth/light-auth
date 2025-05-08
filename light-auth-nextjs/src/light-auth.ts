@@ -3,7 +3,6 @@ import {
   createHttpHandlerFunction,
   createLightAuthUserFunction,
   createSigninFunction,
-  createLightAuthUserAdapter,
   DEFAULT_BASE_PATH,
   createSignoutFunction,
   LightAuthConfig,
@@ -12,6 +11,7 @@ import {
   LightAuthUser,
   resolveBasePath,
 } from "@light-auth/core";
+import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
 import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
 import { nextJsLightAuthCookieStore } from "./nextjs-light-auth-cookie-store";
 import { NextRequest, NextResponse } from "next/server";
@@ -66,8 +66,45 @@ export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: bo
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (() => Promise<LightAuthSession | null | undefined>) => {
-  const lightAuthSession = createLightAuthSessionFunction(config);
-  return async () => await lightAuthSession();
+  // const lightAuthSession = createLightAuthSessionFunction(config);
+  // return async () => await lightAuthSession();
+  return async () => {
+    try {
+      // build the request
+      const requestHeaders = new Headers();
+      requestHeaders.set("Accept", "application/json");
+      requestHeaders.set("User-Agent", "light-auth");
+      requestHeaders.set("Content-Type", "application/json");
+
+      let url = "http://localhost:3000/api/auth/session";
+
+      const request = new Request(url.toString(), { method: "GET", headers: requestHeaders, credentials: "same-origin" });
+
+      console.log("request", request);
+
+      let response: Response | null = null;
+      try {
+        response = await fetch(request);
+      } catch (error) {
+        console.error("Error:", error);
+        throw new Error(`light-auth: Request failed with error ${error}`);
+      }
+
+      if (!response || !response.ok) {
+        throw new Error(`light-auth: Request failed with status ${response?.status}`);
+      }
+      console.log("response", response);
+      const session = await response.json();
+      console.log("session", session);
+
+      if (!session) return null;
+
+      return session;
+    } catch (error) {
+      console.error("Error:", error);
+      return null;
+    }
+  };
 };
 
 /**

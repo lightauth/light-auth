@@ -102,8 +102,4 @@ export const nextJsLightAuthUserAdapterCookie: LightAuthUserAdapter = {
   async deleteUser({ user }: { user: LightAuthUser }): Promise<void> {
     await nextJsLightAuthCookieStore.deleteCookies({ search: new RegExp(`^${DEFAULT_SESSION_COOKIE_NAME}\\.\\d+$`) });
   },
-
-  generateStoreId(): string {
-    return Math.random().toString(36).slice(2);
-  },
 };

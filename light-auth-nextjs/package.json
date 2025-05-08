@@ -25,7 +25,7 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./src/index.tsx",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
