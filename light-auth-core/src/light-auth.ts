@@ -36,8 +36,6 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
     ? new Request(url.toString(), { method: "POST", headers: requestHeaders, body: bodyBytes })
     : new Request(url.toString(), { method: method, headers: requestHeaders });
 
-  console.log("Request:", request);
-
   let response: Response | null = null;
   try {
     response = await fetch(request);

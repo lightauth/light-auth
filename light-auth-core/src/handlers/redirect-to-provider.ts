@@ -12,6 +12,10 @@ export async function redirectToProviderLoginHandler(args: { config: LightAuthCo
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
+  console.log("state", state);
+  console.log("codeVerifier", codeVerifier);
+
+  // Check if the provider is configured
 
   // Using Set to ensure unique scopes
   // and adding default scopes

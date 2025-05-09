@@ -19,12 +19,6 @@ export const expressLightAuthCookieStore: LightAuthCookieStore = {
         const cookie: LightAuthCookie = {
           name,
           value: value || "",
-          httpOnly: false,
-          secure: false,
-          sameSite: "lax",
-          path: "/",
-          maxAge: 3600,
-          domain: undefined,
         };
         return cookie;
       });

@@ -13,7 +13,7 @@ import {
 } from "@light-auth/core";
 
 import type { APIContext, APIRoute } from "astro";
-import { astroLightAuthCookieStore } from "./astro-light-auth-cookie-store";
+import { astroLightAuthSessionStore } from "./astro-light-auth-session-store";
 
 import { createLightAuthUserAdapter } from "@light-auth/core";
 import { astroLightAuthRouter } from "./astro-light-auth-router";
@@ -85,7 +85,7 @@ export function CreateLightAuth(config: LightAuthConfig): AstroLightAuthComponen
 
   config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
   config.router = astroLightAuthRouter;
-  config.sessionStore = astroLightAuthCookieStore;
+  config.sessionStore = astroLightAuthSessionStore;
   config.env = config.env || import.meta.env;
 
   return {

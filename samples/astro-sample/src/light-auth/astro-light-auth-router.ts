@@ -1,5 +1,6 @@
 import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
 import type { APIContext } from "astro";
+import * as cookieParser from "cookie";
 
 export const astroLightAuthRouter: LightAuthRouter = {
   returnJson: function ({ data, context }: { data: {} | null; context?: APIContext }): Response {
@@ -30,10 +31,12 @@ export const astroLightAuthRouter: LightAuthRouter = {
     return context.redirect(url, 302);
   },
 
-  getHeaders: function ({ search, context }: { search?: string | RegExp; context?: APIContext }): Headers {
-    if (!context) throw new Error("APIContext is required in getHeaders function of astroLightAuthRouter");
+  getHeaders: function ({ search, context, req }: { search?: string | RegExp; context?: APIContext; req?: Request }): Headers {
+    const request = context?.request ?? req;
 
-    const incomingHeaders = context.request.headers;
+    if (!request) throw new Error("light-auth: No context provided or no request object available in getHeaders of astroLightAuthRouter.");
+
+    const incomingHeaders = request.headers;
 
     // Convert search to RegExp if it's a string
     const regex = typeof search === "string" ? new RegExp(search) : search;
@@ -59,19 +62,24 @@ export const astroLightAuthRouter: LightAuthRouter = {
         httpOnly: cookie.httpOnly,
         secure: cookie.secure,
         sameSite: cookie.sameSite,
+        maxAge: cookie.maxAge,
+        path: cookie.path,
       });
     }
   },
+
   getCookies: function ({ search, context }: { search?: string | RegExp; context?: APIContext }): LightAuthCookie[] {
     if (!context) throw new Error("APIContext is required in getCookies of expressLightAuthRouter");
 
     const cookies: LightAuthCookie[] = [];
     const regex = typeof search === "string" ? new RegExp(search) : search;
 
-    for (const [name, value] of context.cookies.headers()) {
-      if (!search || !regex || regex.test(name)) cookies.push({ name, value });
+    for (const cookieString of context.cookies.headers()) {
+      const cookie = cookieParser.parse(cookieString);
+      const name = Object.keys(cookie)[0];
+      const value = cookie[name];
+      if (!search || !regex || regex.test(name)) cookies.push({ name: name, value: value || "" });
     }
-    console.log("getCookies", cookies);
     return cookies;
   },
 };
