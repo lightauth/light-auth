@@ -1,10 +1,10 @@
-import { LightAuthCookie, LightAuthCookieStore } from "@light-auth/core";
+import { LightAuthCookie, LightAuthSession, LightAuthSessionStore } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
 /**
  * A concrete CookieStore implementation for express,
  */
-export const expressLightAuthCookieStore: LightAuthCookieStore = {
+export const expressLightAuthCookieStore: LightAuthSessionStore = {
   getCookies: function ({ req, search }: { req?: ExpressRequest; search?: string | RegExp }): LightAuthCookie[] | null | Promise<LightAuthCookie[] | null> {
     if (!req) throw new Error("Request is required in getCookies function of expressLightAuthCookieStore");
 

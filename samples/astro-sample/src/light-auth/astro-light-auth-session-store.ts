@@ -48,7 +48,10 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     if (!config) throw new Error("light-auth: Config is required in deleteSession of astroLightAuthSessionStore");
     if (!context) throw new Error("light-auth: Context is required in deleteSession of astroLightAuthSessionStore");
 
-    context.cookies.delete(DEFAULT_SESSION_NAME);
+    context.cookies.set(DEFAULT_SESSION_NAME, "", {
+      maxAge: 0,
+      path: "/",
+    });
   },
 
   async setSession(args: { config: LightAuthConfig; session: LightAuthSession; context?: AstroContext }): Promise<void> {

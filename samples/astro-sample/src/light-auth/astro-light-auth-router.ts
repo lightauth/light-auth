@@ -1,4 +1,4 @@
-import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
+import { buildFullUrl, DEFAULT_SESSION_NAME, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
 import type { APIContext } from "astro";
 import * as cookieParser from "cookie";
 
@@ -27,7 +27,6 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
   redirectTo: function ({ url, context }: { url: string; context?: APIContext }): Response {
     if (!context) throw new Error("APIContext is required in redirectTo function of astroLightAuthRouter");
-
     return context.redirect(url, 302);
   },
 
