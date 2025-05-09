@@ -19,7 +19,6 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     const cookieStore = await nextJsCookies();
 
     if (!cookies || cookies.length === 0) return;
-
     for (const cookie of cookies) {
       cookieStore.set(cookie.name, cookie.value, {
         path: cookie.path,

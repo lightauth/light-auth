@@ -12,10 +12,6 @@ export async function redirectToProviderLoginHandler(args: { config: LightAuthCo
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
-  console.log("state", state);
-  console.log("codeVerifier", codeVerifier);
-
-  // Check if the provider is configured
 
   // Using Set to ensure unique scopes
   // and adding default scopes
@@ -58,6 +54,7 @@ export async function redirectToProviderLoginHandler(args: { config: LightAuthCo
     maxAge: 60 * 10, // 10 minutes
   };
 
+  // set the cookies in the response
   const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie], ...args });
 
   return await router.redirectTo({ url: url.toString(), headers: newHeaders, res, ...args });
