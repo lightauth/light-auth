@@ -1,8 +1,8 @@
-import { buildFullUrl, type LightAuthRouter } from "@light-auth/core";
+import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
 import type { APIContext } from "astro";
 
 export const astroLightAuthRouter: LightAuthRouter = {
-  writeJson: function ({ data, context }: { data: {} | null; context?: APIContext }): Response {
+  returnJson: function ({ data, context }: { data: {} | null; context?: APIContext }): Response {
     return new Response(JSON.stringify(data));
   },
 
@@ -51,16 +51,27 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
     return filteredHeaders;
   },
-  setHeaders: function ({ res, headers }: { res?: Response; headers: Map<string, string> | { [key: string]: string } }): Response {
-    if (!res) throw new Error("Response is required in setHeaders of expressLightAuthRouter");
+  setCookies: function ({ config, cookies, context }: { config: LightAuthConfig; cookies?: LightAuthCookie[]; context?: APIContext }): void {
+    if (!context) throw new Error("APIContext is required in setCookies of expressLightAuthRouter");
 
-    // for (const [key, value] of headers instanceof Map ? headers : Object.entries(headers)) {
-    //   if (res.headersSent) {
-    //     res.setHeader(key, value);
-    //   } else {
-    //     res.append(key, value);
-    //   }
-    // }
-    return res;
+    for (const cookie of cookies ?? []) {
+      context.cookies.set(cookie.name, cookie.value, {
+        httpOnly: cookie.httpOnly,
+        secure: cookie.secure,
+        sameSite: cookie.sameSite,
+      });
+    }
+  },
+  getCookies: function ({ search, context }: { search?: string | RegExp; context?: APIContext }): LightAuthCookie[] {
+    if (!context) throw new Error("APIContext is required in getCookies of expressLightAuthRouter");
+
+    const cookies: LightAuthCookie[] = [];
+    const regex = typeof search === "string" ? new RegExp(search) : search;
+
+    for (const [name, value] of context.cookies.headers()) {
+      if (!search || !regex || regex.test(name)) cookies.push({ name, value });
+    }
+    console.log("getCookies", cookies);
+    return cookies;
   },
 };

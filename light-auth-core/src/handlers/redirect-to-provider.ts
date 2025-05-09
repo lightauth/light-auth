@@ -1,5 +1,5 @@
 import { generateState, generateCodeVerifier } from "arctic";
-import { LightAuthConfig, BaseResponse } from "../models";
+import { LightAuthConfig, BaseResponse, LightAuthCookie } from "../models";
 import { checkConfig } from "../services/utils";
 import * as cookieParser from "cookie";
 
@@ -30,35 +30,31 @@ export async function redirectToProviderLoginHandler(args: { config: LightAuthCo
     }
   }
 
+  const newHeaders = new Headers();
   // add additional headers
-  if (provider.headers) {
-    const providersHeaders = new Headers();
-    for (const [key, value] of provider.headers) {
-      providersHeaders.append(key, value);
-    }
-    await router.setHeaders({ headers: providersHeaders, ...args });
-  }
+  if (provider.headers) for (const [key, value] of provider.headers) newHeaders.append(key, value);
 
-  const cookiesHeaders = new Headers();
-  const stateCookie = cookieParser.serialize(`${provider.providerName}_light_auth_state`, state, {
+  const stateCookie: LightAuthCookie = {
+    name: `${provider.providerName}_light_auth_state`,
+    value: state,
     path: "/",
     httpOnly: true,
     secure: env["NODE_ENV"] === "production",
     sameSite: "lax",
     maxAge: 60 * 10, // 10 minutes
-  });
+  };
 
-  cookiesHeaders.append("Set-Cookie", stateCookie);
-  const codeVerifierCookie = cookieParser.serialize(`${provider.providerName}_light_auth_code_verifier`, codeVerifier, {
+  const codeVerifierCookie: LightAuthCookie = {
+    name: `${provider.providerName}_light_auth_code_verifier`,
+    value: codeVerifier,
     path: "/",
     httpOnly: true,
     secure: env["NODE_ENV"] === "production",
     sameSite: "lax",
     maxAge: 60 * 10, // 10 minutes
-  });
-  cookiesHeaders.append("Set-Cookie", codeVerifierCookie);
+  };
 
-  await router.setHeaders({ headers: cookiesHeaders, ...args });
+  const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie], ...args });
 
-  return await router.redirectTo({ url: url.toString(), ...args });
+  return await router.redirectTo({ url: url.toString(), headers: newHeaders, res, ...args });
 }

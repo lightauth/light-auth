@@ -1,41 +1,52 @@
-import { LightAuthConfig, BaseResponse } from "../models";
+import { BaseResponse } from "../models";
+import { resolveBasePath } from "../services/utils";
 
-export function createSigninFunction(config: LightAuthConfig): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+export { resolveBasePath };
+
+export interface LightAuthConfigClient {
+  basePath?: string;
+  env?: { [key: string]: string | undefined };
+}
+
+export function createClientSigninFunction(config: LightAuthConfigClient): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
+    if (typeof window === "undefined") throw new Error("light-auth [client]: signIn for client side is not available on the server side");
+
     const { providerName } = args;
-    if (typeof window === "undefined") {
-      throw new Error("light-auth: signIn function for Astro is not available in the server side");
-    }
-    window.location.href = `${config.basePath}/login/${providerName}`;
+    const basePath = resolveBasePath(config);
+
+    window.location.href = `${basePath}/login/${providerName}`;
   };
 }
 
-export function createSignoutFunction(config: LightAuthConfig): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
-  return async (args = {}) => {
-    if (typeof window === "undefined") {
-      throw new Error("light-auth: signOut function for Astro is not available in the server side");
-    }
-    window.location.href = `${config.basePath}/logout`;
-  };
-}
-
-export function createGetSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<BaseResponse> {
+export function createClientSignoutFunction(
+  config: LightAuthConfigClient
+): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
   return async () => {
-    if (typeof window === "undefined") {
-      throw new Error("light-auth: getSession function for Astro is not available in the server side");
-    }
-    const response = await fetch(`${config.basePath}/session`);
+    if (typeof window === "undefined") throw new Error("light-auth [client]: signOut for client side is not available on the server side");
+    const basePath = resolveBasePath(config);
+    window.location.href = `${basePath}/logout`;
+  };
+}
+
+export function createClientSessionFunction(config: LightAuthConfigClient): (args?: { [key: string]: unknown }) => Promise<BaseResponse> {
+  return async () => {
+    if (typeof window === "undefined") throw new Error("light-auth [client]: getSession for client side is not available on the server side");
+    const basePath = resolveBasePath(config);
+    const response = await fetch(`${basePath}/session`);
     return response.json();
   };
 }
 
-export function createGetUserFunction(config: LightAuthConfig): (args?: { userId?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+export function createClientUserFunction(config: LightAuthConfigClient): (args?: { userId?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
-    if (typeof window === "undefined") {
-      throw new Error("light-auth: getUser function for Astro is not available in the server side");
-    }
+    if (typeof window === "undefined") throw new Error("light-auth [client]: getUser for client side is not available on the server side");
+
     const { userId } = args;
-    const response = await fetch(`${config.basePath}/user/${userId}`);
+    if (!userId) throw new Error("light-auth: userId is required");
+
+    const basePath = resolveBasePath(config);
+    const response = await fetch(`${basePath}/user/${userId}`);
     return response.json();
   };
 }

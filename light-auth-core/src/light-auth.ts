@@ -12,10 +12,11 @@ import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "
 async function serverRequest<T extends Record<string, string> | string | Blob>(args: {
   config: LightAuthConfig;
   endpoint: string;
+  method?: "GET" | "POST";
   body?: any;
   [key: string]: unknown;
 }): Promise<T | null | undefined> {
-  const { config, body } = args;
+  const { config, body, method = "GET" } = args;
   const { router } = config;
 
   if (!router) throw new Error("light-auth: router is required");
@@ -33,7 +34,9 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: "POST", headers: requestHeaders, body: bodyBytes })
-    : new Request(url.toString(), { method: "GET", headers: requestHeaders });
+    : new Request(url.toString(), { method: method, headers: requestHeaders });
+
+  console.log("Request:", request);
 
   let response: Response | null = null;
   try {
@@ -67,22 +70,20 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   return null;
 }
 
-export function createSigninFunction(config: LightAuthConfig): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+export function createServerSigninFunction(config: LightAuthConfig): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     const { providerName } = args;
-    const redirectResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
-    return redirectResponse;
+    return await redirectToProviderLoginHandler({ config, providerName, ...args });
   };
 }
 
-export function createSignoutFunction(config: LightAuthConfig): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
+export function createServerSignoutFunction(config: LightAuthConfig): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
-    const redirectResponse = await logoutAndRevokeTokenHandler({ config, ...args });
-    return redirectResponse;
+    return await logoutAndRevokeTokenHandler({ config, ...args });
   };
 }
 
-export function createLightAuthSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
+export function createServerSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
   return async (args) => {
     try {
       // get the session from the server using the api endpoint, because
@@ -101,7 +102,7 @@ export function createLightAuthSessionFunction(config: LightAuthConfig): (args?:
   };
 }
 
-export function createLightAuthUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
+export function createServerUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
   return async (args) => {
     if (!config.userAdapter) return null; // user adapter is not required
     if (!config.router) throw new Error("light-auth: router is required");

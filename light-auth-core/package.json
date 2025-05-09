@@ -24,11 +24,6 @@
       "require": "./dist/index.cjs",
       "types": "./src/index.tsx"
     },
-    "./adapters": {
-      "import": "./dist/adapters/index.mjs",
-      "require": "./dist/adapters/index.cjs",
-      "types": "./src/adapters/index.tsx"
-    },
     "./client": {
       "import": "./dist/client/index.mjs",
       "require": "./dist/client/index.cjs",

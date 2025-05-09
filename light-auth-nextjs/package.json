@@ -19,7 +19,6 @@
     "light-auth"
   ],
   "type": "module",
-  "main": "dist/index.mjs",
   "files": [
     "dist"
   ],
@@ -30,7 +29,7 @@
       "default": "./dist/index.mjs"
     },
     "./client": {
-      "types": "./dist/index_client.d.ts",
+      "types": "./src/index_client.tsx",
       "import": "./dist/index_client.mjs",
       "default": "./dist/index_client.mjs"
     }

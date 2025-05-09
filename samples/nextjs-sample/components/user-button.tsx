@@ -11,6 +11,7 @@ import {
 } from "./ui/dropdown-menu";
 
 import Link from "next/link";
+import { ClientLogoutButton } from "./client/client-logout-button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -65,9 +66,12 @@ export default async function UserButton() {
               }}
             >
               <Button type="submit" className="w-full">
-                Logout
+                Logout with POST Action
               </Button>
             </form>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <ClientLogoutButton />
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

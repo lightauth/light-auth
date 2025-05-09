@@ -1,53 +1,16 @@
 "use client";
 
+import { getSession } from "@/lib/auth-client";
 import { Button } from "./ui/button";
-
-const fetchSession = async () => {
-  try {
-    // build the request
-
-    const url = `${location.origin}/api/auth/session`;
-
-    const request = new Request(url.toString(), {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    console.log("request", request);
-
-    let response: Response | null = null;
-    try {
-      response = await fetch(request);
-    } catch (error) {
-      console.error("Error:", error);
-      throw new Error(`light-auth: Request failed with error ${error}`);
-    }
-
-    if (!response || !response.ok) {
-      throw new Error(
-        `light-auth: Request failed with status ${response?.status}`
-      );
-    }
-    console.log("response", response);
-    const session = await response.json();
-    console.log("session", session);
-
-    if (!session) return null;
-
-    return session;
-  } catch (error) {
-    console.error("Error:", error);
-    return null;
-  }
-};
 
 export function ClientFetchSessionButton() {
   return (
     <Button
       type="button"
-      onClick={async () => await fetchSession()}
+      onClick={async () => {
+        const session = await getSession();
+        console.log("Session:", session);
+      }}
       variant="outline"
       className="w-full"
     >

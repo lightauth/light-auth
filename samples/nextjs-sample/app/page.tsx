@@ -2,38 +2,6 @@ import Link from "next/link";
 import { getSession, getUser } from "@/lib/auth";
 import { ClientFetchSessionButton } from "@/components/client-fetch-session-button";
 
-// import { cookies } from "next/headers";
-// const getSession2 = async () => {
-//   // build the request
-//   const cookiesStore = await cookies();
-//   const requestHeaders = new Headers();
-//   requestHeaders.set("Accept", "application/json");
-//   requestHeaders.set("User-Agent", "light-auth");
-//   requestHeaders.set("Content-Type", "application/json");
-//   requestHeaders.set("Cookie", cookiesStore.toString());
-//   const url = "http://localhost:3000/api/auth/session";
-
-//   const request = new Request(url.toString(), {
-//     method: "GET",
-//     headers: requestHeaders,
-//   });
-
-//   console.log("request", request);
-
-//   let response: Response | null = null;
-//   try {
-//     response = await fetch(request);
-//   } catch (error) {
-//     console.error("Error:", error);
-//   }
-
-//   if (response && response.ok) {
-//     const session = await response.json();
-//     console.log("session", session);
-//     return session;
-//   }
-// };
-
 export default async function Home() {
   const session = await getSession();
   const user = await getUser();

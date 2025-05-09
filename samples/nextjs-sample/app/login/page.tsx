@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { signIn } from "@/lib/auth";
-import { ClientLoginButton } from "@/components/client-login-button";
+import { ClientLoginButton } from "@/components/client/client-login-button";
 
 export default function LoginPage() {
   return (

@@ -32,7 +32,6 @@ export async function logoutAndRevokeTokenHandler(args: {
 
       // revoke the token if the provider supports it
       if (token && provider && revokeToken) {
-        console.log("Revoking token:", token);
         // Revoke the token if the provider supports it
         if (typeof provider.artic.revokeToken === "function") {
           try {

@@ -14,7 +14,7 @@ export async function getSessionHandler(args: { config: LightAuthConfig; [key: s
 
   if (!session || !session.id || !session.userId) {
     console.warn("Unable to read session:", session);
-    return await router.writeJson({ data: null, ...args });
+    return await router.returnJson({ data: null, ...args });
   }
 
   // check if session is expired
@@ -24,7 +24,7 @@ export async function getSessionHandler(args: { config: LightAuthConfig; [key: s
     try {
       await sessionStore.deleteSession({ ...args });
     } catch {}
-    return await router.writeJson({ data: null, ...args });
+    return await router.returnJson({ data: null, ...args });
   }
 
   // get the max age from the environment variable or use the default value
@@ -40,5 +40,5 @@ export async function getSessionHandler(args: { config: LightAuthConfig; [key: s
     await sessionStore.setSession({ ...args, session });
   }
 
-  return await router.writeJson({ data: session, ...args });
+  return await router.returnJson({ data: session, ...args });
 }

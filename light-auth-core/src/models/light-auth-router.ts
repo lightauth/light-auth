@@ -1,10 +1,12 @@
 import { BaseResponse } from "./light-auth-base";
 import { LightAuthConfig } from "./light-auth-config";
+import { LightAuthCookie } from "./light-auth-cookie";
 
 export interface LightAuthRouter {
   redirectTo: (args: { config: LightAuthConfig; url: string; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
+  getCookies: (args: { config: LightAuthConfig; search?: string | RegExp; [key: string]: unknown }) => Promise<LightAuthCookie[]> | LightAuthCookie[];
+  setCookies: (args: { config: LightAuthConfig; cookies?: LightAuthCookie[]; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
   getHeaders: (args: { config: LightAuthConfig; search?: string | RegExp; [key: string]: unknown }) => Headers | Promise<Headers>;
-  setHeaders: (args: { config: LightAuthConfig; headers?: Headers; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
   getUrl: (args: { config: LightAuthConfig; endpoint?: string; [key: string]: unknown }) => string | Promise<string>;
-  writeJson: (args: { config: LightAuthConfig; data: {} | null; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
+  returnJson: (args: { config: LightAuthConfig; data: {} | null; [key: string]: unknown }) => Promise<BaseResponse> | BaseResponse;
 }

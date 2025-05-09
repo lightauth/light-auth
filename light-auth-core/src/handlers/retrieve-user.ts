@@ -6,10 +6,10 @@ export async function getUserHandler(args: { config: LightAuthConfig; id: string
   const { router, userAdapter } = checkConfig(config);
   try {
     const user = await userAdapter.getUser({ ...args });
-    if (user == null) return await router.writeJson({ data: null, ...args });
-    return await router.writeJson({ data: user, ...args });
+    if (user == null) return await router.returnJson({ data: null, ...args });
+    return await router.returnJson({ data: user, ...args });
   } catch (error) {
     console.error("Failed to get user:", error);
-    return await router.writeJson({ data: null, ...args });
+    return await router.returnJson({ data: null, ...args });
   }
 }

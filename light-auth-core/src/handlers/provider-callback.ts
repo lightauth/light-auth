@@ -22,8 +22,8 @@ export async function providerCallbackHandler(args: {
   if (code === null || state === null) throw new Error("light-auth: state or code are missing from the request");
 
   // get the cookies from headers
-  const headers = await router.getHeaders({ search: "Cookie", ...args });
-  const cookieHeader = headers.get("Cookie");
+  const headers = await router.getHeaders({ search: /cookie/i, ...args });
+  const cookieHeader = headers.get("cookie");
   if (cookieHeader === null) throw new Error("light-auth: Cookie header is missing from the request");
 
   const requestCookies = cookieParser.parse(cookieHeader);
@@ -88,26 +88,27 @@ export async function providerCallbackHandler(args: {
 
   if (config.onSessionSaved) await config.onSessionSaved(session);
 
-  // Omit expiresAt from session when creating user
-  const { expiresAt: sessionExpiresAt, ...sessionWithoutExpiresAt } = session;
-  let user: LightAuthUser = {
-    ...sessionWithoutExpiresAt,
-    picture: claims.picture,
-    accessToken: accessToken,
-    accessTokenExpiresAt: accessTokenExpiresAt,
-    refreshToken: refresh_token,
-  };
+  if (userAdapter) {
+    // Omit expiresAt from session when creating user
+    const { expiresAt: sessionExpiresAt, ...sessionWithoutExpiresAt } = session;
+    let user: LightAuthUser = {
+      ...sessionWithoutExpiresAt,
+      picture: claims.picture,
+      accessToken: accessToken,
+      accessTokenExpiresAt: accessTokenExpiresAt,
+      refreshToken: refresh_token,
+    };
 
-  if (config.onUserSaving) {
-    const userSaving = await config.onUserSaving(user, tokens);
-    // if the user is not null, use it
-    // if the user is null, use the original user
-    user = userSaving ?? user;
+    if (config.onUserSaving) {
+      const userSaving = await config.onUserSaving(user, tokens);
+      // if the user is not null, use it
+      // if the user is null, use the original user
+      user = userSaving ?? user;
+    }
+    await userAdapter.setUser({ user, ...args });
+
+    if (config.onUserSaved) await config.onUserSaved(user);
   }
-
-  if (userAdapter) await userAdapter.setUser({ user, ...args });
-
-  if (config.onUserSaved) await config.onUserSaved(user);
 
   const redirectResponse = await router.redirectTo({ url: callbackUrl, ...args });
   return redirectResponse;

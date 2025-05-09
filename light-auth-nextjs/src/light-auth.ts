@@ -1,19 +1,20 @@
 import {
   createHttpHandlerFunction,
-  createLightAuthSessionFunction,
-  createLightAuthUserFunction,
-  createSigninFunction,
-  createSignoutFunction,
+  createServerSessionFunction,
+  createServerUserFunction,
+  createServerSigninFunction,
+  createServerSignoutFunction,
   LightAuthConfig,
   LightAuthProvider,
   LightAuthSession,
   LightAuthUser,
   resolveBasePath,
+  createLightAuthUserAdapter,
 } from "@light-auth/core";
-import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
 import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
 import { nextJsLightAuthSessionStore } from "./nextjs-light-auth-session-store";
 import { NextRequest, NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 
 /**
  * LightAuthNextJsComponents is an interface that defines the structure of the LightAuth components for Next.js.
@@ -27,8 +28,8 @@ export interface LightAuthNextJsComponents {
     GET: (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
     POST: (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
   };
-  signIn: (providerName?: string) => Promise<void>;
-  signOut: (revokeToken?: boolean) => Promise<void>;
+  signIn: (providerName?: string) => Promise<NextResponse>;
+  signOut: (revokeToken?: boolean) => Promise<NextResponse>;
   getSession: () => Promise<LightAuthSession | null | undefined>;
   getUser: () => Promise<LightAuthUser | null | undefined>;
 }
@@ -38,9 +39,11 @@ export interface LightAuthNextJsComponents {
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsSignIn = (config: LightAuthConfig): ((providerName?: string) => Promise<void>) => {
-  const signIn = createSigninFunction(config);
-  return async (providerName?: string) => await signIn({ providerName });
+export const createNextJsSignIn = (config: LightAuthConfig) => {
+  const signIn = createServerSigninFunction(config);
+  return async (providerName?: string) => {
+    return await signIn({ providerName });
+  };
 };
 
 /**
@@ -48,9 +51,11 @@ export const createNextJsSignIn = (config: LightAuthConfig): ((providerName?: st
  * It takes the LightAuth createSignoutFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: boolean) => Promise<void>) => {
-  const signOut = createSignoutFunction(config);
-  return async (revokeToken?: boolean) => await signOut({ revokeToken });
+export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: boolean) => Promise<NextResponse>) => {
+  const signOut = createServerSignoutFunction(config);
+  return async (revokeToken?: boolean) => {
+    return await signOut({ revokeToken });
+  };
 };
 
 /**
@@ -59,7 +64,7 @@ export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: bo
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (() => Promise<LightAuthSession | null | undefined>) => {
-  const lightAuthSession = createLightAuthSessionFunction(config);
+  const lightAuthSession = createServerSessionFunction(config);
   return async () => await lightAuthSession();
 };
 
@@ -69,7 +74,7 @@ export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsLightAuthUserFunction = (config: LightAuthConfig): (() => Promise<LightAuthUser | null | undefined>) => {
-  const lightAuthUser = createLightAuthUserFunction(config);
+  const lightAuthUser = createServerUserFunction(config);
   return async () => await lightAuthUser();
 };
 

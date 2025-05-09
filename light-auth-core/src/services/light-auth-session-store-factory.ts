@@ -1,7 +1,7 @@
 import * as cookieParser from "cookie";
 import { LightAuthConfig, LightAuthSession, LightAuthSessionStore } from "../models";
 import { DEFAULT_SESSION_NAME } from "../constants";
-import { buildSecret, decryptJwt, encryptJwt, getSessionExpirationMaxAge } from "../services";
+import { buildSecret, decryptJwt, encryptJwt, getSessionExpirationMaxAge } from ".";
 
 export const createLightAuthSessionStore = (): LightAuthSessionStore => {
   return {

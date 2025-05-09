@@ -1,6 +1,6 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
-import { LightAuthProvider } from "../models/light-auth-provider";
-import { LightAuthConfig } from "../models/light-auth-config";
+import { LightAuthProvider, LightAuthConfig } from "../models";
+import { LightAuthConfigClient } from "../client";
 
 /**
  * Checks the configuration and throws an error if any required fields are missing.
@@ -38,12 +38,8 @@ export function getSessionExpirationMaxAge() {
 }
 
 /** Resolves the basePath, defaults to "/api/default" if not provided or falsy */
-export function resolveBasePath(config: LightAuthConfig): string {
-  const basePath = config.basePath;
-  let resolvedBasePath = (basePath && basePath !== "") || config.env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
-
-  // Ensure the base path is a string and does starts with "/"
-  if (typeof resolvedBasePath !== "string") resolvedBasePath = DEFAULT_BASE_PATH;
+export function resolveBasePath(config?: LightAuthConfig | LightAuthConfigClient): string {
+  let resolvedBasePath = config?.basePath || config?.env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
 
   if (!resolvedBasePath.startsWith("/")) resolvedBasePath = `/${resolvedBasePath}`;
 

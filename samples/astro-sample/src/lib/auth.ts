@@ -1,6 +1,6 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { type LightAuthProvider } from "@light-auth/core";
-import { CreateLightAuth } from "./light-auth";
+import { CreateLightAuth } from "../light-auth/light-auth";
 
 const googleProvider: LightAuthProvider = {
   providerName: "google",

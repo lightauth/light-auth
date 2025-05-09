@@ -1,12 +1,13 @@
 "use client";
 
-import { Button } from "./ui/button";
+import { signIn } from "@/lib/auth-client";
+import { Button } from "../ui/button";
 
 export function ClientLoginButton() {
   return (
     <Button
       type="button"
-      onClick={() => (window.location.href = "/api/auth/login/google")}
+      onClick={() => signIn("google")}
       variant="outline"
       className="w-full"
     >

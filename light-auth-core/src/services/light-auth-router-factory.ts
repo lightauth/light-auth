@@ -1,5 +1,7 @@
+import { LightAuthCookie } from "../models";
 import { LightAuthRouter } from "../models/light-auth-router";
-import { buildFullUrl } from "../services/utils";
+import { buildFullUrl } from "./utils";
+import * as cookieParser from "cookie";
 
 export const createLightAuthRouter = (): LightAuthRouter => {
   return {
@@ -13,7 +15,41 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       return res;
     },
 
-    writeJson({ res, data }: { res?: Response; data: any }) {
+    getCookies({ req, search }: { req?: Request; search?: string | RegExp }): LightAuthCookie[] {
+      const cookies = req?.headers.get("cookie");
+      if (!cookies) return [];
+
+      const requestCookies = cookieParser.parse(cookies);
+      const result: LightAuthCookie[] = [];
+
+      const searchRegex = typeof search === "string" ? new RegExp(search, "i") : search;
+
+      for (const [key, value] of Object.entries(requestCookies)) {
+        if (!search || !searchRegex || searchRegex.test(key)) result.push({ name: key.trim(), value: value || "" });
+      }
+      return result;
+    },
+
+    setCookies({ res, cookies }: { res?: Response; cookies?: LightAuthCookie[] }) {
+      if (!res) throw new Error("light-auth: Response object is required to set cookies.");
+
+      if (!cookies || cookies.length === 0) {
+        return res;
+      }
+
+      for (const cookie of cookies) {
+        const stateCookie = cookieParser.serialize(cookie.name, cookie.value, {
+          path: cookie.path,
+          httpOnly: cookie.httpOnly,
+          secure: cookie.secure,
+          sameSite: cookie.sameSite,
+          maxAge: cookie.maxAge,
+        });
+        res.headers.set("Set-Cookie", stateCookie);
+      }
+      return res;
+    },
+    returnJson({ res, data }: { res?: Response; data: any }) {
       if (!res) throw new Error("light-auth: Response object is required to write JSON.");
       const json = JSON.stringify(data);
       const response = new Response(json, {
@@ -38,19 +74,6 @@ export const createLightAuthRouter = (): LightAuthRouter => {
         else if (searchRegex.test(key)) result.set(key, value);
       }
       return result;
-    },
-
-    setHeaders({ headers, res }: { headers?: Headers; res?: Response }) {
-      if (!res) throw new Error("light-auth: Response object is required to set headers.");
-
-      if (!headers || headers.entries().next().done) {
-        return res;
-      }
-
-      for (const [key, value] of headers.entries()) {
-        res.headers.set(key, value);
-      }
-      return res;
     },
 
     getUrl({ endpoint, req }: { endpoint?: string; req?: Request }) {

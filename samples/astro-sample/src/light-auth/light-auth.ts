@@ -5,20 +5,18 @@ import {
   type LightAuthSession,
   type LightAuthUser,
   type LightAuthComponents,
+  createHttpHandlerFunction,
+  createServerSessionFunction,
+  createServerUserFunction,
+  createServerSigninFunction,
+  createServerSignoutFunction,
 } from "@light-auth/core";
 
-import { astroLightAuthRouter } from "./astro-light-auth-router";
-import type { APIRoute } from "astro";
+import type { APIContext, APIRoute } from "astro";
 import { astroLightAuthCookieStore } from "./astro-light-auth-cookie-store";
-import {
-  createAstroLightAuthHandlerFunction,
-  createAstroLightAuthSessionFunction,
-  createAstroLightAuthUserFunction,
-  createAstroSigninFunction,
-  createAstroSignoutFunction,
-} from "./wrapper";
 
-import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
+import { createLightAuthUserAdapter } from "@light-auth/core";
+import { astroLightAuthRouter } from "./astro-light-auth-router";
 
 /**
  * AstroLightAuthComponents is an interface that extends the LightAuthComponents interface.
@@ -38,6 +36,49 @@ export interface AstroLightAuthComponents extends LightAuthComponents {
   getSession: (req?: Request) => Promise<LightAuthSession | null | undefined>;
   getUser: (req?: Request) => Promise<LightAuthUser | null | undefined>;
 }
+
+export const createAstroLightAuthSessionFunction = (config: LightAuthConfig) => {
+  const sessionFunction = createServerSessionFunction(config);
+  return async (req?: Request) => {
+    return await sessionFunction({ req });
+  };
+};
+
+export const createAstroLightAuthUserFunction = (config: LightAuthConfig) => {
+  const userFunction = createServerUserFunction(config);
+  return async (req?: Request) => {
+    return await userFunction({ req });
+  };
+};
+
+export function createAstroSigninFunction(config: LightAuthConfig) {
+  const signInFunction = createServerSigninFunction(config);
+  return async (providerName: string) => {
+    return await signInFunction({ providerName });
+  };
+}
+
+export function createAstroSignoutFunction(config: LightAuthConfig) {
+  const signOutFunction = createServerSignoutFunction(config);
+  return async () => {
+    return await signOutFunction();
+  };
+}
+
+export const createAstroLightAuthHandlerFunction = (config: LightAuthConfig): { GET: APIRoute; POST: APIRoute } => {
+  const lightAuthHandler = createHttpHandlerFunction(config);
+
+  return {
+    GET: async (context?: APIContext) => {
+      const response = await lightAuthHandler({ context });
+      return response;
+    },
+    POST: async (context?: APIContext) => {
+      const response = await lightAuthHandler({ context });
+      return response;
+    },
+  };
+};
 
 export function CreateLightAuth(config: LightAuthConfig): AstroLightAuthComponents {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");

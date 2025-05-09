@@ -7,3 +7,4 @@ export * from "./light-auth-router";
 export * from "./light-auth-session-store";
 export * from "./light-auth-session";
 export * from "./light-auth-user-adapter";
+export * from "./light-auth-cookie";
