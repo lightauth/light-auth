@@ -7,10 +7,14 @@ import { LightAuthRouter } from "./light-auth-router";
 
 export interface LightAuthConfig {
   providers: LightAuthProvider[];
-  onSessionSaving?: (session: LightAuthSession, claims: OAuth2Tokens) => LightAuthSession | null | Promise<LightAuthSession | null>;
-  onSessionSaved?: (session: LightAuthSession) => void | Promise<void>;
-  onUserSaving?: (user: LightAuthUser, claims: OAuth2Tokens) => LightAuthUser | null | Promise<LightAuthUser | null>;
-  onUserSaved?: (user: LightAuthUser) => void | Promise<void>;
+  onSessionSaving?: (
+    session: LightAuthSession,
+    claims: OAuth2Tokens,
+    metadata?: { [key: string]: unknown }
+  ) => LightAuthSession | null | Promise<LightAuthSession | null>;
+  onSessionSaved?: (session: LightAuthSession, metadata?: { [key: string]: unknown }) => void | Promise<void>;
+  onUserSaving?: (user: LightAuthUser, claims: OAuth2Tokens, metadata?: { [key: string]: unknown }) => LightAuthUser | null | Promise<LightAuthUser | null>;
+  onUserSaved?: (user: LightAuthUser, metadata?: { [key: string]: unknown }) => void | Promise<void>;
   basePath?: string;
   userAdapter?: LightAuthUserAdapter;
   sessionStore?: LightAuthSessionStore;

@@ -7,7 +7,7 @@ export function ClientLogoutButton() {
   return (
     <Button
       type="button"
-      onClick={() => signOut()}
+      onClick={() => signOut(true, "/profile")}
       variant="outline"
       className="w-full"
     >

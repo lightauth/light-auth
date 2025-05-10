@@ -44,11 +44,7 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
     // Check the size of the cookie value in bytes
     const encoder = new TextEncoder();
     const valueBytes = encoder.encode(value);
-
     if (valueBytes.length > 4096) throw new Error("light-auth: Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
-
-    // get the cookie expiration time
-    const maxAge = getSessionExpirationMaxAge(); // 30 days if no env var is set
 
     // maxAge:  Specifies the number (in seconds) to be the value for the `Max-Age`
     cookieStore.set(DEFAULT_SESSION_NAME, value, {
@@ -56,7 +52,7 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
       secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: maxAge,
+      expires: session.expiresAt,
     });
   },
   generateSessionId(): string {

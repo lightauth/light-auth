@@ -27,20 +27,26 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
     if (pathSegments.length < 1) throw new Error("light-auth: Not enough path segments found");
 
     const providerName = pathSegments.length > 1 ? pathSegments[1] : null;
-    const callbackUrl = reqUrl.searchParams.get("callbackUrl") ?? "/";
+    // get the callback URL if any
+    const callbackUrlParam = reqUrl.searchParams.get("callbackUrl");
+    const callbackUrl = callbackUrlParam ?? "/";
+
+    // get the revoke token parameter if any
+    const revokeTokenParam = reqUrl.searchParams.get("revokeToken");
+    const revokeToken = revokeTokenParam != null ? revokeTokenParam.toLocaleLowerCase() === "true" || revokeTokenParam === "1" : false;
 
     let newResponse: BaseResponse | null = null;
 
     if (pathSegments[0] === "session") {
       newResponse = await getSessionHandler({ config, ...args });
     } else if (pathSegments[0] === "user") {
-      newResponse = await getUserHandler({ config, id: pathSegments[1], ...args });
+      newResponse = await getUserHandler({ config, userId: pathSegments[1], ...args });
     } else if (pathSegments[0] === "login" && providerName) {
-      newResponse = await redirectToProviderLoginHandler({ config, providerName, ...args });
+      newResponse = await redirectToProviderLoginHandler({ config, providerName, callbackUrl, ...args });
     } else if (pathSegments[0] === "logout") {
-      newResponse = await logoutAndRevokeTokenHandler({ config, revokeToken: false, callbackUrl, ...args });
+      newResponse = await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl, ...args });
     } else if (pathSegments[0] === "callback" && providerName) {
-      newResponse = await providerCallbackHandler({ config, providerName, callbackUrl, ...args });
+      newResponse = await providerCallbackHandler({ config, providerName, ...args });
     }
 
     return newResponse;

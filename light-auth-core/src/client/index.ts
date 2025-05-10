@@ -8,24 +8,28 @@ export interface LightAuthConfigClient {
   env?: { [key: string]: string | undefined };
 }
 
-export function createClientSigninFunction(config: LightAuthConfigClient): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+export function createClientSigninFunction(
+  config: LightAuthConfigClient
+): (args?: { providerName?: string; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     if (typeof window === "undefined") throw new Error("light-auth [client]: signIn for client side is not available on the server side");
 
-    const { providerName } = args;
+    const { providerName, callbackUrl = "/" } = args;
     const basePath = resolveBasePath(config);
 
-    window.location.href = `${basePath}/login/${providerName}`;
+    window.location.href = `${basePath}/login/${providerName}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   };
 }
 
 export function createClientSignoutFunction(
   config: LightAuthConfigClient
-): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
-  return async () => {
+): (args?: { revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+  return async (args = {}) => {
     if (typeof window === "undefined") throw new Error("light-auth [client]: signOut for client side is not available on the server side");
     const basePath = resolveBasePath(config);
-    window.location.href = `${basePath}/logout`;
+    const revokeToken = args.revokeToken || false;
+    const callbackUrl = args.callbackUrl || "/";
+    window.location.href = `${basePath}/logout?revokeToken=${revokeToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
   };
 }
 

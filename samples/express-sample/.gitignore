@@ -19,3 +19,6 @@ dist/**/*
 # Ignore built css files
 /public/css/output.css
 
+# Ignore users db
+/users_db
+

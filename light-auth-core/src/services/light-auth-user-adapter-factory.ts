@@ -16,8 +16,8 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
   };
   base = base || "./";
   return {
-    async getUser({ config, id }: { config: LightAuthConfig; id: string }): Promise<LightAuthUser | null> {
-      const safeId = sanitizeKey(id);
+    async getUser({ config, userId }: { config: LightAuthConfig; userId: string }): Promise<LightAuthUser | null> {
+      const safeId = sanitizeKey(userId);
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs
@@ -43,9 +43,28 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
     },
 
     async setUser({ config, user }: { config: LightAuthConfig; user: LightAuthUser }): Promise<void> {
-      if (!user?.id) throw new Error("light-auth: Session must have an id");
-      const safeId = sanitizeKey(user.id);
+      if (!user?.userId) throw new Error("light-auth: user id is required");
+      const safeId = sanitizeKey(user.userId);
       const filePath = resolve(base, safeId + ".json");
+
+      const exists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+
+      // some providers may not return the refresh token or access token, if you did not explicitly logout the last time
+      // using the revokeToken option.
+      if (exists) {
+        const existingUser = await this.getUser({ config, userId: user.userId });
+        if (existingUser && existingUser.id === user.id) {
+          if (existingUser.refreshToken && !user.refreshToken) user.refreshToken = existingUser.refreshToken;
+          if (existingUser.accessToken && !user.accessToken) {
+            user.accessToken = existingUser.accessToken;
+            user.accessTokenExpiresAt = existingUser.accessTokenExpiresAt;
+          }
+        }
+      }
+
       await fs.mkdir(base, { recursive: true });
       if (isEncrypted) {
         // Encrypt the session object and store as a JWT string
@@ -59,7 +78,7 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
 
     async deleteUser({ config, user }: { config: LightAuthConfig; user: LightAuthUser }): Promise<void> {
       if (!user?.id) return;
-      const safeId = sanitizeKey(user.id);
+      const safeId = sanitizeKey(user.userId);
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs

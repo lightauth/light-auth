@@ -1,4 +1,4 @@
-import { LightAuthConfig } from "../models";
+import { LightAuthConfig, LightAuthCookie } from "../models";
 import { checkConfig } from "../services/utils";
 
 export async function logoutAndRevokeTokenHandler(args: {
@@ -22,7 +22,7 @@ export async function logoutAndRevokeTokenHandler(args: {
 
   // get the user from the session store
   if (userAdapter) {
-    const user = await userAdapter.getUser({ id: session.id, ...args });
+    const user = await userAdapter.getUser({ userId: session.userId.toString(), ...args });
 
     if (user) {
       // delete the user
@@ -47,6 +47,15 @@ export async function logoutAndRevokeTokenHandler(args: {
   try {
     // delete the session cookie
     await sessionStore.deleteSession({ ...args });
+  } catch {}
+
+  try {
+    const stateCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_state`, value: "", path: "/", maxAge: 0 };
+    const codeVerifierCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_code_verifier`, value: "", path: "/", maxAge: 0 };
+    const callbackUrlCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_callback_url`, value: "", path: "/", maxAge: 0 };
+
+    // delete the cookies
+    await router.setCookies({ cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete], ...args });
   } catch {}
 
   return await router.redirectTo({ url: callbackUrl, ...args });

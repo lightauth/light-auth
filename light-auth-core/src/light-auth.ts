@@ -68,16 +68,21 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   return null;
 }
 
-export function createServerSigninFunction(config: LightAuthConfig): (args?: { providerName?: string; [key: string]: unknown }) => Promise<BaseResponse> {
+export function createServerSigninFunction(
+  config: LightAuthConfig
+): (args?: { providerName?: string; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
-    const { providerName } = args;
-    return await redirectToProviderLoginHandler({ config, providerName, ...args });
+    const { providerName, callbackUrl = "/" } = args;
+    return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), ...args });
   };
 }
 
-export function createServerSignoutFunction(config: LightAuthConfig): (args?: { revokeToken?: boolean; [key: string]: unknown }) => Promise<BaseResponse> {
+export function createServerSignoutFunction(
+  config: LightAuthConfig
+): (args?: { revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
-    return await logoutAndRevokeTokenHandler({ config, ...args });
+    const { revokeToken = true, callbackUrl = "/" } = args;
+    return await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl, ...args });
   };
 }
 
@@ -119,7 +124,7 @@ export function createServerUserFunction(config: LightAuthConfig): (args?: { [ke
       // get the user from the user adapter      // get the user from the session store
       const user = await serverRequest<LightAuthUser>({
         config,
-        endpoint: `${config.basePath}/user/${session.id}`,
+        endpoint: `${config.basePath}/user/${session.userId}`,
         ...args,
       });
       if (!user) return null;

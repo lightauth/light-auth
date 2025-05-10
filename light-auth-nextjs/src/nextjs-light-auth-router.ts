@@ -10,7 +10,10 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export const nextJsLightAuthRouter: LightAuthRouter = {
   async redirectTo({ config, url }: { config: LightAuthConfig; url: string }): Promise<Response> {
-    const incomingHeaders = await nextJsHeaders();
+    const headersData = await nextJsHeaders();
+    const incomingHeaders = new Headers();
+    for (const [key, value] of headersData.entries()) incomingHeaders.append(key, value);
+
     const fullUrl = buildFullUrl({ url, incomingHeaders });
     return redirect(fullUrl.toString());
   },
@@ -36,8 +39,9 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     // Convert search to RegExp if it's a string
     const regex = typeof search === "string" ? new RegExp(search) : search;
 
-    for (const [name, requestCookie] of cookieStore) {
-      if (!search || !regex || regex.test(name)) cookies.push({ name, value: requestCookie.value });
+    
+    for (const requestCookie of cookieStore.getAll()) {
+      if (!search || !regex || regex.test(requestCookie.name)) cookies.push({ name: requestCookie.name, value: requestCookie.value });
     }
 
     return cookies;
@@ -48,10 +52,11 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
 
     if (url.startsWith("http")) return url;
-
     const headersData = await nextJsHeaders();
+    const incomingHeaders = new Headers();
+    for (const [key, value] of headersData.entries()) incomingHeaders.append(key, value);
 
-    const fullUrl = buildFullUrl({ url, incomingHeaders: headersData });
+    const fullUrl = buildFullUrl({ url, incomingHeaders });
     return fullUrl.toString();
   },
 

@@ -19,12 +19,12 @@ export const createAstroGetUserFunction = (config: LightAuthConfigClient) => {
 
 export function createAstroSigninFunction(config: LightAuthConfigClient) {
   const signInFunction = createClientSigninFunction(config);
-  return async (providerName: string) => await signInFunction({ providerName });
+  return async (providerName: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
 }
 
 export function createAstroSignoutFunction(config: LightAuthConfigClient) {
   const signOutFunction = createClientSignoutFunction(config);
-  return async () => await signOutFunction();
+  return async (revokeToken?: boolean, callbackUrl: string = "/") => await signOutFunction({ revokeToken, callbackUrl });
 }
 
 export function CreateLightAuthClient(config: LightAuthConfigClient) {

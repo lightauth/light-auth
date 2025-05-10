@@ -1,17 +1,9 @@
 import { decodeIdToken } from "arctic";
-import { DEFAULT_SESSION_NAME } from "../constants";
-import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
-import { encryptJwt } from "../services/jwt";
-import { checkConfig, getSessionExpirationMaxAge, buildSecret } from "../services/utils";
-import * as cookieParser from "cookie";
+import { LightAuthConfig, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
+import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
 
-export async function providerCallbackHandler(args: {
-  config: LightAuthConfig;
-  providerName?: string;
-  callbackUrl: string;
-  [key: string]: unknown;
-}): Promise<Response> {
-  const { config, providerName, callbackUrl } = args;
+export async function providerCallbackHandler(args: { config: LightAuthConfig; providerName?: string; [key: string]: unknown }): Promise<Response> {
+  const { config, providerName } = args;
   const { router, userAdapter, provider, sessionStore } = checkConfig(config, providerName);
 
   const url = await router.getUrl({ ...args });
@@ -22,16 +14,19 @@ export async function providerCallbackHandler(args: {
   if (code === null || state === null) throw new Error("light-auth: state or code are missing from the request");
 
   // get the cookies from headers
-  const headers = await router.getHeaders({ search: /cookie/i, ...args });
-  const cookieHeader = headers.get("cookie");
-  if (cookieHeader === null) throw new Error("light-auth: Cookie header is missing from the request");
+  const cookies = await router.getCookies({
+    search: new RegExp(`^${provider.providerName}_light_auth_(code_verifier|state|callback_url)$`),
+    ...args,
+  });
+  if (!cookies) throw new Error("light-auth: Cookies are missing from the request");
 
-  const requestCookies = cookieParser.parse(cookieHeader);
+  const storedStateCookie = cookies.find((c) => c.name == `${provider.providerName}_light_auth_state`)?.value;
+  const codeVerifierCookie = cookies.find((c) => c.name == `${provider.providerName}_light_auth_code_verifier`)?.value;
+  const callbackUrlCookie = cookies.find((c) => c.name == `${provider.providerName}_light_auth_callback_url`)?.value;
 
-  const storedStateCookie = requestCookies[`${provider.providerName}_light_auth_state`];
-  const codeVerifierCookie = requestCookies[`${provider.providerName}_light_auth_code_verifier`];
+  const callbackUrl = callbackUrlCookie ?? "/";
 
-  if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("light-auth: Invalid state or code verifier");
+  if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("light-auth: Invalid state or code verifier or callback URL");
 
   // validate the state
   if (storedStateCookie !== state) throw new Error("light-auth: Invalid state");
@@ -67,7 +62,6 @@ export async function providerCallbackHandler(args: {
 
   const id = sessionStore.generateSessionId();
   const maxAge = getSessionExpirationMaxAge();
-
   const expiresAt = new Date(Date.now() + maxAge * 1000);
 
   let session: LightAuthSession = {
@@ -80,13 +74,13 @@ export async function providerCallbackHandler(args: {
   };
 
   if (config.onSessionSaving) {
-    const sessionSaving = await config.onSessionSaving(session, tokens);
+    const sessionSaving = await config.onSessionSaving(session, tokens, args);
     session = sessionSaving ?? session;
   }
 
   await sessionStore.setSession({ ...args, config: args.config, session });
 
-  if (config.onSessionSaved) await config.onSessionSaved(session);
+  if (config.onSessionSaved) await config.onSessionSaved(session, args);
 
   if (userAdapter) {
     // Omit expiresAt from session when creating user
@@ -100,15 +94,24 @@ export async function providerCallbackHandler(args: {
     };
 
     if (config.onUserSaving) {
-      const userSaving = await config.onUserSaving(user, tokens);
+      const userSaving = await config.onUserSaving(user, tokens, args);
       // if the user is not null, use it
       // if the user is null, use the original user
       user = userSaving ?? user;
     }
     await userAdapter.setUser({ user, ...args });
 
-    if (config.onUserSaved) await config.onUserSaved(user);
+    if (config.onUserSaved) await config.onUserSaved(user, args);
   }
+
+  try {
+    const stateCookieDelete: LightAuthCookie = { name: `${provider.providerName}_light_auth_state`, value: "", path: "/", maxAge: 0 };
+    const codeVerifierCookieDelete: LightAuthCookie = { name: `${provider.providerName}_light_auth_code_verifier`, value: "", path: "/", maxAge: 0 };
+    const callbackUrlCookieDelete: LightAuthCookie = { name: `${provider.providerName}_light_auth_callback_url`, value: "", path: "/", maxAge: 0 };
+
+    // delete the cookies
+    await router.setCookies({ cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete], ...args });
+  } catch (error) {}
 
   const redirectResponse = await router.redirectTo({ url: callbackUrl, ...args });
   return redirectResponse;

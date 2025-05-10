@@ -1,0 +1,76 @@
+import {
+  buildSecret,
+  decryptJwt,
+  DEFAULT_SESSION_NAME,
+  encryptJwt,
+  getSessionExpirationMaxAge,
+  LightAuthConfig,
+  LightAuthCookie,
+  LightAuthSession,
+  LightAuthSessionStore,
+} from "@light-auth/core";
+import { Request as ExpressRequest, Response as ExpressResponse } from "express";
+import * as cookieParser from "cookie";
+/**
+ * A concrete CookieStore implementation for express,
+ */
+export const expressLightAuthSessionStore: LightAuthSessionStore = {
+  getSession: async function ({ config, req }: { config: LightAuthConfig; req?: ExpressRequest }): Promise<LightAuthSession | null> {
+    if (!req) throw new Error("Request is required in getSession function of expressLightAuthSessionStore");
+
+    const incomingCookies = req.headers?.cookie;
+    if (!incomingCookies) return null;
+
+    // parse the cookies
+    const parsedCookies = cookieParser.parse(incomingCookies);
+
+    const sessionString = parsedCookies[DEFAULT_SESSION_NAME];
+    if (!sessionString) return null;
+    try {
+      const decryptedSession = await decryptJwt(sessionString, buildSecret(config.env));
+      return decryptedSession as LightAuthSession;
+    } catch (error) {
+      console.error("Failed to decrypt session cookie:", error);
+      return null;
+    }
+  },
+
+  setSession: async function ({
+    config,
+    res,
+    session,
+  }: {
+    config: LightAuthConfig;
+    res?: ExpressResponse;
+    session: LightAuthSession;
+  }): Promise<ExpressResponse> {
+    if (!res) throw new Error("Response is required in setSession of expressLightAuthSessionStore");
+
+    const value = await encryptJwt(session, buildSecret(config.env));
+
+    // Check the size of the cookie value in bytes
+    const encoder = new TextEncoder();
+    const valueBytes = encoder.encode(value);
+    if (valueBytes.length > 4096) throw new Error("light-auth: Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
+
+    // get the cookie expiration time
+    res.cookie(DEFAULT_SESSION_NAME, value, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      expires: session.expiresAt,
+    });
+
+    return res;
+  },
+  deleteSession: function ({ res }: { config: LightAuthConfig; res?: ExpressResponse }): ExpressResponse {
+    if (!res) throw new Error("Response is required in deleteSession of expressLightAuthSessionStore");
+
+    res.clearCookie(DEFAULT_SESSION_NAME);
+    return res;
+  },
+  generateSessionId: function (): string {
+    return Math.random().toString(36).substring(2, 15);
+  },
+};

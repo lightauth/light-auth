@@ -62,7 +62,7 @@ export default async function UserButton() {
             <form
               action={async () => {
                 "use server";
-                await signOut(false);
+                await signOut(false, "/profile");
               }}
             >
               <Button type="submit" className="w-full">

@@ -28,8 +28,8 @@ export interface LightAuthNextJsComponents {
     GET: (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
     POST: (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
   };
-  signIn: (providerName?: string) => Promise<NextResponse>;
-  signOut: (revokeToken?: boolean) => Promise<NextResponse>;
+  signIn: (providerName?: string, callbackUrl?: string) => Promise<NextResponse>;
+  signOut: (revokeToken?: boolean, callbackUrl?: string) => Promise<NextResponse>;
   getSession: () => Promise<LightAuthSession | null | undefined>;
   getUser: () => Promise<LightAuthUser | null | undefined>;
 }
@@ -41,8 +41,8 @@ export interface LightAuthNextJsComponents {
  */
 export const createNextJsSignIn = (config: LightAuthConfig) => {
   const signIn = createServerSigninFunction(config);
-  return async (providerName?: string) => {
-    return await signIn({ providerName });
+  return async (providerName?: string, callbackUrl: string = "/") => {
+    return await signIn({ providerName, callbackUrl });
   };
 };
 
@@ -53,8 +53,8 @@ export const createNextJsSignIn = (config: LightAuthConfig) => {
  */
 export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: boolean) => Promise<NextResponse>) => {
   const signOut = createServerSignoutFunction(config);
-  return async (revokeToken?: boolean) => {
-    return await signOut({ revokeToken });
+  return async (revokeToken?: boolean, callbackUrl: string = "/") => {
+    return await signOut({ revokeToken, callbackUrl });
   };
 };
 

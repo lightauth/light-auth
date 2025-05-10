@@ -66,19 +66,23 @@ export function buildFullUrl({ url, incomingHeaders }: { url: string; incomingHe
   if (url.startsWith("http")) return new URL(url);
 
   const sanitizedEndpoint = url.startsWith("/") ? url : `/${url}`;
-  const reqHost = incomingHeaders && incomingHeaders.get("host") != null ? incomingHeaders.get("host") : null;
-  const host: string = reqHost ?? "localhost:3000"; // todo : replace with env variable
-
-  // Check if we are on https
+  let reqHost = incomingHeaders?.get("host");
   let protocol = "http";
-  if (
-    incomingHeaders &&
-    (incomingHeaders.get("x-forwarded-proto") === "https" ||
-      incomingHeaders.get("x-forwarded-protocol") === "https" ||
-      incomingHeaders.get("x-forwarded-proto")?.split(",")[0] === "https")
-  ) {
+
+  // Prefer x-forwarded-proto headers for protocol
+  const xfp = incomingHeaders?.get("x-forwarded-proto") || incomingHeaders?.get("x-forwarded-protocol");
+  if (xfp && xfp.split(",")[0].trim() === "https") {
     protocol = "https";
+  }else{
+    // TODO : forward env
+    // protocol = env["NODE_ENV"] === "production" ? "https" : "http";
   }
+
+  //TODO : if x-forwarded-host is not present, check if we are in production or not
+
+
+  const host: string = reqHost ?? "localhost:3000";
+
   const sanitizedHost = host.endsWith("/") ? host.slice(0, -1) : host;
   return new URL(sanitizedEndpoint, `${protocol}://${sanitizedHost}`);
 }

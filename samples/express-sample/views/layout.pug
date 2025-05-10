@@ -11,14 +11,14 @@ html
       )
         if session
           div(class="flex flex-row items-center gap-2")
-            if session.user.image
-              img(src=`${session.user.image}`, class="h-8 w-8 rounded-full")
+            if user && user.picture
+              img(src=`${user.picture}`, class="h-8 w-8 rounded-full")
             span
               | Signed in as #{ ' ' }
-              strong= session.user.email || session.user.name
+              strong= session.email || session.name
           a(
             class="rounded-md bg-blue-600 px-5 py-2.5 font-medium text-white",
-            href="/api/auth/signout"
+            href="/logout"
           ) Sign out
         else
           span(class="") You are not signed in

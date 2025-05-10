@@ -9,15 +9,15 @@ import {
 
 function createNextJsSigninFunction(config: LightAuthConfigClient) {
   const signIn = createClientSigninFunction(config);
-  return async (providerName?: string) => {
-    return await signIn({ providerName });
+  return async (providerName?: string, callbackUrl: string = "/") => {
+    return await signIn({ providerName, callbackUrl });
   };
 }
 
 function createNextJsSignoutFunction(config: LightAuthConfigClient) {
   const signOut = createClientSignoutFunction(config);
-  return async (revokeToken?: boolean) => {
-    return await signOut({ revokeToken });
+  return async (revokeToken?: boolean, callbackUrl: string = "/") => {
+    return await signOut({ revokeToken, callbackUrl });
   };
 }
 

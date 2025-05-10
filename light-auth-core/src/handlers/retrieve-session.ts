@@ -12,10 +12,7 @@ export async function getSessionHandler(args: { config: LightAuthConfig; [key: s
 
   const session = await sessionStore.getSession({ ...args });
 
-  if (!session || !session.id || !session.userId) {
-    console.warn("Unable to read session:", session);
-    return await router.returnJson({ data: null, ...args });
-  }
+  if (!session || !session.id || !session.userId) return await router.returnJson({ data: null, ...args });
 
   // check if session is expired
   if (session.expiresAt && new Date(session.expiresAt) < new Date()) {

@@ -6,7 +6,12 @@ import * as cookieParser from "cookie";
 /**
  * Redirects the user to the provider login page.
  */
-export async function redirectToProviderLoginHandler(args: { config: LightAuthConfig; providerName?: string; [key: string]: unknown }): Promise<BaseResponse> {
+export async function redirectToProviderLoginHandler(args: {
+  config: LightAuthConfig;
+  providerName?: string;
+  callbackUrl?: string;
+  [key: string]: unknown;
+}): Promise<BaseResponse> {
   const { config, providerName } = args;
   const { provider, router, env } = checkConfig(config, providerName);
 
@@ -54,8 +59,18 @@ export async function redirectToProviderLoginHandler(args: { config: LightAuthCo
     maxAge: 60 * 10, // 10 minutes
   };
 
+  const callbackUrlCookie: LightAuthCookie = {
+    name: `${provider.providerName}_light_auth_callback_url`,
+    value: args.callbackUrl ? decodeURIComponent(args.callbackUrl) : "/",
+    path: "/",
+    httpOnly: true,
+    secure: env["NODE_ENV"] === "production",
+    sameSite: "lax",
+    maxAge: 60 * 10, // 10 minutes
+  };
+
   // set the cookies in the response
-  const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie], ...args });
+  const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie], ...args });
 
   return await router.redirectTo({ url: url.toString(), headers: newHeaders, res, ...args });
 }
