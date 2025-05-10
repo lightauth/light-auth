@@ -3,9 +3,59 @@ import { checkConfig } from "../services/utils";
 
 export async function getUserHandler(args: { config: LightAuthConfig; userId: string; [key: string]: unknown }): Promise<Response> {
   const { config, userId, ...restArgs } = args;
-  const { router, userAdapter } = checkConfig(config);
+  const { router, userAdapter, provider } = checkConfig(config);
   try {
-    const user = await userAdapter.getUser({ config, userId, ...restArgs });
+    let user = await userAdapter.getUser({ config, userId, ...restArgs });
+    const accessTokenExpiresAt = user?.accessTokenExpiresAt ? new Date(user.accessTokenExpiresAt) : new Date();
+
+    // lower limit before trying to refresh the token is 10 minutes
+    const lowerLimitSessionRevalidationDate = new Date(accessTokenExpiresAt.getTime() - 10 * 60 * 1000);
+    const now = new Date();
+
+    // check if we are over the limit, and if we have a refresh token
+    if (now > lowerLimitSessionRevalidationDate && user?.refreshToken) {
+      // Using Set to ensure unique scopes
+      // and adding default scopes
+      const scopeSet = new Set(provider.scopes ?? []);
+      scopeSet.add("openid");
+      scopeSet.add("profile");
+      scopeSet.add("email");
+      const scopes = Array.from(scopeSet);
+
+      // we can update the session expiration time
+      if (provider.artic && typeof provider.artic.refreshAccessToken === "function") {
+        const tokens = await provider.artic.refreshAccessToken(user.refreshToken, scopes);
+
+        // Calculate the access token expiration time
+        // The access token expiration time is the number of seconds until the token expires
+        // The default expiration time is 3600 seconds (1 hour)
+        // https://www.ietf.org/rfc/rfc6749.html#section-4.2.2
+        let accessTokenExpiresIn: number = 3600; // default to 1 hour
+        if ("expires_in" in tokens.data && typeof tokens.data.expires_in === "number") {
+          accessTokenExpiresIn = Number(tokens.data.expires_in);
+        }
+        const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000);
+        // get the access token
+        const accessToken = tokens.accessToken();
+        let refresh_token: string | undefined;
+        if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
+        // update the user
+        user.accessToken = accessToken;
+        user.accessTokenExpiresAt = accessTokenExpiresAt;
+        if (refresh_token) user.refreshToken = refresh_token;
+        // update the user in the store
+        if (config.onUserSaving) {
+          const userSaving = await config.onUserSaving(user, tokens, args);
+          // if the user is not null, use it
+          // if the user is null, use the original user
+          user = userSaving ?? user;
+        }
+        await userAdapter.setUser({ user, ...args });
+
+        if (config.onUserSaved) await config.onUserSaved(user, args);
+      }
+    }
+
     if (user == null) return await router.returnJson({ data: null, ...args });
     return await router.returnJson({ data: user, ...args });
   } catch (error) {

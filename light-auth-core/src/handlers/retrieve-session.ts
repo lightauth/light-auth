@@ -30,7 +30,7 @@ export async function getSessionHandler(args: { config: LightAuthConfig; [key: s
   const now = new Date();
   const expiresAt = new Date(session.expiresAt);
 
-  if (now > lowerLimitSessionRevalidationDate && now < expiresAt) {
+  if (now > lowerLimitSessionRevalidationDate) {
     // we can update the session expiration time
     session.expiresAt = new Date(Date.now() + maxAge * 1000);
     // update the session store
