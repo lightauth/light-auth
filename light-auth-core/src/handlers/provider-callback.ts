@@ -34,6 +34,8 @@ export async function providerCallbackHandler(args: { config: LightAuthConfig; p
   // validate the authorization code
   let tokens = await provider.artic.validateAuthorizationCode(code, codeVerifierCookie);
 
+  if (provider.onGetOAuth2Tokens) tokens = await provider.onGetOAuth2Tokens(tokens, args);
+
   if (tokens === null) throw new Error("light-auth: Failed to fetch tokens");
 
   // Calculate the access token expiration time

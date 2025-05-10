@@ -1,3 +1,4 @@
+import { OAuth2Tokens } from "arctic";
 import { ArticProvider } from "./artic-provider";
 
 /**
@@ -5,6 +6,11 @@ import { ArticProvider } from "./artic-provider";
  * It includes the provider name, artic provider, optional scopes, search parameters, and headers.
  */
 export interface LightAuthProvider {
+  /**
+   * Event raised when getting OAuth2 tokens, either the access token / id token during login or the refresh token during automatic refresh.
+   */
+  onGetOAuth2Tokens?: (tokens: OAuth2Tokens, metadata: { [key: string]: unknown }) => Promise<OAuth2Tokens> | OAuth2Tokens;
+
   /**
    * The name of the provider.
    * This is used to identify the provider in the light auth configuration.

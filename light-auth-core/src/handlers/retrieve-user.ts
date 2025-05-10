@@ -24,7 +24,9 @@ export async function getUserHandler(args: { config: LightAuthConfig; userId: st
 
       // we can update the session expiration time
       if (provider.artic && typeof provider.artic.refreshAccessToken === "function") {
-        const tokens = await provider.artic.refreshAccessToken(user.refreshToken, scopes);
+        let tokens = await provider.artic.refreshAccessToken(user.refreshToken, scopes);
+
+        if (provider.onGetOAuth2Tokens) tokens = await provider.onGetOAuth2Tokens(tokens, args);
 
         // Calculate the access token expiration time
         // The access token expiration time is the number of seconds until the token expires
