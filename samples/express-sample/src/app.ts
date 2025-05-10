@@ -1,5 +1,5 @@
 import express, { NextFunction, type Request, type Response } from "express";
-import { getSession, getUser, handlers, signIn, signOut } from "./auth";
+import { getSession, getUser, handlers, middleware, signIn, signOut } from "./auth";
 import * as path from "node:path";
 import * as dotenv from "dotenv";
 
@@ -22,19 +22,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // handlers for everything related to light-auth
-app.use("/api/auth/", async (req, res, next) => await handlers(req, res, next));
+app.use("/api/auth/", handlers);
 
 // Middleware to set the session and user in res.locals
-app.use(async (req: Request, res: Response, next: NextFunction) => {
-  const session = await getSession(req, res);
-  res.locals.session = session;
-  const user = await getUser(req, res);
-  res.locals.user = user;
-
-  console.log(process.env.NODE_ENV);
-  // Set the session and user in the response locals
-  return next();
-});
+app.use(middleware);
 
 app.get("/login", async (req: Request, res: Response) => {
   res.render("login");
@@ -46,8 +37,7 @@ app.post("/login", async (req: Request, res: Response) => {
 });
 
 app.get("/logout", async (req: Request, res: Response) => {
-  await signOut(req, res);
-  res.redirect("/");
+  await signOut(req, res, false, "/protected");
 });
 
 // Routes
@@ -56,12 +46,11 @@ app.get("/protected", async (_req: Request, res: Response) => {
 });
 
 app.get("/", async (_req: Request, res: Response) => {
-  console.log("Session:", res.locals.session);
-  console.log("user:", res.locals.user);
+  const user = await getUser(_req, res);
   res.render("index", {
     title: "Express Auth Example",
     session: res.locals.session,
-    user: res.locals.user,
+    user,
   });
 });
 

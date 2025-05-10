@@ -20,6 +20,7 @@ import { expressLightAuthSessionStore } from "./express-light-auth-session-store
 export interface LightAuthExpressComponents {
   providers: LightAuthProvider[];
   handlers: (req: ExpressRequest, res: ExpressResponse, next: NextFunction, ...params: any[]) => Promise<void>;
+  middleware: (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => Promise<void>;
   signIn: (req: ExpressRequest, res: ExpressResponse, providerName?: string, callbackUrl?: string) => Promise<void>;
   signOut: (req: ExpressRequest, res: ExpressResponse, revokeToken?: boolean, callbackUrl?: string) => Promise<void>;
   basePath: string;
@@ -32,6 +33,16 @@ export const createExpressLightAuthHandlerFunction = (config: LightAuthConfig) =
   return async (req: ExpressRequest, res: ExpressResponse, next: NextFunction, ...params: any[]) => {
     await lightAuthHandler({ req, res, next, ...params });
     if (!res.headersSent) next();
+  };
+};
+
+export const createExpressLightAuthMiddlewareFunction = (config: LightAuthConfig) => {
+  const sessionFunction = createServerSessionFunction(config);
+
+  return async (req: ExpressRequest, res: ExpressResponse, next: NextFunction, ...params: any[]) => {
+    const session = await sessionFunction({ req, res });
+    res.locals.session = session;
+    return next();
   };
 };
 
@@ -77,6 +88,7 @@ export function CreateLightAuth(config: LightAuthConfig): LightAuthExpressCompon
   return {
     providers: config.providers,
     handlers: createExpressLightAuthHandlerFunction(config),
+    middleware: createExpressLightAuthMiddlewareFunction(config),
     basePath: config.basePath,
     signIn: createExpressLightAuthSignIn(config),
     signOut: createExpressLightAuthSignOut(config),
