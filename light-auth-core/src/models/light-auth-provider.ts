@@ -1,9 +1,9 @@
 import { OAuth2Tokens } from "arctic";
-import { ArticProvider } from "./artic-provider";
+import { ArcticProvider } from "./artic-provider";
 
 /**
  * LightAuthProvider is an interface that defines the structure of a light auth provider.
- * It includes the provider name, artic provider, optional scopes, search parameters, and headers.
+ * It includes the provider name, arctic provider, optional scopes, search parameters, and headers.
  */
 export interface LightAuthProvider {
   /**
@@ -19,11 +19,11 @@ export interface LightAuthProvider {
   providerName: string;
 
   /**
-   * The artic provider.
+   * The arctic provider.
    * This is responsible for creating authorization URLs, validating authorization codes,
    * and exchanging authorization codes for access tokens.
    */
-  artic: ArticProvider;
+  arctic: ArcticProvider;
 
   /**
    * Optional scopes for the provider.

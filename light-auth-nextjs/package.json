@@ -1,7 +1,7 @@
 {
   "name": "@light-auth/nextjs",
   "version": "0.0.3",
-  "description": "light auth framework for react, using artic",
+  "description": "light auth framework for react, using arctic",
   "author": {
     "name": "Sébastien Pertus",
     "email": "spertus@microsoft.com",

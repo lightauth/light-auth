@@ -23,8 +23,8 @@ export async function getUserHandler(args: { config: LightAuthConfig; userId: st
       const scopes = Array.from(scopeSet);
 
       // we can update the session expiration time
-      if (provider.artic && typeof provider.artic.refreshAccessToken === "function") {
-        let tokens = await provider.artic.refreshAccessToken(user.refreshToken, scopes);
+      if (provider.arctic && typeof provider.arctic.refreshAccessToken === "function") {
+        let tokens = await provider.arctic.refreshAccessToken(user.refreshToken, scopes);
 
         if (provider.onGetOAuth2Tokens) tokens = await provider.onGetOAuth2Tokens(tokens, args);
 

@@ -32,7 +32,7 @@ export async function providerCallbackHandler(args: { config: LightAuthConfig; p
   if (storedStateCookie !== state) throw new Error("light-auth: Invalid state");
 
   // validate the authorization code
-  let tokens = await provider.artic.validateAuthorizationCode(code, codeVerifierCookie);
+  let tokens = await provider.arctic.validateAuthorizationCode(code, codeVerifierCookie);
 
   if (provider.onGetOAuth2Tokens) tokens = await provider.onGetOAuth2Tokens(tokens, args);
 
@@ -86,7 +86,7 @@ export async function providerCallbackHandler(args: { config: LightAuthConfig; p
 
   if (userAdapter) {
     // Omit expiresAt from session when creating user
-    const { expiresAt: sessionExpiresAt, ...sessionWithoutExpiresAt } = session;
+    const { expiresAt: sessionExpiresAt, id: sessionId, ...sessionWithoutExpiresAt } = session;
     let user: LightAuthUser = {
       ...sessionWithoutExpiresAt,
       picture: claims.picture,

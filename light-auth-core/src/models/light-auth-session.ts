@@ -24,7 +24,7 @@ export interface LightAuthSession {
  *
  * The user instance is saved in your data store using the userAdapter.
  */
-export interface LightAuthUser extends Omit<LightAuthSession, "expiresAt"> {
+export interface LightAuthUser extends Omit<LightAuthSession, "expiresAt" | "id"> {
   // we are not using expiresAt in the user object as session can be updated anytime and we don't want to call update on user for this
   picture?: string;
   accessToken?: string;

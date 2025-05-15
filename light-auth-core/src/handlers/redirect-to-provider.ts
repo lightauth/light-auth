@@ -26,7 +26,7 @@ export async function redirectToProviderLoginHandler(args: {
   scopeSet.add("email");
   const scopes = Array.from(scopeSet);
 
-  const url = provider.artic.createAuthorizationURL(state, codeVerifier, scopes);
+  const url = provider.arctic.createAuthorizationURL(state, codeVerifier, scopes);
 
   // add additional params to the url
   if (provider.searchParams) {

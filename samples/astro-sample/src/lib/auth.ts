@@ -4,13 +4,13 @@ import { CreateLightAuth } from "../light-auth/light-auth";
 
 const googleProvider: LightAuthProvider = {
   providerName: "google",
-  artic: new Google(import.meta.env.GOOGLE_CLIENT_ID || "", import.meta.env.GOOGLE_CLIENT_SECRET || "", "http://localhost:4321/api/auth/callback/google"),
+  arctic: new Google(import.meta.env.GOOGLE_CLIENT_ID || "", import.meta.env.GOOGLE_CLIENT_SECRET || "", "http://localhost:4321/api/auth/callback/google"),
   searchParams: new Map([["access_type", "offline"]]),
 };
 
 const microsoftProvider: LightAuthProvider = {
   providerName: "microsoft",
-  artic: new MicrosoftEntraId(
+  arctic: new MicrosoftEntraId(
     import.meta.env.MICROSOFT_ENTRA_ID_TENANT_ID || "",
     import.meta.env.MICROSOFT_ENTRA_ID_CLIENT_ID || "",
     import.meta.env.MICROSOFT_ENTRA_ID_CLIENT_SECRET || "",
