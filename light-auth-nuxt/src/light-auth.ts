@@ -9,9 +9,6 @@ import {
 } from "@light-auth/core";
 import { type EventHandlerRequest, type EventHandlerResponse, H3Event } from "h3";
 
-import { useFetch, useNuxtData } from "nuxt/app";
-import { ref, type Ref } from "vue";
-
 // export type LightAuthAsyncDataRequestStatus = "idle" | "pending" | "success" | "error";
 
 // export interface LightAuthAsyncSessionData {

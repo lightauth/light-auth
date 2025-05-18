@@ -34,10 +34,8 @@ export default
         external: [
             ...Object.keys(pkg.dependencies || {}),
             ...Object.keys(pkg.peerDependencies || {}),
-            "next/headers",
-            "next/navigation",
-            "next/server",
-            "react/jsx-runtime"
+            "nuxt/app",
+            "#app"
         ],
 
     };
