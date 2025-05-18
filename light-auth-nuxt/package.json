@@ -1,0 +1,61 @@
+{
+  "name": "@light-auth/nuxt",
+  "version": "0.0.3",
+  "description": "light auth framework for nuxt, using arctic",
+  "author": {
+    "name": "Sébastien Pertus",
+    "email": "spertus@microsoft.com",
+    "url": "https://github.com/Mimetis"
+  },
+  "license": "MIT",
+  "keywords": [
+    "vue",
+    "nodejs",
+    "oauth",
+    "jwt",
+    "oauth2",
+    "authentication",
+    "nuxt",
+    "light-auth"
+  ],
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "npm run clean && rollup -c --bundleConfigAsCjs",
+    "dev": "rollup -cw --bundleConfigAsCjs",
+    "clean": "shx rm -rf dist lib",
+    "start": "rollup -c -w"
+  },
+  "dependencies": {
+    "arctic": "^3.6.0",
+    "jose": "^6.0.10",
+    "@light-auth/core": "0.0.3"
+  },
+  "peerDependencies": {
+    "nuxt": "^3.17.2",
+    "vue": "^3.5.13",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "arctic": "^3.6.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.2",
+    "shx": "^0.4.0",
+    "vue": "^3.5.13",
+    "nuxt": "^3.17.2"
+  },
+  "workspaces": [
+    "../light-auth-core"
+  ]
+}
