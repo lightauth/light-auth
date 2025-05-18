@@ -7,7 +7,6 @@ export default
     {
         input: {
             index: 'src/index.tsx',
-            index_client: 'src/index_client.tsx',
         },
         output:
         {

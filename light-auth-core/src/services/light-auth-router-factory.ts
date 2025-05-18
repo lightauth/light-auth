@@ -1,4 +1,4 @@
-import { LightAuthCookie } from "../models";
+import { LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
 import { LightAuthRouter } from "../models/light-auth-router";
 import { buildFullUrl } from "./utils";
 import * as cookieParser from "cookie";

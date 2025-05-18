@@ -1,8 +1,20 @@
 import { LightAuthConfig } from "./light-auth-config";
-import { LightAuthUser } from "./light-auth-session";
+import { LightAuthSession, LightAuthUser } from "./light-auth-session";
 
 export interface LightAuthUserAdapter {
-  getUser: (args: { config: LightAuthConfig; userId: string; [key: string]: unknown }) => LightAuthUser | null | Promise<LightAuthUser | null>;
-  setUser: (args: { config: LightAuthConfig; user: LightAuthUser; [key: string]: unknown }) => Promise<void>;
-  deleteUser: (args: { config: LightAuthConfig; user: LightAuthUser; [key: string]: unknown }) => Promise<void>;
+  getUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config: LightAuthConfig<Session, User>;
+    userId: string | number;
+    [key: string]: unknown;
+  }) => User | null | Promise<User | null>;
+  setUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config: LightAuthConfig<Session, User>;
+    user: User;
+    [key: string]: unknown;
+  }) => Promise<void>;
+  deleteUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config: LightAuthConfig<Session, User>;
+    user: User;
+    [key: string]: unknown;
+  }) => Promise<void>;
 }

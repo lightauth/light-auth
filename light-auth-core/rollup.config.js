@@ -77,41 +77,4 @@ export default
             ],
 
         },
-        {
-            input: {
-                index: 'src/client/index.ts',
-            },
-            output:
-            {
-                dir: "dist",
-                format: "es",
-                entryFileNames: "client/[name].mjs",
-                banner: libraryHeader,
-                sourcemap: true,
-                intro: "'use strict';"
-            },
-
-            jsx: {
-                mode: 'automatic',
-                factory: 'React.createElement',
-                importSource: 'react',
-                jsxImportSource: 'react/jsx-runtime'
-            },
-            treeshake: {
-                moduleSideEffects: false,
-                propertyReadSideEffects: false
-            },
-            plugins: [
-                typescript({ typescript: require("typescript") }),
-            ],
-            external: [
-                ...Object.keys(pkg.dependencies || {}),
-                ...Object.keys(pkg.peerDependencies || {}),
-                "react/jsx-runtime",
-                "node:fs",
-                "node:path",
-            ],
-
-        }
-
     ]

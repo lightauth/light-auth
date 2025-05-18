@@ -1,6 +1,4 @@
-import { buildFullUrl, LightAuthConfig, LightAuthCookie, LightAuthRouter } from "@light-auth/core";
-import { headers as nextJsHeaders, cookies as nextJsCookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { buildFullUrl, LightAuthConfig, LightAuthCookie, LightAuthRouter, LightAuthSession, LightAuthUser } from "@light-auth/core";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -9,7 +7,19 @@ import { NextRequest, NextResponse } from "next/server";
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthRouter: LightAuthRouter = {
-  async redirectTo({ config, url }: { config: LightAuthConfig; url: string }): Promise<Response> {
+  async redirectTo<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    url,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    url: string;
+  }): Promise<Response> {
+
+    
+
+    const { headers: nextJsHeaders } = await import("next/headers");
+    const { redirect } = await import("next/navigation");
+
     const headersData = await nextJsHeaders();
     const incomingHeaders = new Headers();
     for (const [key, value] of headersData.entries()) incomingHeaders.append(key, value);
@@ -19,6 +29,8 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
   },
 
   async setCookies({ cookies }: { cookies?: LightAuthCookie[] }) {
+    const { cookies: nextJsCookies } = await import("next/headers");
+
     const cookieStore = await nextJsCookies();
 
     if (!cookies || cookies.length === 0) return;
@@ -34,6 +46,7 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
   },
 
   async getCookies({ search }: { search?: string | RegExp }) {
+    const { cookies: nextJsCookies } = await import("next/headers");
     const cookieStore = await nextJsCookies();
     const cookies: LightAuthCookie[] = [];
     // Convert search to RegExp if it's a string
@@ -55,6 +68,7 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     const isServerSide = typeof window === "undefined";
 
     if (!isServerSide) return url;
+    const { headers: nextJsHeaders } = await import("next/headers");
 
     const headersData = await nextJsHeaders();
     const incomingHeaders = new Headers();
@@ -65,14 +79,18 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
   },
 
   async getHeaders({ search }: { search?: string | RegExp }): Promise<Headers> {
-    const headersStore = await nextJsHeaders();
+    const isServerSide = typeof window === "undefined";
+
+    if (!isServerSide) return new Headers();
 
     // Convert search to RegExp if it's a string
     const regex = typeof search === "string" ? new RegExp(search) : search;
 
     // Create a new Headers object to hold filtered headers
     const filteredHeaders = new Headers();
+    const { headers: nextJsHeaders } = await import("next/headers");
 
+    const headersStore = await nextJsHeaders();
     // Iterate and filter headers whose names match the regex
     for (const [key, value] of headersStore.entries()) {
       if (!search || !regex || regex.test(key)) filteredHeaders.append(key, value);
@@ -81,7 +99,7 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return filteredHeaders;
   },
 
-  returnJson(args: { config: LightAuthConfig; data: {} | null }): NextResponse {
+  returnJson(args: { data: {} | null }): NextResponse {
     return NextResponse.json(args.data);
   },
 };

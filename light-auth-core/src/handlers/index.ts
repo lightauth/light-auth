@@ -1,4 +1,4 @@
-import { LightAuthConfig, BaseResponse } from "../models";
+import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "../models";
 import { logoutAndRevokeTokenHandler } from "./logout";
 import { providerCallbackHandler } from "./provider-callback";
 import { redirectToProviderLoginHandler } from "./redirect-to-provider";
@@ -10,7 +10,9 @@ import { getUserHandler } from "./retrieve-user";
  * @param config The LightAuth configuration object.
  * @returns An HTTP handler function that processes requests and responses.
  */
-export function createHttpHandlerFunction(config: LightAuthConfig) {
+export function createHttpHandlerFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
   const httpHandler = async (args?: { [key: string]: unknown }): Promise<BaseResponse> => {
     if (!config.router) throw new Error("light-auth: router is required");
 
@@ -46,7 +48,6 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
     } else if (pathSegments[0] === "logout") {
       newResponse = await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl, ...args });
     } else if (pathSegments[0] === "callback" && providerName) {
-      console.log("callback", providerName);
       newResponse = await providerCallbackHandler({ config, providerName, ...args });
     }
 

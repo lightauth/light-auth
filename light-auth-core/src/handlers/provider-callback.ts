@@ -2,7 +2,10 @@ import { decodeIdToken } from "arctic";
 import { LightAuthConfig, LightAuthCookie, LightAuthRouter, LightAuthSession, LightAuthUser } from "../models";
 import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
 
-export async function providerCallbackHandler(args: { config: LightAuthConfig; providerName?: string; [key: string]: unknown }): Promise<Response | undefined> {
+export async function providerCallbackHandler<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(args: { config: LightAuthConfig<Session, User>; providerName?: string; [key: string]: unknown }): Promise<Response | undefined> {
   const { config, providerName } = args;
   let currentRouter: LightAuthRouter | null = null;
   let callbackUrl = "/";
@@ -70,14 +73,14 @@ export async function providerCallbackHandler(args: { config: LightAuthConfig; p
     const maxAge = getSessionExpirationMaxAge();
     const expiresAt = new Date(Date.now() + maxAge * 1000);
 
-    let session: LightAuthSession = {
+    let session = {
       id: id,
       userId: claims.sub,
       email: claims.email,
       name: claims.name,
       expiresAt: expiresAt, // 30 days
       providerName: provider.providerName,
-    };
+    } as Session;
 
     if (config.onSessionSaving) {
       const sessionSaving = await config.onSessionSaving(session, tokens, args);
@@ -91,13 +94,13 @@ export async function providerCallbackHandler(args: { config: LightAuthConfig; p
     if (userAdapter) {
       // Omit expiresAt from session when creating user
       const { expiresAt: sessionExpiresAt, id: sessionId, ...sessionWithoutExpiresAt } = session;
-      let user: LightAuthUser = {
+      let user = {
         ...sessionWithoutExpiresAt,
         picture: claims.picture,
         accessToken: accessToken,
         accessTokenExpiresAt: accessTokenExpiresAt,
         refreshToken: refresh_token,
-      };
+      } as User;
 
       if (config.onUserSaving) {
         const userSaving = await config.onUserSaving(user, tokens, args);

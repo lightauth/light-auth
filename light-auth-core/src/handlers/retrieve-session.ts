@@ -1,16 +1,22 @@
 import { DEFAULT_SESSION_NAME } from "../constants";
-import { LightAuthConfig, LightAuthSession } from "../models";
+import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
 import { decryptJwt, encryptJwt } from "../services/jwt";
 import { checkConfig, buildSecret, getSessionExpirationMaxAge } from "../services/utils";
 
 /**
  * get session handler available on endpoint /${basePath}/session
  */
-export async function getSessionHandler(args: { config: LightAuthConfig; [key: string]: unknown }): Promise<Response> {
+export async function getSessionHandler<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(args: { config: LightAuthConfig<Session, User>; [key: string]: unknown }): Promise<Response> {
   const { config } = args;
-  const { sessionStore, router } = checkConfig(config);
+  const { sessionStore, router } = checkConfig<Session, User>(config);
 
-  const session = await sessionStore.getSession({ ...args });
+  const session = await sessionStore.getSession({
+    ...args,
+    config: args.config as LightAuthConfig<Session, User>,
+  });
 
   if (!session || !session.id || !session.userId) return await router.returnJson({ data: null, ...args });
 

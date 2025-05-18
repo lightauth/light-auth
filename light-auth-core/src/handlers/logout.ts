@@ -1,12 +1,10 @@
-import { LightAuthConfig, LightAuthCookie } from "../models";
+import { LightAuthConfig, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
 
-export async function logoutAndRevokeTokenHandler(args: {
-  config: LightAuthConfig;
-  revokeToken?: boolean;
-  callbackUrl?: string;
-  [key: string]: unknown;
-}): Promise<Response> {
+export async function logoutAndRevokeTokenHandler<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(args: { config: LightAuthConfig<Session, User>; revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }): Promise<Response> {
   const { config, revokeToken = true, callbackUrl = "/" } = args;
   const { userAdapter, router, sessionStore } = checkConfig(config);
 

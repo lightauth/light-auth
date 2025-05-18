@@ -8,8 +8,8 @@ import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "
  *
  * it will use the router to get the url and the headers (if server side)
  */
-async function internalFetch<T extends Record<string, string> | string | Blob>(args: {
-  config: LightAuthConfig;
+async function internalFetch<T extends Record<string, unknown> | string | Blob>(args: {
+  config: LightAuthConfig<any, any>;
   endpoint: string;
   method?: "GET" | "POST";
   body?: any;
@@ -73,8 +73,8 @@ async function internalFetch<T extends Record<string, string> | string | Blob>(a
   return null;
 }
 
-export function createSigninFunction(
-  config: LightAuthConfig
+export function createSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
 ): (args?: { providerName?: string; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     const { providerName, callbackUrl = "/" } = args;
@@ -84,17 +84,15 @@ export function createSigninFunction(
     // if we are on the client side, we can use the window object to get the url and headers
     const isServerSide = typeof window === "undefined";
     if (isServerSide) {
-      console.log("signin server side");
       return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), ...args });
     } else {
-      console.log("signin client side");
       window.location.href = `${config.basePath}/login/${providerName}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
     }
   };
 }
 
-export function createSignoutFunction(
-  config: LightAuthConfig
+export function createSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
 ): (args?: { revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     const { revokeToken = true, callbackUrl = "/" } = args;
@@ -108,12 +106,14 @@ export function createSignoutFunction(
   };
 }
 
-export function createFetchSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
+export function createFetchSessionFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+): (args?: { [key: string]: unknown }) => Promise<Session | null | undefined> {
   return async (args) => {
     try {
       // get the session from the server using the api endpoint, because
       // the session is stored in the cookie store and we may need to delete / update it
-      const session = await internalFetch<LightAuthSession>({
+      const session = await internalFetch<Session>({
         config,
         endpoint: `${config.basePath}/session`,
         ...args,
@@ -127,19 +127,21 @@ export function createFetchSessionFunction(config: LightAuthConfig): (args?: { [
   };
 }
 
-export function createFetchUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
+export function createFetchUserFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+): (args?: { [key: string]: unknown }) => Promise<User | null | undefined> {
   return async (args) => {
     try {
       // get the user from the server using the api endpoint, because
       // to get user we need the session that is stored in the cookie store and we may need to delete / update it
-      const session = await internalFetch<LightAuthSession>({
+      const session = await internalFetch<Session>({
         config,
         endpoint: `${config.basePath}/session`,
         ...args,
       });
       if (!session || !session.userId) return null;
       // get the user from the user adapter      // get the user from the session store
-      const user = await internalFetch<LightAuthUser>({
+      const user = await internalFetch<User>({
         config,
         endpoint: `${config.basePath}/user/${session.userId}`,
         ...args,

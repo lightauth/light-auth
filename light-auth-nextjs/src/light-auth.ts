@@ -10,11 +10,8 @@ import {
   LightAuthUser,
   resolveBasePath,
 } from "@light-auth/core";
-import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
-import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
-import { nextJsLightAuthSessionStore } from "./nextjs-light-auth-session-store";
+
 import { NextRequest, NextResponse } from "next/server";
-import { redirect } from "next/navigation";
 
 /**
  * LightAuthNextJsComponents is an interface that defines the structure of the LightAuth components for Next.js.
@@ -30,8 +27,12 @@ export interface LightAuthNextJsComponents {
   };
   signIn: (providerName?: string, callbackUrl?: string) => Promise<NextResponse>;
   signOut: (revokeToken?: boolean, callbackUrl?: string) => Promise<NextResponse>;
-  getSession: () => Promise<LightAuthSession | null | undefined>;
-  getUser: () => Promise<LightAuthUser | null | undefined>;
+  getSession: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>() => Promise<
+    Session | null | undefined
+  >;
+  getUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>() => Promise<
+    User | null | undefined
+  >;
 }
 
 /**
@@ -39,7 +40,9 @@ export interface LightAuthNextJsComponents {
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsSignIn = (config: LightAuthConfig) => {
+export const createNextJsSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
   const signIn = createSigninFunction(config);
   return async (providerName?: string, callbackUrl: string = "/") => {
     return await signIn({ providerName, callbackUrl });
@@ -51,7 +54,9 @@ export const createNextJsSignIn = (config: LightAuthConfig) => {
  * It takes the LightAuth createSignoutFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: boolean) => Promise<NextResponse>) => {
+export const createNextJsSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
   const signOut = createSignoutFunction(config);
   return async (revokeToken?: boolean, callbackUrl: string = "/") => {
     return await signOut({ revokeToken, callbackUrl });
@@ -63,7 +68,12 @@ export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: bo
  * It takes the LightAuth createLightAuthSessionFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (() => Promise<LightAuthSession | null | undefined>) => {
+export const createNextJsLightAuthSessionFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+): (() => Promise<Session | null | undefined>) => {
   const lightAuthSession = createFetchSessionFunction(config);
   return async () => await lightAuthSession();
 };
@@ -73,7 +83,12 @@ export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (
  * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsLightAuthUserFunction = (config: LightAuthConfig): (() => Promise<LightAuthUser | null | undefined>) => {
+export const createNextJsLightAuthUserFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+): (() => Promise<User | null | undefined>) => {
   const lightAuthUser = createFetchUserFunction(config);
   return async () => await lightAuthUser();
 };
@@ -86,7 +101,12 @@ type NextJsLightAuthHandlerFullFunction = { GET: NextJsLightAuthHandlerFunction;
  * It takes the LightAuth createHttpHandlerFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNextJsLightAuthHandlerFunction = (config: LightAuthConfig): NextJsLightAuthHandlerFullFunction => {
+export const createNextJsLightAuthHandlerFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+): NextJsLightAuthHandlerFullFunction => {
   const lightAuthHandler = createHttpHandlerFunction(config);
   return {
     GET: async (req: NextRequest, res: NextResponse, ...params: any[]) => {
@@ -105,12 +125,29 @@ export const createNextJsLightAuthHandlerFunction = (config: LightAuthConfig): N
  * It takes a LightAuthConfig object as a parameter and returns a LightAuthNextJsComponents object.
  * The function also sets default values for the userAdapter, router and cookieStore if they are not provided.
  */
-export function CreateLightAuth(config: LightAuthConfig): LightAuthNextJsComponents {
+export function CreateLightAuth<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
-  config.router = config.router ?? nextJsLightAuthRouter;
-  config.sessionStore = config.sessionStore ?? nextJsLightAuthSessionStore;
+  // dynamic imports to avoid error if we are on the client side
+  if (!config.userAdapter && typeof window === "undefined") {
+    import("@light-auth/core/adapters").then((module) => {
+      config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
+    });
+  }
+
+  if (!config.sessionStore && typeof window === "undefined") {
+    import("./nextjs-light-auth-session-store").then((module) => {
+      config.sessionStore = module.nextJsLightAuthSessionStore;
+    });
+  }
+  if (!config.router && typeof window === "undefined") {
+    import("./nextjs-light-auth-router").then((module) => {
+      config.router = module.nextJsLightAuthRouter;
+    });
+  }
+
   config.basePath = resolveBasePath(config);
   config.env = config.env || process.env;
   return {

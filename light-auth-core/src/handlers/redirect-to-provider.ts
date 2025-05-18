@@ -1,17 +1,15 @@
 import { generateState, generateCodeVerifier } from "arctic";
-import { LightAuthConfig, BaseResponse, LightAuthCookie } from "../models";
+import { LightAuthConfig, BaseResponse, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
 import * as cookieParser from "cookie";
 
 /**
  * Redirects the user to the provider login page.
  */
-export async function redirectToProviderLoginHandler(args: {
-  config: LightAuthConfig;
-  providerName?: string;
-  callbackUrl?: string;
-  [key: string]: unknown;
-}): Promise<BaseResponse> {
+export async function redirectToProviderLoginHandler<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(args: { config: LightAuthConfig<Session, User>; providerName?: string; callbackUrl?: string; [key: string]: unknown }): Promise<BaseResponse> {
   const { config, providerName } = args;
   const { provider, router, env } = checkConfig(config, providerName);
 

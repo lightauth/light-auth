@@ -27,11 +27,6 @@
       "types": "./src/index.tsx",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
-    },
-    "./client": {
-      "types": "./src/index_client.tsx",
-      "import": "./dist/index_client.mjs",
-      "default": "./dist/index_client.mjs"
     }
   },
   "scripts": {

@@ -7,8 +7,8 @@ import {
   LightAuthConfig,
   LightAuthSession,
   LightAuthSessionStore,
+  LightAuthUser,
 } from "@light-auth/core";
-import { cookies } from "next/headers";
 
 /**
  * A concrete CookieStore implementation for Node.js server-side,
@@ -16,7 +16,13 @@ import { cookies } from "next/headers";
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession({ config }: { config: LightAuthConfig }): Promise<LightAuthSession | null> {
+  async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+  }: {
+    config: LightAuthConfig<Session, User>;
+  }): Promise<Session | null> {
+    const { cookies } = await import("next/headers");
+
     const cookieStore = await cookies();
     const requestCookie = cookieStore.get(DEFAULT_SESSION_NAME);
 
@@ -24,19 +30,28 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
 
     try {
       const decryptedSession = await decryptJwt(requestCookie.value, buildSecret(config.env));
-      return decryptedSession as LightAuthSession;
+      return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
       return null;
     }
   },
 
-  async deleteSession({ config }: { config: LightAuthConfig }): Promise<void> {
+  async deleteSession(): Promise<void> {
+    const { cookies } = await import("next/headers");
+
     const cookieStore = await cookies();
     cookieStore.delete(DEFAULT_SESSION_NAME);
   },
 
-  async setSession({ config, session }: { config: LightAuthConfig; session: LightAuthSession }): Promise<void> {
+  async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    session,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    session: Session;
+  }): Promise<void> {
+    const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
 
     const value = await encryptJwt(session, buildSecret(config.env));

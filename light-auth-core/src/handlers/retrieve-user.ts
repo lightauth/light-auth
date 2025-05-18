@@ -1,7 +1,11 @@
-import { LightAuthConfig } from "../models";
+import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
 
-export async function getUserHandler(args: { config: LightAuthConfig; userId: string; [key: string]: unknown }): Promise<Response> {
+export async function getUserHandler<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+  config: LightAuthConfig<Session, User>;
+  userId: string;
+  [key: string]: unknown;
+}): Promise<Response> {
   const { config, userId, ...restArgs } = args;
   const { router, userAdapter, provider } = checkConfig(config);
   try {

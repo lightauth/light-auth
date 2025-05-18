@@ -1,17 +1,12 @@
 "use client";
 
-import { signOut } from "@/lib/auth-client";
+import { signOut } from "@/lib/auth";
 import { Button } from "../ui/button";
 
 export function ClientLogoutButton() {
   return (
-    <Button
-      type="button"
-      onClick={() => signOut(true, "/profile")}
-      variant="outline"
-      className="w-full"
-    >
-      Logout Client Side
+    <Button type="button" onClick={() => signOut(true, "/")} variant="outline" className="w-full">
+      Logout from Client Side with revoke token
     </Button>
   );
 }

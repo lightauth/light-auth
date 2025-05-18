@@ -1,6 +1,5 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
-import { LightAuthProvider, LightAuthConfig } from "../models";
-import { LightAuthConfigClient } from "../client";
+import { LightAuthProvider, LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
 
 /**
  * Checks the configuration and throws an error if any required fields are missing.
@@ -8,7 +7,10 @@ import { LightAuthConfigClient } from "../client";
  * @returns The checked configuration object.
  * @throws Error if any required fields are missing.
  */
-export function checkConfig(config: LightAuthConfig, providerName?: string): Required<LightAuthConfig> & { provider: LightAuthProvider } {
+export function checkConfig<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>,
+  providerName?: string
+): Required<LightAuthConfig<Session, User>> & { provider: LightAuthProvider } {
   if (!config.env) throw new Error("light-auth: env is required");
   if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) {
     throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
@@ -25,7 +27,7 @@ export function checkConfig(config: LightAuthConfig, providerName?: string): Req
   if (!provider) throw new Error(`light-auth: Provider ${providerName} not found`);
 
   return {
-    ...(config as Required<LightAuthConfig>),
+    ...(config as Required<LightAuthConfig<Session, User>>),
     provider,
   };
 }
@@ -38,7 +40,9 @@ export function getSessionExpirationMaxAge() {
 }
 
 /** Resolves the basePath, defaults to "/api/default" if not provided or falsy */
-export function resolveBasePath(config?: LightAuthConfig | LightAuthConfigClient): string {
+export function resolveBasePath<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config?: LightAuthConfig<Session, User>
+): string {
   let resolvedBasePath = config?.basePath || config?.env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
 
   if (!resolvedBasePath.startsWith("/")) resolvedBasePath = `/${resolvedBasePath}`;

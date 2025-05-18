@@ -1,4 +1,4 @@
-import { LightAuthConfig, LightAuthUserAdapter, LightAuthUser } from "../models";
+import { LightAuthConfig, LightAuthUserAdapter, LightAuthUser, LightAuthSession } from "../models";
 import { decryptJwt, encryptJwt } from "../services/jwt";
 import { buildSecret } from "../services/utils";
 import { promises as fs } from "node:fs";
@@ -16,8 +16,14 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
   };
   base = base || "./";
   return {
-    async getUser({ config, userId }: { config: LightAuthConfig; userId: string }): Promise<LightAuthUser | null> {
-      const safeId = sanitizeKey(userId);
+    async getUser<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+      config,
+      userId,
+    }: {
+      config: LightAuthConfig<Session, User>;
+      userId: string | number;
+    }): Promise<User | null> {
+      const safeId = sanitizeKey(userId.toString());
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs
@@ -32,19 +38,25 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
         if (isEncrypted) {
           // Decrypt the stored JWT string to get the session object
           const payload = await decryptJwt(data, buildSecret(config.env));
-          return payload as LightAuthUser;
+          return payload as User;
         } else {
           // Parse the plain JSON session object
-          return JSON.parse(data) as LightAuthUser;
+          return JSON.parse(data) as User;
         }
       } catch {
         return null;
       }
     },
 
-    async setUser({ config, user }: { config: LightAuthConfig; user: LightAuthUser }): Promise<void> {
+    async setUser<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+      config,
+      user,
+    }: {
+      config: LightAuthConfig<Session, User>;
+      user: User;
+    }): Promise<void> {
       if (!user?.userId) throw new Error("light-auth: user id is required");
-      const safeId = sanitizeKey(user.userId);
+      const safeId = sanitizeKey(user.userId.toString());
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs
@@ -56,7 +68,7 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       // using the revokeToken option.
       if (exists) {
         const existingUser = await this.getUser({ config, userId: user.userId });
-        if (existingUser && existingUser.id === user.id) {
+        if (existingUser && existingUser.userId === user.userId) {
           if (existingUser.refreshToken && !user.refreshToken) user.refreshToken = existingUser.refreshToken;
           if (existingUser.accessToken && !user.accessToken) {
             user.accessToken = existingUser.accessToken;
@@ -76,9 +88,15 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       }
     },
 
-    async deleteUser({ config, user }: { config: LightAuthConfig; user: LightAuthUser }): Promise<void> {
-      if (!user?.id) return;
-      const safeId = sanitizeKey(user.userId);
+    async deleteUser<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+      config,
+      user,
+    }: {
+      config: LightAuthConfig<Session, User>;
+      user: User;
+    }): Promise<void> {
+      if (!user?.userId) return;
+      const safeId = sanitizeKey(user.userId.toString());
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs
