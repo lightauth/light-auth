@@ -14,6 +14,20 @@ export interface LightAuthSession {
 }
 
 /**
+ * LightAuthAsyncSessionData interface represents the session data returned after an authentication attempt.
+ *
+ * It includes the session object, a refresh function, an error object, and a status string.
+ *
+ * The status string can be either "success" or "error".
+ */
+export interface LightAuthAsyncSessionData {
+  session: LightAuthSession;
+  refresh: () => Promise<void>;
+  error: Error | null;
+  status: "success" | "error";
+}
+
+/**
  * LightAuthUser interface represents a user in the LightAuth system.
  *
  * It extends the LightAuthSession interface but omits the expiresAt property.

@@ -13,12 +13,11 @@ export const astroLightAuthRouter: LightAuthRouter = {
     let url = endpoint;
     if (!url) url = context?.request?.url || req?.url;
 
-    if (!url) {
+    if (!url) 
       throw new Error("light-auth: No url provided and no request object available in getUrl of astroLightAuthRouter.");
-    }
-
+    
     if (url.startsWith("http")) return url;
-
+    
     if (!request) return url;
 
     const parsedUrl = buildFullUrl({ url, incomingHeaders: request.headers });

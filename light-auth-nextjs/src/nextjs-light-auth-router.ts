@@ -39,7 +39,6 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     // Convert search to RegExp if it's a string
     const regex = typeof search === "string" ? new RegExp(search) : search;
 
-    
     for (const requestCookie of cookieStore.getAll()) {
       if (!search || !regex || regex.test(requestCookie.name)) cookies.push({ name: requestCookie.name, value: requestCookie.value });
     }
@@ -52,6 +51,11 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
 
     if (url.startsWith("http")) return url;
+
+    const isServerSide = typeof window === "undefined";
+
+    if (!isServerSide) return url;
+
     const headersData = await nextJsHeaders();
     const incomingHeaders = new Headers();
     for (const [key, value] of headersData.entries()) incomingHeaders.append(key, value);

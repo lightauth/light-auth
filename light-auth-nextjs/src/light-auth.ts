@@ -1,16 +1,16 @@
 import {
   createHttpHandlerFunction,
-  createServerSessionFunction,
-  createServerUserFunction,
-  createServerSigninFunction,
-  createServerSignoutFunction,
+  createFetchSessionFunction,
+  createFetchUserFunction,
+  createSigninFunction,
+  createSignoutFunction,
   LightAuthConfig,
   LightAuthProvider,
   LightAuthSession,
   LightAuthUser,
   resolveBasePath,
-  createLightAuthUserAdapter,
 } from "@light-auth/core";
+import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
 import { nextJsLightAuthRouter } from "./nextjs-light-auth-router";
 import { nextJsLightAuthSessionStore } from "./nextjs-light-auth-session-store";
 import { NextRequest, NextResponse } from "next/server";
@@ -40,7 +40,7 @@ export interface LightAuthNextJsComponents {
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsSignIn = (config: LightAuthConfig) => {
-  const signIn = createServerSigninFunction(config);
+  const signIn = createSigninFunction(config);
   return async (providerName?: string, callbackUrl: string = "/") => {
     return await signIn({ providerName, callbackUrl });
   };
@@ -52,7 +52,7 @@ export const createNextJsSignIn = (config: LightAuthConfig) => {
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: boolean) => Promise<NextResponse>) => {
-  const signOut = createServerSignoutFunction(config);
+  const signOut = createSignoutFunction(config);
   return async (revokeToken?: boolean, callbackUrl: string = "/") => {
     return await signOut({ revokeToken, callbackUrl });
   };
@@ -64,7 +64,7 @@ export const createNextJsSignOut = (config: LightAuthConfig): ((revokeToken?: bo
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (() => Promise<LightAuthSession | null | undefined>) => {
-  const lightAuthSession = createServerSessionFunction(config);
+  const lightAuthSession = createFetchSessionFunction(config);
   return async () => await lightAuthSession();
 };
 
@@ -74,7 +74,7 @@ export const createNextJsLightAuthSessionFunction = (config: LightAuthConfig): (
  * removing the req and res parameters, that are not needed in the Next.js context.
  */
 export const createNextJsLightAuthUserFunction = (config: LightAuthConfig): (() => Promise<LightAuthUser | null | undefined>) => {
-  const lightAuthUser = createServerUserFunction(config);
+  const lightAuthUser = createFetchUserFunction(config);
   return async () => await lightAuthUser();
 };
 

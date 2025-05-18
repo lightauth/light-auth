@@ -46,6 +46,7 @@ export function createHttpHandlerFunction(config: LightAuthConfig) {
     } else if (pathSegments[0] === "logout") {
       newResponse = await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl, ...args });
     } else if (pathSegments[0] === "callback" && providerName) {
+      console.log("callback", providerName);
       newResponse = await providerCallbackHandler({ config, providerName, ...args });
     }
 

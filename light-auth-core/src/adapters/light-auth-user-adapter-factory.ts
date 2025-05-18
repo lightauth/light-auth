@@ -1,6 +1,6 @@
 import { LightAuthConfig, LightAuthUserAdapter, LightAuthUser } from "../models";
-import { decryptJwt, encryptJwt } from "./jwt";
-import { buildSecret } from "./utils";
+import { decryptJwt, encryptJwt } from "../services/jwt";
+import { buildSecret } from "../services/utils";
 import { promises as fs } from "node:fs";
 import { resolve } from "node:path";
 

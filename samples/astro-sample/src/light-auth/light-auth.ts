@@ -6,16 +6,16 @@ import {
   type LightAuthUser,
   type LightAuthComponents,
   createHttpHandlerFunction,
-  createServerSessionFunction,
-  createServerUserFunction,
-  createServerSigninFunction,
-  createServerSignoutFunction,
+  createFetchSessionFunction,
+  createFetchUserFunction,
+  createSigninFunction,
+  createSignoutFunction,
 } from "@light-auth/core";
 
 import type { APIContext, APIRoute } from "astro";
 import { astroLightAuthSessionStore } from "./astro-light-auth-session-store";
 
-import { createLightAuthUserAdapter } from "@light-auth/core";
+import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
 import { astroLightAuthRouter } from "./astro-light-auth-router";
 
 /**
@@ -38,28 +38,28 @@ export interface AstroLightAuthComponents extends LightAuthComponents {
 }
 
 export const createAstroLightAuthSessionFunction = (config: LightAuthConfig) => {
-  const sessionFunction = createServerSessionFunction(config);
+  const sessionFunction = createFetchSessionFunction(config);
   return async (req?: Request) => {
     return await sessionFunction({ req });
   };
 };
 
 export const createAstroLightAuthUserFunction = (config: LightAuthConfig) => {
-  const userFunction = createServerUserFunction(config);
+  const userFunction = createFetchUserFunction(config);
   return async (req?: Request) => {
     return await userFunction({ req });
   };
 };
 
 export function createAstroSigninFunction(config: LightAuthConfig) {
-  const signInFunction = createServerSigninFunction(config);
+  const signInFunction = createSigninFunction(config);
   return async (providerName: string) => {
     return await signInFunction({ providerName });
   };
 }
 
 export function createAstroSignoutFunction(config: LightAuthConfig) {
-  const signOutFunction = createServerSignoutFunction(config);
+  const signOutFunction = createSignoutFunction(config);
   return async () => {
     return await signOutFunction();
   };

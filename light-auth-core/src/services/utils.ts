@@ -62,27 +62,31 @@ export function buildSecret(env?: { [key: string]: string | undefined }): string
   return secret;
 }
 
-export function buildFullUrl({ url, incomingHeaders }: { url: string; incomingHeaders: Headers }): URL {
-  if (url.startsWith("http")) return new URL(url);
+export function buildFullUrl({ url, incomingHeaders }: { url: string; incomingHeaders: Headers }): string {
+  if (url.startsWith("http")) return new URL(url).toString();
+  let reqHost = incomingHeaders?.get("host") ?? incomingHeaders?.get("x-forwarded-host");
 
+  const isServerSide = typeof window === "undefined";
+
+  // If the host is not present or not on server side, return the url as is
+  if (!reqHost || !isServerSide) return url;
+
+  // build the full url from the url and the host
   const sanitizedEndpoint = url.startsWith("/") ? url : `/${url}`;
-  let reqHost = incomingHeaders?.get("host");
   let protocol = "http";
 
   // Prefer x-forwarded-proto headers for protocol
   const xfp = incomingHeaders?.get("x-forwarded-proto") || incomingHeaders?.get("x-forwarded-protocol");
   if (xfp && xfp.split(",")[0].trim() === "https") {
     protocol = "https";
-  }else{
+  } else {
     // TODO : forward env
     // protocol = env["NODE_ENV"] === "production" ? "https" : "http";
   }
-
   //TODO : if x-forwarded-host is not present, check if we are in production or not
-
 
   const host: string = reqHost ?? "localhost:3000";
 
   const sanitizedHost = host.endsWith("/") ? host.slice(0, -1) : host;
-  return new URL(sanitizedEndpoint, `${protocol}://${sanitizedHost}`);
+  return new URL(sanitizedEndpoint, `${protocol}://${sanitizedHost}`).toString();
 }

@@ -77,12 +77,11 @@ export const createLightAuthRouter = (): LightAuthRouter => {
     },
 
     getUrl({ endpoint, req }: { endpoint?: string; req?: Request }) {
-      if (!req) throw new Error("light-auth: Request object is required to get URL.");
-      const url = endpoint ?? req.url;
+      const url = endpoint ?? req?.url;
 
       if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
 
-      if (url.startsWith("http")) return url;
+      if (url.startsWith("http") || !req) return url;
 
       const fullUrl = buildFullUrl({ url, incomingHeaders: req.headers });
       return fullUrl.toString();

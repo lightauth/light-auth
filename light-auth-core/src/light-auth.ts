@@ -3,13 +3,12 @@ import { redirectToProviderLoginHandler } from "./handlers/redirect-to-provider"
 import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "./models";
 
 /**
- * this function is used to make a server request to the light auth server
- * it's not meant to be used from the client side as we are transferring the session
- * in the request headers
- * @param param0
- * @returns
+ * this function is used to make a request to the light auth server
+ * it can be done from the server side or the client side
+ *
+ * it will use the router to get the url and the headers (if server side)
  */
-async function serverRequest<T extends Record<string, string> | string | Blob>(args: {
+async function internalFetch<T extends Record<string, string> | string | Blob>(args: {
   config: LightAuthConfig;
   endpoint: string;
   method?: "GET" | "POST";
@@ -19,24 +18,30 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   const { config, body, method = "GET" } = args;
   const { router } = config;
 
-  if (!router) throw new Error("light-auth: router is required");
+  // check if we are on the server side or client side
+  // if we are on the server side, we need to use the router to get the url and headers
+  // if we are on the client side, we can use the window object to get the url and headers
+  const isServerSide = typeof window === "undefined";
 
   const bodyBytes = body ? new TextEncoder().encode(body.toString()) : undefined;
 
-  // check we are on the server side
-  if (typeof window !== "undefined") throw new Error("light-auth: serverRequest can only be used on the server side");
-
   // get all the headers from the request
-  let requestHeaders: Headers = await router.getHeaders(args);
+  let requestHeaders: Headers | null = null;
 
-  // get the session from the session store
-  let url = await router.getUrl(args);
+  if (router && isServerSide) requestHeaders = await router.getHeaders(args);
+
+  // get the full url from the router if available
+  let url = args.endpoint;
+  if (router && isServerSide) url = await router.getUrl(args);
 
   const request = bodyBytes
-    ? new Request(url.toString(), { method: "POST", headers: requestHeaders, body: bodyBytes })
-    : new Request(url.toString(), { method: method, headers: requestHeaders });
+    ? new Request(url.toString(), { method: "POST", headers: requestHeaders ?? new Headers(), body: bodyBytes })
+    : new Request(url.toString(), { method: method, headers: requestHeaders ?? new Headers() });
 
   let response: Response | null = null;
+
+  console.log("args.optionalFetch", args.optionalFetch);
+
   try {
     response = await fetch(request);
   } catch (error) {
@@ -68,30 +73,47 @@ async function serverRequest<T extends Record<string, string> | string | Blob>(a
   return null;
 }
 
-export function createServerSigninFunction(
+export function createSigninFunction(
   config: LightAuthConfig
 ): (args?: { providerName?: string; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     const { providerName, callbackUrl = "/" } = args;
-    return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), ...args });
+
+    // check if we are on the server side or client side
+    // if we are on the server side, we need to use the router to get the url and headers
+    // if we are on the client side, we can use the window object to get the url and headers
+    const isServerSide = typeof window === "undefined";
+    if (isServerSide) {
+      console.log("signin server side");
+      return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), ...args });
+    } else {
+      console.log("signin client side");
+      window.location.href = `${config.basePath}/login/${providerName}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    }
   };
 }
 
-export function createServerSignoutFunction(
+export function createSignoutFunction(
   config: LightAuthConfig
 ): (args?: { revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     const { revokeToken = true, callbackUrl = "/" } = args;
-    return await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl, ...args });
+
+    // check if we are on the server side or client side
+    // if we are on the server side, we need to use the router to get the url and headers
+    // if we are on the client side, we can use the window object to get the url and headers
+    const isServerSide = typeof window === "undefined";
+    if (isServerSide) return await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl: encodeURIComponent(callbackUrl), ...args });
+    else window.location.href = `${config.basePath}/logout?revokeToken=${revokeToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
   };
 }
 
-export function createServerSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
+export function createFetchSessionFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthSession | null | undefined> {
   return async (args) => {
     try {
       // get the session from the server using the api endpoint, because
       // the session is stored in the cookie store and we may need to delete / update it
-      const session = await serverRequest<LightAuthSession>({
+      const session = await internalFetch<LightAuthSession>({
         config,
         endpoint: `${config.basePath}/session`,
         ...args,
@@ -105,28 +127,24 @@ export function createServerSessionFunction(config: LightAuthConfig): (args?: { 
   };
 }
 
-export function createServerUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
+export function createFetchUserFunction(config: LightAuthConfig): (args?: { [key: string]: unknown }) => Promise<LightAuthUser | null | undefined> {
   return async (args) => {
-    if (!config.userAdapter) return null; // user adapter is not required
-    if (!config.router) throw new Error("light-auth: router is required");
-    if (!config.sessionStore) throw new Error("light-auth: sessionStore is required");
-
     try {
       // get the user from the server using the api endpoint, because
       // to get user we need the session that is stored in the cookie store and we may need to delete / update it
-      const session = await serverRequest<LightAuthSession>({
+      const session = await internalFetch<LightAuthSession>({
         config,
         endpoint: `${config.basePath}/session`,
         ...args,
       });
-
-      if (!session || !session.id) return null;
+      if (!session || !session.userId) return null;
       // get the user from the user adapter      // get the user from the session store
-      const user = await serverRequest<LightAuthUser>({
+      const user = await internalFetch<LightAuthUser>({
         config,
         endpoint: `${config.basePath}/user/${session.userId}`,
         ...args,
       });
+
       if (!user) return null;
 
       return user;

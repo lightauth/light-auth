@@ -6,13 +6,13 @@ import {
   LightAuthProvider,
   LightAuthSession,
   LightAuthUser,
-  createLightAuthUserAdapter,
   resolveBasePath,
-  createServerSigninFunction,
-  createServerSignoutFunction,
-  createServerSessionFunction,
-  createServerUserFunction,
+  createSigninFunction,
+  createSignoutFunction,
+  createFetchSessionFunction,
+  createFetchUserFunction,
 } from "@light-auth/core";
+import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { expressLightAuthRouter } from "./express-light-auth-router";
 import { expressLightAuthSessionStore } from "./express-light-auth-session-store";
@@ -37,7 +37,7 @@ export const createExpressLightAuthHandlerFunction = (config: LightAuthConfig) =
 };
 
 export const createExpressLightAuthMiddlewareFunction = (config: LightAuthConfig) => {
-  const sessionFunction = createServerSessionFunction(config);
+  const sessionFunction = createFetchSessionFunction(config);
 
   return async (req: ExpressRequest, res: ExpressResponse, next: NextFunction, ...params: any[]) => {
     const session = await sessionFunction({ req, res });
@@ -47,7 +47,7 @@ export const createExpressLightAuthMiddlewareFunction = (config: LightAuthConfig
 };
 
 export const createExpressLightAuthSignIn = (config: LightAuthConfig) => {
-  const signIn = createServerSigninFunction(config);
+  const signIn = createSigninFunction(config);
   return async (req: ExpressRequest, res: ExpressResponse, providerName?: string, callbackUrl: string = "/") => {
     await signIn({ providerName, req, res, callbackUrl });
     if (!res.headersSent) res.end();
@@ -55,7 +55,7 @@ export const createExpressLightAuthSignIn = (config: LightAuthConfig) => {
 };
 
 export const createExpressLightAuthSignOut = (config: LightAuthConfig) => {
-  const signOut = createServerSignoutFunction(config);
+  const signOut = createSignoutFunction(config);
   return async (req: ExpressRequest, res: ExpressResponse, revokeToken?: boolean, callbackUrl: string = "/") => {
     await signOut({ revokeToken, req, res, callbackUrl });
     if (!res.headersSent) res.end();
@@ -63,7 +63,7 @@ export const createExpressLightAuthSignOut = (config: LightAuthConfig) => {
 };
 
 export const createExpressLightAuthSessionFunction = (config: LightAuthConfig) => {
-  const sessionFunction = createServerSessionFunction(config);
+  const sessionFunction = createFetchSessionFunction(config);
   return async (req: ExpressRequest, res: ExpressResponse): Promise<LightAuthSession | null | undefined> => {
     const session = await sessionFunction({ req, res });
     return session;
@@ -71,7 +71,7 @@ export const createExpressLightAuthSessionFunction = (config: LightAuthConfig) =
 };
 
 export const createExpressLightAuthUserFunction = (config: LightAuthConfig) => {
-  const userFunction = createServerUserFunction(config);
+  const userFunction = createFetchUserFunction(config);
   return async (req: ExpressRequest, res: ExpressResponse): Promise<LightAuthUser | null | undefined> => {
     return await userFunction({ req, res });
   };

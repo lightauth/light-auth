@@ -28,6 +28,11 @@
       "import": "./dist/client/index.mjs",
       "require": "./dist/client/index.cjs",
       "types": "./src/client/index.ts"
+    },
+    "./adapters": {
+      "import": "./dist/adapters/index.mjs",
+      "require": "./dist/adapters/index.cjs",
+      "types": "./src/adapters/index.ts"
     }
   },
   "files": [
