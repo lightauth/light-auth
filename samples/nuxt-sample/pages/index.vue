@@ -1,31 +1,16 @@
 <script setup lang="ts">
-import { ref } from "vue";
-
 import { getSession, getUser, signIn } from "#imports";
-import type { LightAuthUser } from "@light-auth/core";
 
-// const user = await getUser();
 const session = await getSession();
-const userResult = await getUser();
-const userRefData = userResult?.user;
-const refreshUser = userResult?.refresh;
+const user = await getUser();
 
 console.log("Session:", session);
-
-const handleSignIn = async (providerName: string) => {
-  try {
-    await signIn(providerName);
-  } catch (e: any) {
-    console.log(e.message || "Failed to retrieve session");
-  }
-};
-
-const handleSignOut = async () => await signOut(true);
+console.log("User:", user);
 
 const handleGetSession = async () => {
   try {
     const session = await getSession();
-    console.log("Session:", session);
+    console.log("Session:", session?.value);
   } catch (e: any) {
     console.log(e.message || "Failed to retrieve session");
   }
@@ -33,8 +18,9 @@ const handleGetSession = async () => {
 
 const handleGetUser = async (forceRefresh: boolean = false) => {
   try {
-    // if (forceRefresh) refresh();
-    if (forceRefresh && refreshUser) refreshUser();
+    if (forceRefresh) await user.refresh();
+
+    console.log("User:", user?.value);
   } catch (e: any) {
     console.log(e.message || "Failed to retrieve user");
   }
@@ -47,13 +33,13 @@ const handleGetUser = async (forceRefresh: boolean = false) => {
       <div class="text-center" v-if="session != null">
         <h1 class="text-2xl font-bold mb-4">You are logged in!</h1>
         <button
-          @click="handleSignOut()"
+          @click="signOut()"
           class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           Logout
         </button>
         <!-- <p class="text-gray-600 mb-6 text-center" v-if="userData != null">{{ userData?.name }}</p> -->
-        <p class="text-gray-600 mb-6 text-center" v-if="userRefData != null">{{ userRefData?.name }}</p>
+        <p class="text-gray-600 mb-6 text-center" v-if="user != null">{{ user?.firstName }} {{ user?.lastName }} {{ user?.iss }}</p>
       </div>
 
       <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
@@ -91,7 +77,7 @@ const handleGetUser = async (forceRefresh: boolean = false) => {
         </form>
 
         <button
-          @click="handleSignIn('google')"
+          @click="signIn('google')"
           class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           <svg class="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -135,7 +121,7 @@ const handleGetUser = async (forceRefresh: boolean = false) => {
         </button>
 
         <button
-          @click="handleSignIn('microsoft')"
+          @click="signIn('microsoft')"
           class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
         >
           <svg

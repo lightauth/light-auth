@@ -14,28 +14,6 @@ import {
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * LightAuthNextJsComponents is an interface that defines the structure of the LightAuth components for Next.js.
- * It includes the providers, base path, handlers for GET and POST requests, and functions for signing in,
- * signing out, and retrieving the light session and user.
- */
-export interface LightAuthNextJsComponents {
-  providers: LightAuthProvider[];
-  basePath: string;
-  handlers: {
-    GET: (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
-    POST: (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
-  };
-  signIn: (providerName?: string, callbackUrl?: string) => Promise<NextResponse>;
-  signOut: (revokeToken?: boolean, callbackUrl?: string) => Promise<NextResponse>;
-  getSession: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>() => Promise<
-    Session | null | undefined
-  >;
-  getUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>() => Promise<
-    User | null | undefined
-  >;
-}
-
-/**
  * createNextJsSignIn is a function that creates a sign-in function for Next.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Next.js context.
@@ -45,7 +23,7 @@ export const createNextJsSignIn = <Session extends LightAuthSession = LightAuthS
 ) => {
   const signIn = createSigninFunction(config);
   return async (providerName?: string, callbackUrl: string = "/") => {
-    return await signIn({ providerName, callbackUrl });
+    await signIn({ providerName, callbackUrl });
   };
 };
 
@@ -59,7 +37,7 @@ export const createNextJsSignOut = <Session extends LightAuthSession = LightAuth
 ) => {
   const signOut = createSignoutFunction(config);
   return async (revokeToken?: boolean, callbackUrl: string = "/") => {
-    return await signOut({ revokeToken, callbackUrl });
+    await signOut({ revokeToken, callbackUrl });
   };
 };
 
@@ -122,7 +100,6 @@ export const createNextJsLightAuthHandlerFunction = <
 
 /**
  * CreateLightAuth is a function that creates the LightAuth components for Next.js.
- * It takes a LightAuthConfig object as a parameter and returns a LightAuthNextJsComponents object.
  * The function also sets default values for the userAdapter, router and cookieStore if they are not provided.
  */
 export function CreateLightAuth<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

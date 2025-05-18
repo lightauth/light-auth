@@ -7,16 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthRouter: LightAuthRouter = {
-  async redirectTo<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-    url,
-  }: {
-    config: LightAuthConfig<Session, User>;
-    url: string;
-  }): Promise<Response> {
-
-    
-
+  async redirectTo({ url }: { url: string }): Promise<Response> {
     const { headers: nextJsHeaders } = await import("next/headers");
     const { redirect } = await import("next/navigation");
 

@@ -8,7 +8,7 @@ import { H3Event, type EventHandlerRequest, parseCookies, setCookie, deleteCooki
  * with appropriate Set-Cookie headers.
  */
 export const nuxtJsLightAuthRouter: LightAuthRouter = {
-  async redirectTo({ config, url, event }: { config: LightAuthConfig; url: string; event?: H3Event<EventHandlerRequest> }) {
+  async redirectTo({ url, event }: { url: string; event?: H3Event<EventHandlerRequest> }) {
     if (!event) throw new Error("Event is required in redirectTo of nuxtJsLightAuthRouter.");
 
     const headersData = getHeaders(event); // { "content-type": "application/json", "x-custom-header": "value" }
@@ -64,7 +64,7 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
 
     if (!event) return url;
 
-    const headersData = await getHeaders(event);
+    const headersData = getHeaders(event);
     const incomingHeaders = new Headers();
     for (const [key, value] of Object.entries(headersData)) if (value) incomingHeaders.append(key, value);
 
@@ -75,7 +75,7 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
   async getHeaders({ search, event }: { search?: string | RegExp; event?: H3Event<EventHandlerRequest> }): Promise<Headers> {
     if (!event) return new Headers();
 
-    const headersData = await getHeaders(event);
+    const headersData = getHeaders(event);
 
     // Convert search to RegExp if it's a string
     const regex = typeof search === "string" ? new RegExp(search) : search;
@@ -91,8 +91,7 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
     return filteredHeaders;
   },
 
-  returnJson({ config, event, data }: { config: LightAuthConfig; event?: H3Event<EventHandlerRequest>; data: {} | null }) {
-    if (!event) throw new Error("Event is required in returnJson of nuxtJsLightAuthRouter.");
+  returnJson({ data }: { data: {} | null }) {
     return data;
   },
 };
