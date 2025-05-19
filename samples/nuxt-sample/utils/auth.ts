@@ -42,8 +42,6 @@ export const { providers, handlers, signIn, signOut, getSession, getUser } = Cre
     // This example adds the first and last name from the idToken to the user
     const idToken = JSON.parse(Buffer.from(tokens.idToken().split(".")[1], "base64").toString());
 
-    console.log("idToken", idToken);
-
     if ("given_name" in idToken && typeof idToken.given_name === "string") session.firstName = idToken.given_name;
     if ("family_name" in idToken && typeof idToken.family_name === "string") session.lastName = idToken.family_name;
 

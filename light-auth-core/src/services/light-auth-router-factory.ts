@@ -1,4 +1,4 @@
-import { LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
+import { LightAuthConfig, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
 import { LightAuthRouter } from "../models/light-auth-router";
 import { buildFullUrl } from "./utils";
 import * as cookieParser from "cookie";
@@ -85,6 +85,16 @@ export const createLightAuthRouter = (): LightAuthRouter => {
 
       const fullUrl = buildFullUrl({ url, incomingHeaders: req.headers });
       return fullUrl.toString();
+    },
+    getRequest<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+      config,
+      req,
+    }: {
+      config: LightAuthConfig<Session, User>;
+      req?: Request;
+    }) {
+      if (!req) throw new Error("light-auth: No request object provided in getRequest of nextJsLightAuthRouter.");
+      return req;
     },
   };
 };

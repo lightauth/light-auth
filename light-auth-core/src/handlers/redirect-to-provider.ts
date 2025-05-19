@@ -1,7 +1,8 @@
 import { generateState, generateCodeVerifier } from "arctic";
 import { LightAuthConfig, BaseResponse, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
-import { checkConfig } from "../services/utils";
+import { buildSecret, checkConfig } from "../services/utils";
 import * as cookieParser from "cookie";
+import { validateCsrfToken } from "../services";
 
 /**
  * Redirects the user to the provider login page.
@@ -9,12 +10,27 @@ import * as cookieParser from "cookie";
 export async function redirectToProviderLoginHandler<
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
->(args: { config: LightAuthConfig<Session, User>; providerName?: string; callbackUrl?: string; [key: string]: unknown }): Promise<BaseResponse> {
-  const { config, providerName } = args;
+>(args: {
+  config: LightAuthConfig<Session, User>;
+  providerName?: string;
+  callbackUrl?: string;
+  checkCsrf?: boolean;
+  [key: string]: unknown;
+}): Promise<BaseResponse> {
+  const { config, providerName, checkCsrf = true } = args;
   const { provider, router, env } = checkConfig(config, providerName);
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
+
+  // Check if CSRF validation is required
+  // it could be disable for direct call from a post action issued by the SSR framework
+  if (checkCsrf) {
+    const secret = buildSecret(env);
+    const cookies = await router.getCookies({ ...args });
+    const csrfIsValid = validateCsrfToken(cookies, secret);
+    if (!csrfIsValid) throw new Error("Invalid CSRF token");
+  }
 
   // Using Set to ensure unique scopes
   // and adding default scopes
@@ -67,8 +83,15 @@ export async function redirectToProviderLoginHandler<
     maxAge: 60 * 10, // 10 minutes
   };
 
+  // delete the csrf token cookie
+  const csrfCookieDelete: LightAuthCookie = {
+    name: "light_auth_csrf_token",
+    value: "",
+    maxAge: 0,
+  };
+
   // set the cookies in the response
-  const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie], ...args });
+  const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie, csrfCookieDelete], ...args });
 
   return await router.redirectTo({ url: url.toString(), headers: newHeaders, res, ...args });
 }

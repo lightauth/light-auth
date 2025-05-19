@@ -1,4 +1,4 @@
-import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
+import { buildFullUrl, LightAuthSession, LightAuthUser, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
 import { H3Event, type EventHandlerRequest, parseCookies, setCookie, deleteCookie, getHeaders, sendRedirect } from "h3";
 
 /**
@@ -88,6 +88,24 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
     }
 
     return filteredHeaders;
+  },
+
+  async getRequest<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    event,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    event?: H3Event<EventHandlerRequest>;
+  }): Promise<Request> {
+    if (!event) throw new Error("Event is required in getRequest of nuxtJsLightAuthRouter.");
+
+    try {
+      const url = await this.getUrl({ config, event });
+      const headers = await this.getHeaders({ config, event });
+      return new Request(url, { method: event.node.req.method, headers: headers });
+    } catch (error) {
+      throw new Error(`light-auth: Error creating request object in getRequest of nuxtJsLightAuthRouter: ${error}`);
+    }
   },
 
   returnJson({ data }: { data: {} | null }) {

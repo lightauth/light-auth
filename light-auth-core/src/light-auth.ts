@@ -1,6 +1,7 @@
 import { logoutAndRevokeTokenHandler } from "./handlers/logout";
 import { redirectToProviderLoginHandler } from "./handlers/redirect-to-provider";
-import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "./models";
+import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser, LightAuthCsrfToken } from "./models";
+import { checkConfig } from "./services";
 
 /**
  * this function is used to make a request to the light auth server
@@ -8,14 +9,13 @@ import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "
  *
  * it will use the router to get the url and the headers (if server side)
  */
-async function internalFetch<T extends Record<string, unknown> | string | Blob>(args: {
+async function internalPost<T extends Record<string, any> | string | Blob>(args: {
   config: LightAuthConfig<any, any>;
   endpoint: string;
-  method?: "GET" | "POST";
   body?: any;
   [key: string]: unknown;
 }): Promise<T | null | undefined> {
-  const { config, body, method = "GET" } = args;
+  const { config, body } = args;
   const { router } = config;
 
   // check if we are on the server side or client side
@@ -36,11 +36,9 @@ async function internalFetch<T extends Record<string, unknown> | string | Blob>(
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: "POST", headers: requestHeaders ?? new Headers(), body: bodyBytes })
-    : new Request(url.toString(), { method: method, headers: requestHeaders ?? new Headers() });
+    : new Request(url.toString(), { method: "POST", headers: requestHeaders ?? new Headers() });
 
   let response: Response | null = null;
-
-  console.log("args.optionalFetch", args.optionalFetch);
 
   try {
     response = await fetch(request);
@@ -73,6 +71,26 @@ async function internalFetch<T extends Record<string, unknown> | string | Blob>(
   return null;
 }
 
+async function getCsrfToken<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+  config: LightAuthConfig<Session, User>;
+  [key: string]: unknown;
+}) {
+  const isServerSide = typeof window === "undefined";
+  if (isServerSide) return;
+
+  const { config } = args;
+  // Get a csrf token from the server
+  const endpoint = `${config.basePath}/csrf`;
+  const csrfToken = await internalPost<LightAuthCsrfToken>({ endpoint, ...args });
+
+  if (!csrfToken) throw new Error("light-auth: Failed to get csrf token");
+
+  // Set the csrf token in the cookie store
+  window.document.cookie = `light_auth_csrf_token=${csrfToken.csrfTokenHash}.${csrfToken.csrfToken}; path=/; secure=${
+    config.env?.["NODE_ENV"] === "production"
+  }`;
+}
+
 export function createSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ): (args?: { providerName?: string; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
@@ -84,8 +102,10 @@ export function createSigninFunction<Session extends LightAuthSession = LightAut
     // if we are on the client side, we can use the window object to get the url and headers
     const isServerSide = typeof window === "undefined";
     if (isServerSide) {
-      return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), ...args });
+      return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), checkCsrf: false, ...args });
     } else {
+      // Get a csrf token from the server and set it in the cookie store
+      await getCsrfToken({ config, ...args });
       window.location.href = `${config.basePath}/login/${providerName}?callbackUrl=${encodeURIComponent(callbackUrl)}`;
     }
   };
@@ -101,8 +121,13 @@ export function createSignoutFunction<Session extends LightAuthSession = LightAu
     // if we are on the server side, we need to use the router to get the url and headers
     // if we are on the client side, we can use the window object to get the url and headers
     const isServerSide = typeof window === "undefined";
-    if (isServerSide) return await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl: encodeURIComponent(callbackUrl), ...args });
-    else window.location.href = `${config.basePath}/logout?revokeToken=${revokeToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    if (isServerSide)
+      return await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl: encodeURIComponent(callbackUrl), checkCsrf: false, ...args });
+    else {
+      // Get a csrf token from the server and set it in the cookie store
+      await getCsrfToken({ config, ...args });
+      window.location.href = `${config.basePath}/logout?revokeToken=${revokeToken}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    }
   };
 }
 
@@ -111,13 +136,8 @@ export function createFetchSessionFunction<Session extends LightAuthSession = Li
 ): (args?: { [key: string]: unknown }) => Promise<Session | null | undefined> {
   return async (args) => {
     try {
-      // get the session from the server using the api endpoint, because
-      // the session is stored in the cookie store and we may need to delete / update it
-      const session = await internalFetch<Session>({
-        config,
-        endpoint: `${config.basePath}/session`,
-        ...args,
-      });
+      // get the session from the server using the api endpoint
+      const session = await internalPost<Session>({ config, endpoint: `${config.basePath}/session`, ...args });
 
       return session;
     } catch (error) {
@@ -132,20 +152,12 @@ export function createFetchUserFunction<Session extends LightAuthSession = Light
 ): (args?: { [key: string]: unknown }) => Promise<User | null | undefined> {
   return async (args) => {
     try {
-      // get the user from the server using the api endpoint, because
-      // to get user we need the session that is stored in the cookie store and we may need to delete / update it
-      const session = await internalFetch<Session>({
-        config,
-        endpoint: `${config.basePath}/session`,
-        ...args,
-      });
+      // get the user from the server using the api endpoint
+      const session = await internalPost<Session>({ config, endpoint: `${config.basePath}/session`, ...args });
       if (!session || !session.userId) return null;
-      // get the user from the user adapter      // get the user from the session store
-      const user = await internalFetch<User>({
-        config,
-        endpoint: `${config.basePath}/user/${session.userId}`,
-        ...args,
-      });
+
+      // get the user from the user adapter
+      const user = await internalPost<User>({ config, endpoint: `${config.basePath}/user/${session.userId}`, ...args });
 
       if (!user) return null;
 

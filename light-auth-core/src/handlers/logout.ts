@@ -1,17 +1,34 @@
 import { LightAuthConfig, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
-import { checkConfig } from "../services/utils";
+import { validateCsrfToken } from "../services";
+import { buildSecret, checkConfig } from "../services/utils";
 
 export async function logoutAndRevokeTokenHandler<
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
->(args: { config: LightAuthConfig<Session, User>; revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }): Promise<Response> {
-  const { config, revokeToken = true, callbackUrl = "/" } = args;
-  const { userAdapter, router, sessionStore } = checkConfig(config);
+>(args: {
+  config: LightAuthConfig<Session, User>;
+  revokeToken?: boolean;
+  callbackUrl?: string;
+  checkCsrf?: boolean;
+  [key: string]: unknown;
+}): Promise<Response> {
+  const { config, revokeToken = true, callbackUrl = "/", checkCsrf = true } = args;
+
+  const { userAdapter, router, sessionStore, env } = checkConfig(config);
 
   // get the session
   const session = await sessionStore.getSession({ ...args });
 
   if (!session || !session.id) return await router.redirectTo({ url: callbackUrl, ...args });
+
+  // Check if CSRF validation is required
+  // it could be disable for direct call from a post action issued by the SSR framework
+  if (checkCsrf) {
+    const secret = buildSecret(env);
+    const cookies = await router.getCookies({ ...args });
+    const csrfIsValid = validateCsrfToken(cookies, secret);
+    if (!csrfIsValid) throw new Error("Invalid CSRF token");
+  }
 
   // get the provider name from the session
   const providerName = session?.providerName;
@@ -51,9 +68,10 @@ export async function logoutAndRevokeTokenHandler<
     const stateCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_state`, value: "", path: "/", maxAge: 0 };
     const codeVerifierCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_code_verifier`, value: "", path: "/", maxAge: 0 };
     const callbackUrlCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_callback_url`, value: "", path: "/", maxAge: 0 };
+    const csrfCookieDelete: LightAuthCookie = { name: "light_auth_csrf_token", value: "", maxAge: 0 };
 
     // delete the cookies
-    await router.setCookies({ cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete], ...args });
+    await router.setCookies({ cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete, csrfCookieDelete], ...args });
   } catch {}
 
   return await router.redirectTo({ url: callbackUrl, ...args });

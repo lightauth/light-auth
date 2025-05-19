@@ -1,7 +1,5 @@
-import { DEFAULT_SESSION_NAME } from "../constants";
 import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
-import { decryptJwt, encryptJwt } from "../services/jwt";
-import { checkConfig, buildSecret, getSessionExpirationMaxAge } from "../services/utils";
+import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
 
 /**
  * get session handler available on endpoint /${basePath}/session

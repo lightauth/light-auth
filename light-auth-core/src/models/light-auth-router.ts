@@ -29,6 +29,10 @@ export interface LightAuthRouter {
     endpoint?: string;
     [key: string]: unknown;
   }) => string | Promise<string>;
+  getRequest: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config: LightAuthConfig<Session, User>;
+    [key: string]: unknown;
+  }) => Promise<Request> | Request;
   returnJson: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     config: LightAuthConfig<Session, User>;
     data: {} | null;

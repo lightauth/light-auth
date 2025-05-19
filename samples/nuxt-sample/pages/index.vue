@@ -4,9 +4,6 @@ import { getSession, getUser, signIn } from "#imports";
 const session = await getSession();
 const user = await getUser();
 
-console.log("Session:", session);
-console.log("User:", user);
-
 const handleGetSession = async () => {
   try {
     const session = await getSession();

@@ -46,7 +46,9 @@ export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuth
   };
 };
 
+// @ts-ignore
 type NuxtJsLightAuthAsyncData<T> = Ref<T | null | undefined> & {
+  // @ts-ignore
   error: Ref<Error | null>;
   refresh: () => Promise<void>;
 };
@@ -63,7 +65,8 @@ export const createNuxtJsLightAuthSessionFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   return async () => {
-    const { data, error, refresh } = await useFetch<Session>(`${config.basePath}/session`, { key: "light-auth-session" });
+    // @ts-ignore
+    const { data, error, refresh } = await useFetch<Session>(`${config.basePath}/session`, { method: "post", key: "light-auth-session" });
     return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<Session>;
   };
 };
@@ -83,15 +86,23 @@ export const createNuxtJsLightAuthUserFunction = <
   // to get user we need the session that is stored in the cookie store and we may need to delete / update it
 
   return async () => {
+    // @ts-ignore
     const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
 
     if (!cachedSession.value) {
+      // @ts-ignore
       return Object.assign(ref(null), { error: ref(new Error("No session found")), refresh: async () => {} }) as NuxtJsLightAuthAsyncData<User>;
     }
 
+    // @ts-ignore
     const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${cachedSession.value.userId}`, {
+      method: "post",
       key: `light-auth-user${cachedSession.value.userId}`,
     });
+
+    if (error.value) {
+      console.error("Error in createNuxtJsLightAuthUserFunction:", error.value);
+    }
     return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<User>;
   };
 };

@@ -18,7 +18,6 @@ export const useSession = (is_required = false) => {
 
   const context = useContext(SessionContext);
 
-  console.log("Session context:", context);
   if (!context) {
     throw new Error("light-auth: `useSession` must be wrapped in a <SessionProvider />");
   }

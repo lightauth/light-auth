@@ -50,6 +50,17 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return cookies;
   },
 
+  getRequest<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    req,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    req?: Request;
+  }) {
+    if (!req) throw new Error("light-auth: No request object provided in getRequest of nextJsLightAuthRouter.");
+    return req;
+  },
+
   async getUrl({ endpoint, req }: { endpoint?: string; req?: NextRequest }) {
     const url = endpoint ?? req?.url;
     if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of nextJsLightAuthRouter.");
@@ -90,7 +101,10 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return filteredHeaders;
   },
 
-  returnJson(args: { data: {} | null }): NextResponse {
+  async returnJson<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    data: {} | null;
+    config: LightAuthConfig<Session, User>;
+  }): Promise<NextResponse> {
     return NextResponse.json(args.data);
   },
 };
