@@ -1,6 +1,6 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { type LightAuthProvider } from "@light-auth/core";
-import { CreateLightAuth } from "../light-auth/light-auth";
+import { CreateLightAuth } from "@light-auth/astro";
 
 const googleProvider: LightAuthProvider = {
   providerName: "google",
@@ -8,18 +8,7 @@ const googleProvider: LightAuthProvider = {
   searchParams: new Map([["access_type", "offline"]]),
 };
 
-const microsoftProvider: LightAuthProvider = {
-  providerName: "microsoft",
-  arctic: new MicrosoftEntraId(
-    import.meta.env.MICROSOFT_ENTRA_ID_TENANT_ID || "",
-    import.meta.env.MICROSOFT_ENTRA_ID_CLIENT_ID || "",
-    import.meta.env.MICROSOFT_ENTRA_ID_CLIENT_SECRET || "",
-    "http://localhost:8000/api/auth/callback/microsoft"
-  ),
-  scopes: ["offline_access"],
-};
-
 export const { providers, handlers, getSession, getUser, signIn, signOut } = CreateLightAuth({
-  providers: [googleProvider, microsoftProvider],
+  providers: [googleProvider],
   basePath: "/api/auth", // Optional: specify a custom base path for the handlers
 });

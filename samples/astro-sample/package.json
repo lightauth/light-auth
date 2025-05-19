@@ -34,7 +34,7 @@
     "tw-animate-css": "^1.2.9"
   },
   "workspaces": [
-    "../../light-auth-nextjs",
-    "../../light-auth-core"
+    "../../light-auth-core",
+    "../../light-auth-astro"
   ]
 }

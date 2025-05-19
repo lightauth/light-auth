@@ -78,7 +78,8 @@ export function CreateLightAuth(config: LightAuthConfig) {
     });
   }
 
-  config.env = config.env || import.meta.env;
+  // @ts-ignore
+  config.env = config.env || import.meta;
 
   return {
     providers: config.providers,
