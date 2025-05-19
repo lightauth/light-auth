@@ -84,11 +84,7 @@ export async function redirectToProviderLoginHandler<
   };
 
   // delete the csrf token cookie
-  const csrfCookieDelete: LightAuthCookie = {
-    name: "light_auth_csrf_token",
-    value: "",
-    maxAge: 0,
-  };
+  const csrfCookieDelete: LightAuthCookie = { name: "light_auth_csrf_token", value: "", maxAge: 0 };
 
   // set the cookies in the response
   const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie, csrfCookieDelete], ...args });

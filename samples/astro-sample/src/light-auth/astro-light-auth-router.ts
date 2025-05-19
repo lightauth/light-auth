@@ -1,4 +1,4 @@
-import { buildFullUrl, DEFAULT_SESSION_NAME, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
+import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter, type LightAuthSession, type LightAuthUser } from "@light-auth/core";
 import type { APIContext } from "astro";
 import * as cookieParser from "cookie";
 
@@ -13,11 +13,13 @@ export const astroLightAuthRouter: LightAuthRouter = {
     let url = endpoint;
     if (!url) url = context?.request?.url || req?.url;
 
-    if (!url) 
-      throw new Error("light-auth: No url provided and no request object available in getUrl of astroLightAuthRouter.");
-    
+    if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of astroLightAuthRouter.");
+
     if (url.startsWith("http")) return url;
-    
+
+    const isServerSide = typeof window === "undefined";
+    if (!isServerSide) return url;
+
     if (!request) return url;
 
     const parsedUrl = buildFullUrl({ url, incomingHeaders: request.headers });
@@ -32,7 +34,7 @@ export const astroLightAuthRouter: LightAuthRouter = {
   getHeaders: function ({ search, context, req }: { search?: string | RegExp; context?: APIContext; req?: Request }): Headers {
     const request = context?.request ?? req;
 
-    if (!request) throw new Error("light-auth: No context provided or no request object available in getHeaders of astroLightAuthRouter.");
+    if (!request) return new Headers();
 
     const incomingHeaders = request.headers;
 
@@ -52,7 +54,15 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
     return filteredHeaders;
   },
-  setCookies: function ({ config, cookies, context }: { config: LightAuthConfig; cookies?: LightAuthCookie[]; context?: APIContext }): void {
+  setCookies: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    cookies,
+    context,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    cookies?: LightAuthCookie[];
+    context?: APIContext;
+  }): void {
     if (!context) throw new Error("APIContext is required in setCookies of expressLightAuthRouter");
 
     for (const cookie of cookies ?? []) {
@@ -78,6 +88,28 @@ export const astroLightAuthRouter: LightAuthRouter = {
       const value = cookie[name];
       if (!search || !regex || regex.test(name)) cookies.push({ name: name, value: value || "" });
     }
+
+    const cookieString = context.request?.headers?.get("cookie");
+    if (cookieString) {
+      const cookie = cookieParser.parse(cookieString);
+      for (const cookieString of Object.entries(cookie)) {
+        const [name, value] = cookieString;
+        if (!search || !regex || regex.test(name)) cookies.push({ name: name, value: value || "" });
+      }
+    }
+
     return cookies;
+  },
+
+  getRequest: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    context,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    context?: APIContext;
+  }): Request {
+    if (!context) throw new Error("APIContext is required in getRequest of expressLightAuthRouter");
+
+    return context.request;
   },
 };

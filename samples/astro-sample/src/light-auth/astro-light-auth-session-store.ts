@@ -8,6 +8,7 @@ import {
   type LightAuthCookie,
   type LightAuthSession,
   type LightAuthSessionStore,
+  type LightAuthUser,
 } from "@light-auth/core";
 import type { APIContext } from "astro";
 import * as cookieParser from "cookie";
@@ -20,7 +21,11 @@ type AstroContext = APIContext<Record<string, any>, Record<string, string | unde
  * with appropriate Set-Cookie headers.
  */
 export const astroLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession(args: { config?: LightAuthConfig; context?: AstroContext; req?: Request }): Promise<LightAuthSession | null> {
+  async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config?: LightAuthConfig<Session, User>;
+    context?: AstroContext;
+    req?: Request;
+  }): Promise<Session | null> {
     const { config, context, req } = args;
     if (!config) throw new Error("light-auth: Config is required in getSession of astroLightAuthSessionStore");
 
@@ -36,14 +41,17 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
 
     try {
       const decryptedSession = await decryptJwt(sessionCookie, buildSecret(config.env));
-      return decryptedSession as LightAuthSession;
+      return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
       return null;
     }
   },
 
-  async deleteSession(args: { config?: LightAuthConfig; context?: AstroContext }): Promise<void> {
+  async deleteSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config?: LightAuthConfig<Session, User>;
+    context?: AstroContext;
+  }): Promise<void> {
     const { config, context } = args;
     if (!config) throw new Error("light-auth: Config is required in deleteSession of astroLightAuthSessionStore");
     if (!context) throw new Error("light-auth: Context is required in deleteSession of astroLightAuthSessionStore");
@@ -54,7 +62,11 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     });
   },
 
-  async setSession(args: { config: LightAuthConfig; session: LightAuthSession; context?: AstroContext }): Promise<void> {
+  async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config: LightAuthConfig<Session, User>;
+    session: Session;
+    context?: AstroContext;
+  }): Promise<void> {
     const { config, session, context } = args;
     if (!context) throw new Error("light-auth: Context is required in setSession of astroLightAuthSessionStore");
 

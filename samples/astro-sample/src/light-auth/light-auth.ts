@@ -13,29 +13,6 @@ import {
 } from "@light-auth/core";
 
 import type { APIContext, APIRoute } from "astro";
-import { astroLightAuthSessionStore } from "./astro-light-auth-session-store";
-
-import { createLightAuthUserAdapter } from "@light-auth/core/adapters";
-import { astroLightAuthRouter } from "./astro-light-auth-router";
-
-/**
- * AstroLightAuthComponents is an interface that extends the LightAuthComponents interface.
- *
- * It includes the providers, base path, handlers for GET and POST requests, and functions for signing in,
- * signing out, and retrieving the light auth session and user.
- *
- * It get a strong typed version of the light auth components for Astro.
- */
-export interface AstroLightAuthComponents extends LightAuthComponents {
-  providers: LightAuthProvider[];
-  handlers: {
-    GET: APIRoute;
-    POST: APIRoute;
-  };
-  basePath: string;
-  getSession: (req?: Request) => Promise<LightAuthSession | null | undefined>;
-  getUser: (req?: Request) => Promise<LightAuthUser | null | undefined>;
-}
 
 export const createAstroLightAuthSessionFunction = (config: LightAuthConfig) => {
   const sessionFunction = createFetchSessionFunction(config);
@@ -80,12 +57,27 @@ export const createAstroLightAuthHandlerFunction = (config: LightAuthConfig): { 
   };
 };
 
-export function CreateLightAuth(config: LightAuthConfig): AstroLightAuthComponents {
+export function CreateLightAuth(config: LightAuthConfig) {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
-  config.userAdapter = config.userAdapter ?? createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
-  config.router = astroLightAuthRouter;
-  config.sessionStore = astroLightAuthSessionStore;
+  // dynamic imports to avoid error if we are on the client side
+  if (!config.userAdapter && typeof window === "undefined") {
+    import("@light-auth/core/adapters").then((module) => {
+      config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
+    });
+  }
+
+  if (!config.sessionStore && typeof window === "undefined") {
+    import("./astro-light-auth-session-store").then((module) => {
+      config.sessionStore = module.astroLightAuthSessionStore;
+    });
+  }
+  if (!config.router && typeof window === "undefined") {
+    import("./astro-light-auth-router").then((module) => {
+      config.router = module.astroLightAuthRouter;
+    });
+  }
+
   config.env = config.env || import.meta.env;
 
   return {
@@ -94,5 +86,7 @@ export function CreateLightAuth(config: LightAuthConfig): AstroLightAuthComponen
     basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
     getSession: createAstroLightAuthSessionFunction(config),
     getUser: createAstroLightAuthUserFunction(config),
+    signIn: createAstroSigninFunction(config),
+    signOut: createAstroSignoutFunction(config),
   };
 }

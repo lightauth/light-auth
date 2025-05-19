@@ -85,6 +85,10 @@ async function getCsrfToken<Session extends LightAuthSession = LightAuthSession,
 
   if (!csrfToken) throw new Error("light-auth: Failed to get csrf token");
 
+  // Check if the csrf token cookie, called light_auth_csrf_token exist
+  const csrfTokenCookie = document.cookie.split("; ").find((row) => row.startsWith("light_auth_csrf_token="));
+  if (csrfTokenCookie) window.document.cookie = `light_auth_csrf_token=; path=/; max-age=0;`;
+
   // Set the csrf token in the cookie store
   window.document.cookie = `light_auth_csrf_token=${csrfToken.csrfTokenHash}.${csrfToken.csrfToken}; path=/; secure=${
     config.env?.["NODE_ENV"] === "production"

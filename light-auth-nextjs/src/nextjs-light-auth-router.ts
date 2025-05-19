@@ -68,8 +68,8 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     if (url.startsWith("http")) return url;
 
     const isServerSide = typeof window === "undefined";
-
     if (!isServerSide) return url;
+
     const { headers: nextJsHeaders } = await import("next/headers");
 
     const headersData = await nextJsHeaders();
@@ -82,7 +82,6 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
 
   async getHeaders({ search }: { search?: string | RegExp }): Promise<Headers> {
     const isServerSide = typeof window === "undefined";
-
     if (!isServerSide) return new Headers();
 
     // Convert search to RegExp if it's a string

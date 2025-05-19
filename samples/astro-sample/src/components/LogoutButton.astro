@@ -1,11 +1,19 @@
 ---
-import { buttonVariants } from "./ui/button";
-import { Github, LogOut } from "lucide-react";
+import { Button, buttonVariants } from "./ui/button";
+import Google from "../../public/google.svg";
+import { LogOut } from "lucide-react";
 ---
 
 <div class="flex flex-col gap-2 w-80">
-  <a href={"/api/auth/logout"} class={buttonVariants({ variant: "outline" })}>
+  <Button id="btnLogout" variant="outline">
     <LogOut className="mr-2 h-4 w-4" />
     Logout
-  </a>
+  </Button>
 </div>
+
+<script>
+  import { signOut } from "@/lib/auth";
+  const btnLogout = document.getElementById("btnLogout");
+
+  if (btnLogout) btnLogout.onclick = signOut;
+</script>

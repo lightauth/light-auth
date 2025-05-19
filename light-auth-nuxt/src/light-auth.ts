@@ -9,15 +9,6 @@ import {
 } from "@light-auth/core";
 import { type EventHandlerRequest, type EventHandlerResponse, H3Event } from "h3";
 
-// export type LightAuthAsyncDataRequestStatus = "idle" | "pending" | "success" | "error";
-
-// export interface LightAuthAsyncSessionData {
-//   session: LightAuthSession;
-//   refresh: () => Promise<void>;
-//   error: Error | null;
-//   status: LightAuthAsyncDataRequestStatus;
-// }
-
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
