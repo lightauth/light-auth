@@ -1,0 +1,65 @@
+{
+  "name": "@light-auth/express",
+  "version": "0.0.8",
+  "description": "light auth framework for express, using arctic",
+  "author": {
+    "name": "Sébastien Pertus",
+    "email": "spertus@microsoft.com",
+    "url": "https://github.com/Mimetis"
+  },
+  "license": "MIT",
+  "keywords": [
+    "vue",
+    "nodejs",
+    "oauth",
+    "jwt",
+    "oauth2",
+    "authentication",
+    "nuxt",
+    "light-auth"
+  ],
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": [
+        "./src/index.ts",
+        "./dist/index.d.ts"
+      ],
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    },
+    "./client": {
+      "types": [
+        "./src/client/index.ts",
+        "./dist/client/index.d.ts"
+      ],
+      "import": "./dist/client/index.mjs",
+      "default": "./dist/client/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "npm run clean && rollup -c --bundleConfigAsCjs",
+    "dev": "rollup -cw --bundleConfigAsCjs",
+    "clean": "shx rm -rf dist lib",
+    "start": "rollup -c -w"
+  },
+  "peerDependencies": {
+    "arctic": "^3.6.0",
+    "jose": "^6.0.10",
+    "@light-auth/core": "^0.0.8",
+    "cookie": "^1.0.2"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/node": "^22.15.3",
+    "shx": "^0.4.0",
+    "@types/express": "^5.0.1",
+    "express": "^5.1.0"
+  },
+  "workspaces": [
+    "../light-auth-core"
+  ]
+}

@@ -10,13 +10,8 @@ export const actions = {
 		if (typeof providerName !== 'string') throw new Error('Invalid provider');
 		if (typeof callbackUrl !== 'string') throw new Error('Invalid callback URL');
 
-		signIn(providerName, callbackUrl, event);
+		await signIn(providerName, callbackUrl, event);
 	}
 };
 
-export const load = async (event: RequestEvent) => {
-	// const sec = LIGHT_AUTH_SECRET_VALUE;
-	// console.log('Secret value:', sec);
-	// const sec = env.LIGHT_AUTH_SECRET_VALUE;
-	// console.log('Secret value:', sec);
-};
+export const load = async (event: RequestEvent) => {};

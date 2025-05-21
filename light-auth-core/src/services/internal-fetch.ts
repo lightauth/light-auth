@@ -13,7 +13,7 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
   body?: any;
   [key: string]: unknown;
 }): Promise<T | null | undefined> {
-  const { config , body, method = "GET" } = args;
+  const { config, body, method = "GET" } = args;
   const { router } = config;
 
   // check if we are on the server side or client side

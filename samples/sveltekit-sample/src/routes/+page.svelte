@@ -1,9 +1,9 @@
 <script lang="ts">
 	import google from '../assets/google.svg';
-	// import { signIn } from '$lib/auth';
+	import { signIn } from '$lib/auth-client';
 
 	const handleClick = () => {
-		// signIn('google');
+		signIn('google', '/profile');
 	};
 </script>
 
@@ -23,6 +23,7 @@
 </form>
 
 <button
+	on:click={handleClick}
 	type="button"
 	class="w-120 flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-3 transition-colors hover:bg-gray-50"
 >

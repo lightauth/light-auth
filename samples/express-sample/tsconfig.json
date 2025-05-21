@@ -9,14 +9,13 @@
         "noImplicitAny": true, /* Enable error reporting for expressions and declarations with an implied 'any' type. */
         "strictNullChecks": true, /* When type checking, take into account 'null' and 'undefined'. */
         "skipLibCheck": true, /* Skip type checking all .d.ts files. */
-        "outDir": "./dist",
+        "outDir": "./public/js",
         "sourceMap": true,
         "jsx": "preserve",
-        "allowJs": false, /* Allow JavaScript files to be compiled. */
-        "declaration": true, /* Generates corresponding '.d.ts' file. */
+        "allowJs": false,
     },
     "include": [
-        "src"
+        "lib",
     ],
     "exclude": [
         "node_modules",

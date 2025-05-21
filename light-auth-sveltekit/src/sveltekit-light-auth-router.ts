@@ -22,7 +22,6 @@ export const sveltekitLightAuthRouter: LightAuthRouter = {
   },
 
   redirectTo: function ({ url, event }: { url: string; event?: RequestEvent }): Response {
-    console.log("Sveltekit- Redirecting to:", url);
     redirect(302, url);
   },
 

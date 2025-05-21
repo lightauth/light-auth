@@ -65,7 +65,6 @@ export function createFetchUserServerFunction<
 
       // get the user from the user adapter
       const user = await internalFetch<User>({ config, method: "POST", endpoint: `${config.basePath}/user/${session.userId}`, ...args });
-
       if (!user) return null;
 
       return user;

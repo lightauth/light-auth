@@ -25,7 +25,6 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
     await checkCsrfOrigin(headers);
 
     const url = await config.router.getUrl({ config, ...args });
-
     const reqUrl = new URL(url);
 
     // Get the auth segments from the URL

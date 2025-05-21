@@ -8,6 +8,7 @@ import {
   LightAuthCookie,
   LightAuthSession,
   LightAuthSessionStore,
+  LightAuthUser,
 } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
@@ -15,7 +16,13 @@ import * as cookieParser from "cookie";
  * A concrete CookieStore implementation for express,
  */
 export const expressLightAuthSessionStore: LightAuthSessionStore = {
-  getSession: async function ({ config, req }: { config: LightAuthConfig; req?: ExpressRequest }): Promise<LightAuthSession | null> {
+  getSession: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    config,
+    req,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    req?: ExpressRequest;
+  }): Promise<Session | null> {
     if (!req) throw new Error("Request is required in getSession function of expressLightAuthSessionStore");
 
     const incomingCookies = req.headers?.cookie;
@@ -28,21 +35,21 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     if (!sessionString) return null;
     try {
       const decryptedSession = await decryptJwt(sessionString, buildSecret(config.env));
-      return decryptedSession as LightAuthSession;
+      return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
       return null;
     }
   },
 
-  setSession: async function ({
+  setSession: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
     config,
     res,
     session,
   }: {
-    config: LightAuthConfig;
+    config: LightAuthConfig<Session, User>;
     res?: ExpressResponse;
-    session: LightAuthSession;
+    session: Session;
   }): Promise<ExpressResponse> {
     if (!res) throw new Error("Response is required in setSession of expressLightAuthSessionStore");
 
@@ -64,7 +71,12 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
 
     return res;
   },
-  deleteSession: function ({ res }: { config: LightAuthConfig; res?: ExpressResponse }): ExpressResponse {
+  deleteSession: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
+    res,
+  }: {
+    config: LightAuthConfig<Session, User>;
+    res?: ExpressResponse;
+  }): ExpressResponse {
     if (!res) throw new Error("Response is required in deleteSession of expressLightAuthSessionStore");
 
     res.clearCookie(DEFAULT_SESSION_NAME);

@@ -1,4 +1,4 @@
-import { buildFullUrl, LightAuthCookie, LightAuthRouter } from "@light-auth/core";
+import { buildFullUrl, LightAuthConfig, LightAuthCookie, LightAuthRouter, LightAuthSession, LightAuthUser } from "@light-auth/core";
 import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
 
@@ -9,19 +9,42 @@ export const expressLightAuthRouter: LightAuthRouter = {
     return res;
   },
 
-  getUrl: function ({ endpoint, req }: { endpoint?: string; req?: ExpressRequest }): string {
+  getRequest: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+    config: LightAuthConfig<Session, User>;
+    req?: ExpressRequest;
+    [key: string]: unknown;
+  }): Promise<Request> {
+    const { config, req } = args;
+    if (!req) throw new Error("Request is required in getRequest function of expressLightAuthRouter");
+    const url = await this.getUrl({ ...args });
+    const headers = await this.getHeaders({ ...args });
+    return new Request(url, { method: req.method, headers: headers });
+  },
+
+  getUrl: function ({ endpoint, req, args }: { endpoint?: string; req?: ExpressRequest; args?: any }): string {
+    const url = endpoint ?? req?.url;
+    if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of expressLightAuthRouter.");
+
+    if (url.startsWith("http")) return url;
+
+    const isServerSide = typeof window === "undefined";
+    if (!isServerSide) return url;
+
     if (!req) throw new Error("Request is required in getUrl function of expressLightAuthRouter");
 
-    const pathUrl = endpoint ?? req?.originalUrl;
-    if (!pathUrl) throw new Error("light-auth: No url provided and no request object available in getUrl of expressLightAuthRouter.");
+    const headers = new Headers();
+    if (req.headers) {
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (!value) continue;
+        const vals = Array.isArray(value) ? value : [value];
+        for (const val of vals) {
+          headers.append(key, val);
+        }
+      }
+    }
 
-    if (pathUrl.startsWith("http")) return pathUrl;
-
-    const url = req?.protocol + "://" + req?.get("host") + pathUrl;
-    const parsedUrl = new URL(url);
-    const searchParams = new URLSearchParams(req?.query as any);
-    parsedUrl.search = searchParams.toString();
-    return parsedUrl.toString();
+    const fullUrl = buildFullUrl({ url, incomingHeaders: headers });
+    return fullUrl.toString();
   },
 
   getCookies: function ({ search, req }: { search?: string | RegExp; req?: ExpressRequest }): LightAuthCookie[] {

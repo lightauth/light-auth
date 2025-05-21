@@ -1,5 +1,5 @@
 import express, { NextFunction, type Request, type Response } from "express";
-import { getSession, getUser, handlers, middleware, signIn, signOut } from "./auth";
+import { getSession, getUser, handlers, middleware, signIn, signOut } from "../lib/auth";
 import * as path from "node:path";
 import * as dotenv from "dotenv";
 
@@ -18,6 +18,7 @@ app.set("view engine", "pug");
 app.set("trust proxy", true);
 
 app.use(express.static(path.join(import.meta.dirname, "..", "public")));
+app.use(express.static(path.join(import.meta.dirname, "..", "public", "js")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
@@ -33,11 +34,11 @@ app.get("/login", async (req: Request, res: Response) => {
 
 app.post("/login", async (req: Request, res: Response) => {
   const providerName = req.body.providerName;
-  await signIn(req, res, providerName);
+  await signIn(providerName, "/", req, res);
 });
 
 app.get("/logout", async (req: Request, res: Response) => {
-  await signOut(req, res, false, "/protected");
+  await signOut(false, "/", req, res);
 });
 
 // Routes
@@ -45,8 +46,8 @@ app.get("/protected", async (_req: Request, res: Response) => {
   res.render("protected", { session: res.locals.session });
 });
 
-app.get("/", async (_req: Request, res: Response) => {
-  const user = await getUser(_req, res);
+app.get("/", async (req: Request, res: Response) => {
+  const user = await getUser(req, res);
   res.render("index", {
     title: "Express Auth Example",
     session: res.locals.session,

@@ -10,8 +10,6 @@ export async function providerCallbackHandler<
   let currentRouter: LightAuthRouter | null = null;
   let callbackUrl = "/";
   try {
-    console.log("callback called:");
-
     const { router, userAdapter, provider, sessionStore } = checkConfig(config, providerName);
     currentRouter = router;
 
