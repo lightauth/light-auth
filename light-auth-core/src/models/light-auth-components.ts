@@ -1,6 +1,4 @@
-import { BaseRequest, BaseResponse } from "./light-auth-base";
-import { LightAuthProvider } from "./light-auth-provider";
-import { LightAuthSession, LightAuthUser } from "./light-auth-session";
+import { type LightAuthProvider } from "./light-auth-provider";
 
 /**
  * LightAuthComponents is an interface that defines the structure of the LightAuth components.

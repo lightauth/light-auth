@@ -1,4 +1,4 @@
-import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
 
 /**

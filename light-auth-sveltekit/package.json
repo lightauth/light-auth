@@ -1,7 +1,7 @@
 {
-  "name": "@light-auth/astro",
+  "name": "@light-auth/sveltekit",
   "version": "0.0.8",
-  "description": "light auth framework for astro, using arctic",
+  "description": "light auth framework for sveltekit, using arctic",
   "author": {
     "name": "Sébastien Pertus",
     "email": "spertus@microsoft.com",
@@ -47,15 +47,18 @@
     "start": "rollup -c -w"
   },
   "peerDependencies": {
+    "@light-auth/core": "^0.0.8",
     "arctic": "^3.6.0",
-    "jose": "^6.0.10",
-    "@light-auth/core": "^0.0.8"
+    "jose": "^6.0.10"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^22.15.3",
+    "@sveltejs/kit": "^2.16.0",
+    "svelte": "^5.0.0",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.2",
     "shx": "^0.4.0",
-    "astro": "5.7.10"
+    "tslib": "^2.8.1"
   },
   "workspaces": [
     "../light-auth-core"

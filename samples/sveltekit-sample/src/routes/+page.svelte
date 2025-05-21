@@ -11,7 +11,8 @@
 <p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
 
 <form method="POST">
-	<input type="hidden" name="provider" value="google" />
+	<input type="hidden" name="providerName" value="google" />
+	<input type="hidden" name="callbackUrl" value="/" />
 	<button
 		type="submit"
 		class="w-120 flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-3 transition-colors hover:bg-gray-50"

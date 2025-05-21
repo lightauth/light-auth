@@ -1,74 +1,76 @@
 import {
+  DEFAULT_BASE_PATH,
   type LightAuthConfig,
-  type LightAuthSession,
-  type LightAuthUser,
   createHttpHandlerFunction,
   createFetchSessionServerFunction,
   createFetchUserServerFunction,
   createSigninServerFunction,
   createSignoutServerFunction,
+  type LightAuthSession,
+  type LightAuthUser,
   resolveBasePath,
 } from "@light-auth/core";
+import { redirect, type RequestEvent } from "@sveltejs/kit";
 
-import type { APIRoute, AstroGlobal, AstroSharedContext } from "astro";
-
-export const createAstroLightAuthSessionFunction = <
+export const createSvelteKitLightAuthSessionFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
 ) => {
   const sessionFunction = createFetchSessionServerFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await sessionFunction({ context });
+  return async (event?: RequestEvent) => {
+    return await sessionFunction({ event });
   };
 };
 
-export const createAstroLightAuthUserFunction = <
+export const createSvelteKitLightAuthUserFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserServerFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await userFunction({ context });
+  return async (event?: RequestEvent) => {
+    return await userFunction({ event });
   };
 };
 
-export function createAstroSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) {
+export function createSvelteKitSigninFunction<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(config: LightAuthConfig<Session, User>) {
   const signInFunction = createSigninServerFunction(config);
-  return async (providerName: string, callbackUrl: string = "/", context: AstroSharedContext) => {
-    return await signInFunction({ providerName, callbackUrl, context });
+  return async (providerName: string, callbackUrl: string = "/", event: RequestEvent) => {
+    return await signInFunction({ providerName, callbackUrl, event });
   };
 }
 
-export function createAstroSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) {
+export function createSvelteKitSignoutFunction<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(config: LightAuthConfig<Session, User>) {
   const signOutFunction = createSignoutServerFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await signOutFunction({ context });
+  return async (revokeToken: boolean, callbackUrl: string = "/", event: RequestEvent) => {
+    return await signOutFunction({ revokeToken, callbackUrl, event });
   };
 }
 
-export const createAstroLightAuthHandlerFunction = <
+export const createSvelteKitLightAuthHandlerFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
-): { GET: APIRoute; POST: APIRoute } => {
+) => {
   const lightAuthHandler = createHttpHandlerFunction(config);
 
   return {
-    GET: async (context?: AstroSharedContext) => {
-      const response = await lightAuthHandler({ context });
+    GET: async (event?: RequestEvent) => {
+      const response = await lightAuthHandler({ event });
       return response;
     },
-    POST: async (context?: AstroSharedContext) => {
-      const response = await lightAuthHandler({ context });
+    POST: async (event?: RequestEvent) => {
+      const response = await lightAuthHandler({ event });
       return response;
     },
   };
@@ -92,27 +94,26 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   }
 
   if (!config.sessionStore && typeof window === "undefined") {
-    import("./astro-light-auth-session-store").then((module) => {
-      config.sessionStore = module.astroLightAuthSessionStore;
+    import("./sveltekit-light-auth-session-store").then((module) => {
+      config.sessionStore = module.sveltekitLightAuthSessionStore;
     });
   }
   if (!config.router && typeof window === "undefined") {
-    import("./astro-light-auth-router").then((module) => {
-      config.router = module.astroLightAuthRouter;
+    import("./sveltekit-light-auth-router").then((module) => {
+      config.router = module.sveltekitLightAuthRouter;
     });
   }
 
-  // @ts-ignore
-  config.env = config.env || import.meta;
+  config.env = config.env || process.env;
   config.basePath = resolveBasePath(config);
 
   return {
     providers: config.providers,
-    handlers: createAstroLightAuthHandlerFunction(config),
-    basePath: config.basePath,
-    getSession: createAstroLightAuthSessionFunction(config),
-    getUser: createAstroLightAuthUserFunction(config),
-    signIn: createAstroSigninFunction(config),
-    signOut: createAstroSignoutFunction(config),
+    handlers: createSvelteKitLightAuthHandlerFunction(config),
+    basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
+    getSession: createSvelteKitLightAuthSessionFunction(config),
+    getUser: createSvelteKitLightAuthUserFunction(config),
+    signIn: createSigninServerFunction(config),
+    signOut: createSvelteKitSignoutFunction(config),
   };
 }

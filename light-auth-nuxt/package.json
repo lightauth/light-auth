@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/nuxt",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "light auth framework for nuxt, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -46,17 +46,10 @@
     "clean": "shx rm -rf dist lib",
     "start": "rollup -c -w"
   },
-  "dependencies": {
+  "peerDependencies": {
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
-    "@light-auth/core": "^0.0.7"
-  },
-  "peerDependencies": {
-    "nuxt": "^3.17.2",
-    "vue": "^3.5.13",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "arctic": "^3.6.0"
+    "@light-auth/core": "^0.0.8"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",

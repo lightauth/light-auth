@@ -1,5 +1,5 @@
 import { generateState, generateCodeVerifier } from "arctic";
-import { LightAuthConfig, BaseResponse, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type BaseResponse, type LightAuthCookie, type LightAuthSession, type LightAuthUser } from "../models";
 import { buildSecret, checkConfig } from "../services/utils";
 import * as cookieParser from "cookie";
 import { validateCsrfToken } from "../services";

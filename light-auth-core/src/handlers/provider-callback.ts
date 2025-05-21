@@ -1,5 +1,5 @@
 import { decodeIdToken } from "arctic";
-import { LightAuthConfig, LightAuthCookie, LightAuthRouter, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthCookie, type LightAuthRouter, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
 
 export async function providerCallbackHandler<

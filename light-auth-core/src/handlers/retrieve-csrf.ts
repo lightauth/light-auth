@@ -1,4 +1,4 @@
-import { LightAuthSession, LightAuthUser, LightAuthConfig, BaseResponse, LightAuthCookie } from "../models";
+import { type LightAuthSession, type LightAuthUser, type LightAuthConfig, type BaseResponse } from "../models";
 import { buildSecret, checkConfig, createCsrfToken } from "../services";
 
 export async function getCsrfToken<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {

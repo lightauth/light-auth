@@ -1,9 +1,9 @@
 import { OAuth2Tokens } from "arctic";
-import { LightAuthProvider } from "./light-auth-provider";
-import { LightAuthSession, LightAuthUser } from "./light-auth-session";
-import { LightAuthUserAdapter } from "./light-auth-user-adapter";
-import { LightAuthSessionStore } from "./light-auth-session-store";
-import { LightAuthRouter } from "./light-auth-router";
+import { type LightAuthProvider } from "./light-auth-provider";
+import { type LightAuthSession, type LightAuthUser } from "./light-auth-session";
+import { type LightAuthUserAdapter } from "./light-auth-user-adapter";
+import { type LightAuthSessionStore } from "./light-auth-session-store";
+import { type LightAuthRouter } from "./light-auth-router";
 
 export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>> = {
   providers?: LightAuthProvider[];

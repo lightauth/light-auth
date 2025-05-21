@@ -1,6 +1,6 @@
 import * as sha2 from "@oslojs/crypto/sha2";
 import * as encoding from "@oslojs/encoding";
-import { LightAuthConfig, LightAuthCookie, LightAuthCsrfToken, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthCookie, type LightAuthCsrfToken, type LightAuthSession, type LightAuthUser } from "../models";
 import { internalFetch } from "./internal-fetch";
 
 function createSha256(value: string): string {

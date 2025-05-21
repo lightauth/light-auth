@@ -1,4 +1,4 @@
-import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "../models";
 import { getCsrfToken, internalFetch } from "../services";
 
 export function createSigninClientFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

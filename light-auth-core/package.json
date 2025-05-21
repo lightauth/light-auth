@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/core",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "light auth core framework agnostic, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -22,17 +22,26 @@
     "./client": {
       "import": "./dist/client/index.mjs",
       "require": "./dist/client/index.cjs",
-      "types": "./src/client/index.ts"
+      "types": [
+        "./src/client/index.ts",
+        "./dist/client/index.d.ts"
+      ]
     },
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
-      "types": "./src/index.ts"
+      "types": [
+        "./src/index.ts",
+        "./dist/index.d.ts"
+      ]
     },
     "./adapters": {
       "import": "./dist/adapters/index.mjs",
       "require": "./dist/adapters/index.cjs",
-      "types": "./src/adapters/index.ts"
+      "types": [
+        "./src/adapters/index.ts",
+        "./dist/adapters/index.d.ts"
+      ]
     }
   },
   "files": [
@@ -44,15 +53,10 @@
     "clean": "shx rm -rf dist lib",
     "start": "rollup -c -w"
   },
-  "dependencies": {
-    "arctic": "^3.6.0",
-    "cookie": "^1.0.2",
-    "jose": "^6.0.10"
-  },
   "peerDependencies": {
-    "arctic": "^3.6.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "cookie": "^1.0.2",
+    "jose": "^6.0.10",
+    "arctic": "^3.6.0"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",

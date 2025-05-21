@@ -9,7 +9,7 @@ import {
   resolveBasePath,
 } from "@light-auth/core/client";
 
-export const createNextJsLightAuthSessionFunction = <
+export const createSveltekitLightAuthSessionFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
@@ -19,7 +19,7 @@ export const createNextJsLightAuthSessionFunction = <
   return async () => await sessionFunction();
 };
 
-export const createNextJsLightAuthUserFunction = <
+export const createSveltekitLightAuthUserFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
@@ -29,14 +29,14 @@ export const createNextJsLightAuthUserFunction = <
   return async () => await userFunction();
 };
 
-export function createNextJsSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export function createSveltekitSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninClientFunction(config);
   return async (providerName: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
 }
 
-export function createNextJsSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export function createSveltekitSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signOutFunction = createSignoutClientFunction(config);
@@ -51,9 +51,9 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    getSession: createNextJsLightAuthSessionFunction(config),
-    getUser: createNextJsLightAuthUserFunction(config),
-    signIn: createNextJsSigninFunction(config),
-    signOut: createNextJsSignoutFunction(config),
+    getSession: createSveltekitLightAuthSessionFunction(config),
+    getUser: createSveltekitLightAuthUserFunction(config),
+    signIn: createSveltekitSigninFunction(config),
+    signOut: createSveltekitSignoutFunction(config),
   };
 }

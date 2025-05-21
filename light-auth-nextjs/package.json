@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/nextjs",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "light auth framework for react, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -46,18 +46,15 @@
     "clean": "shx rm -rf dist lib",
     "start": "rollup -c -w"
   },
-  "dependencies": {
+  "peerDependencies": {
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
-    "@light-auth/core": "^0.0.7"
+    "@light-auth/core": "^0.0.8"
   },
-  "peerDependencies": {
+  "devDependencies": {
     "next": "^15.3.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "arctic": "^3.6.0"
-  },
-  "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",

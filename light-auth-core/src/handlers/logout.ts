@@ -1,4 +1,4 @@
-import { LightAuthConfig, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthCookie, type LightAuthSession, type LightAuthUser } from "../models";
 import { validateCsrfToken } from "../services";
 import { buildSecret, checkConfig } from "../services/utils";
 

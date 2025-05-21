@@ -1,5 +1,5 @@
 import { OAuth2Tokens } from "arctic";
-import { ArcticProvider } from "./artic-provider";
+import { type ArcticProvider } from "./artic-provider";
 
 /**
  * LightAuthProvider is an interface that defines the structure of a light auth provider.

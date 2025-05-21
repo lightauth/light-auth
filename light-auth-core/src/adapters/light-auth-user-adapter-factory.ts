@@ -1,4 +1,4 @@
-import { LightAuthConfig, LightAuthUserAdapter, LightAuthUser, LightAuthSession } from "../models";
+import { type LightAuthConfig, type LightAuthUserAdapter, type LightAuthUser, type LightAuthSession } from "../models";
 import { decryptJwt, encryptJwt } from "../services/jwt";
 import { buildSecret } from "../services/utils";
 import { promises as fs } from "node:fs";

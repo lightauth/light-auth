@@ -1,7 +1,7 @@
-import { BaseResponse } from "./light-auth-base";
-import { LightAuthConfig } from "./light-auth-config";
+import { type BaseResponse } from "./light-auth-base";
+import { type LightAuthConfig } from "./light-auth-config";
 
-import { LightAuthSession, LightAuthUser } from "./light-auth-session";
+import { type LightAuthSession, type LightAuthUser } from "./light-auth-session";
 
 export interface LightAuthSessionStore {
   getSession: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {

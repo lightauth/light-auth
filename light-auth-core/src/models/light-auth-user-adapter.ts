@@ -1,5 +1,5 @@
-import { LightAuthConfig } from "./light-auth-config";
-import { LightAuthSession, LightAuthUser } from "./light-auth-session";
+import { type LightAuthConfig } from "./light-auth-config";
+import { type LightAuthSession, type LightAuthUser } from "./light-auth-session";
 
 export interface LightAuthUserAdapter {
   getUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {

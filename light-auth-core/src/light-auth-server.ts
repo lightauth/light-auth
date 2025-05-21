@@ -1,6 +1,6 @@
 import { logoutAndRevokeTokenHandler } from "./handlers/logout";
 import { redirectToProviderLoginHandler } from "./handlers/redirect-to-provider";
-import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser, LightAuthCsrfToken } from "./models";
+import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "./models";
 import { internalFetch } from "./services";
 
 export function createSigninServerFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

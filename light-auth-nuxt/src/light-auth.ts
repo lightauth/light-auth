@@ -68,6 +68,11 @@ export const createNuxtJsLightAuthHandlerFunction = <
 export function CreateLightAuth<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
+  // check if we are on the server side
+  const isServerSide = typeof window === "undefined";
+  if (!isServerSide)
+    throw new Error("light-auth-nextjs: DO NOT use this function [CreateLightAuth] on the client side as you may expose sensitive data to the client.");
+
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
   // lazy import the user adapter to avoid circular dependencies

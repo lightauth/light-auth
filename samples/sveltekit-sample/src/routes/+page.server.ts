@@ -1,18 +1,16 @@
-import { redirect, type RequestEvent } from '@sveltejs/kit';
-import { signIn } from '$lib/auth';
-import { LIGHT_AUTH_SECRET_VALUE } from '$env/static/private';
-import { env } from '$env/dynamic/private';
-// const sec = process.env['LIGHT_AUTH_SECRET_VALUE'];
-// console.log('Secret value:', sec);
+import { redirect, type Redirect, type RequestEvent } from '@sveltejs/kit';
+import { signIn } from '$lib/server/auth';
 
 export const actions = {
 	default: async (event) => {
 		const data = await event.request.formData();
 
-		const provider = data.get('provider');
-		if (typeof provider !== 'string') throw new Error('Invalid provider');
+		const providerName = data.get('providerName');
+		const callbackUrl = data.get('callbackUrl');
+		if (typeof providerName !== 'string') throw new Error('Invalid provider');
+		if (typeof callbackUrl !== 'string') throw new Error('Invalid callback URL');
 
-		await signIn(provider, event);
+		signIn(providerName, callbackUrl, event);
 	}
 };
 

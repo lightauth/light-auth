@@ -1,4 +1,4 @@
-import { LightAuthConfig } from "../models";
+import { type LightAuthConfig } from "../models";
 
 /**
  * this function is used to make a request to the light auth server

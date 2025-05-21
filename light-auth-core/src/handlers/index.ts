@@ -1,4 +1,4 @@
-import { LightAuthConfig, BaseResponse, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkCsrfOrigin, createCsrfToken } from "../services/csrf";
 import { logoutAndRevokeTokenHandler } from "./logout";
 import { providerCallbackHandler } from "./provider-callback";

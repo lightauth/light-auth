@@ -1,8 +1,9 @@
 import { Google, MicrosoftEntraId } from 'arctic';
 
-import type { LightAuthProvider, LightAuthSession, LightAuthUser } from '@light-auth/core';
-import { CreateLightAuth } from './lightauth';
+import type { LightAuthProvider } from '@light-auth/core';
+import { CreateLightAuth } from '@aaaaa/sveltekit';
 import { env } from '$env/dynamic/private';
+import type { MyLightAuthSession, MyLightAuthUser } from '$lib/auth-client';
 
 const googleProvider: LightAuthProvider = {
 	providerName: 'google',
@@ -19,19 +20,6 @@ const microsoftProvider: LightAuthProvider = {
 		'http://localhost:5173/api/auth/callback/microsoft'
 	),
 	scopes: ['offline_access']
-};
-
-export type MyLightAuthSession = LightAuthSession & {
-	// Add any additional properties you want to include in your custom session type
-	firstName?: string;
-	lastName?: string;
-};
-
-export type MyLightAuthUser = LightAuthUser<MyLightAuthSession> & {
-	// Add any additional properties you want to include in your custom user type
-	email_verified?: boolean;
-	iss?: string;
-	sub?: string;
 };
 
 export const { providers, handlers, signIn, signOut, getSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({

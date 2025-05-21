@@ -1,5 +1,5 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
-import { LightAuthProvider, LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthProvider, type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
 
 /**
  * Checks the configuration and throws an error if any required fields are missing.

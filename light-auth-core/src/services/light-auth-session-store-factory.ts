@@ -1,5 +1,5 @@
 import * as cookieParser from "cookie";
-import { LightAuthConfig, LightAuthSession, LightAuthSessionStore, LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthSession, type LightAuthSessionStore, type LightAuthUser } from "../models";
 import { DEFAULT_SESSION_NAME } from "../constants";
 import { buildSecret, getSessionExpirationMaxAge } from "./utils";
 import { decryptJwt, encryptJwt } from "./jwt";

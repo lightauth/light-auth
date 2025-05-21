@@ -1,4 +1,4 @@
-import { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
 
 export async function getUserHandler<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {

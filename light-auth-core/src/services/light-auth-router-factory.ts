@@ -1,5 +1,5 @@
-import { LightAuthConfig, LightAuthCookie, LightAuthSession, LightAuthUser } from "../models";
-import { LightAuthRouter } from "../models/light-auth-router";
+import { type LightAuthConfig, type LightAuthCookie, type LightAuthSession, type LightAuthUser } from "../models";
+import { type LightAuthRouter } from "../models/light-auth-router";
 import { buildFullUrl } from "./utils";
 import * as cookieParser from "cookie";
 
