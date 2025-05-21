@@ -37,10 +37,7 @@
 	},
 	"dependencies": {
 		"arctic": "^3.6.0",
-		"jose": "^6.0.10"
-	},
-	"workspaces": [
-		"../../light-auth-core",
-		"../../light-auth-sveltekit"
-	]
+		"jose": "^6.0.10",
+		"@light-auth/sveltekit": "^0.0.8"
+	}
 }
