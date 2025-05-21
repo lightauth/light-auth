@@ -37,6 +37,7 @@ export default
             external: [
                 ...Object.keys(pkg.dependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
+                ...Object.keys(pkg.devDependencies || {}),
                 "next/headers",
                 "next/navigation",
                 "next/server",
@@ -74,6 +75,7 @@ export default
             ],
             external: [
                 ...Object.keys(pkg.dependencies || {}),
+                ...Object.keys(pkg.devDependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
                 "next/headers",
                 "next/navigation",

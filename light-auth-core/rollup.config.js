@@ -35,9 +35,12 @@ export default
             external: [
                 ...Object.keys(pkg.dependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
+                ...Object.keys(pkg.devDependencies || {}),
                 "react/jsx-runtime",
                 "node:fs",
                 "node:path",
+                "@oslojs/crypto/sha2",
+                "@oslojs/encoding",
             ],
 
         },
@@ -71,9 +74,12 @@ export default
             external: [
                 ...Object.keys(pkg.dependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
+                ...Object.keys(pkg.devDependencies || {}),
                 "react/jsx-runtime",
                 "node:fs",
                 "node:path",
+                "@oslojs/crypto/sha2",
+                "@oslojs/encoding",
             ],
 
         },
@@ -107,9 +113,12 @@ export default
             external: [
                 ...Object.keys(pkg.dependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
+                ...Object.keys(pkg.devDependencies || {}),
                 "react/jsx-runtime",
                 "node:fs",
                 "node:path",
+                "@oslojs/crypto/sha2",
+                "@oslojs/encoding",
             ],
 
         },

@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/nuxt",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "light auth framework for nuxt, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -43,7 +43,7 @@
   "dependencies": {
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
-    "@light-auth/core": "0.0.3"
+    "@light-auth/core": "^0.0.6"
   },
   "peerDependencies": {
     "nuxt": "^3.17.2",
