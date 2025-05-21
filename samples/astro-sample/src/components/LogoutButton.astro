@@ -12,7 +12,7 @@ import { LogOut } from "lucide-react";
 </div>
 
 <script>
-  import { signOut } from "@/lib/auth";
+  import { signOut } from "@/lib/auth-client";
   const btnLogout = document.getElementById("btnLogout");
 
   if (btnLogout) btnLogout.onclick = signOut;

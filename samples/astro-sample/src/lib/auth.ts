@@ -1,4 +1,4 @@
-import { Google, MicrosoftEntraId } from "arctic";
+import { Google } from "arctic";
 import { type LightAuthProvider } from "@light-auth/core";
 import { CreateLightAuth } from "@light-auth/astro";
 
@@ -11,4 +11,5 @@ const googleProvider: LightAuthProvider = {
 export const { providers, handlers, getSession, getUser, signIn, signOut } = CreateLightAuth({
   providers: [googleProvider],
   basePath: "/api/auth", // Optional: specify a custom base path for the handlers
+  env: import.meta.env, // Optional: pass the environment variables to the handlers
 });

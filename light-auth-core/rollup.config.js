@@ -7,13 +7,49 @@ export default
     [
         {
             input: {
-                index: 'src/index.tsx',
+                index: 'src/client/index.ts',
             },
             output:
             {
                 dir: "dist",
                 format: "es",
-                entryFileNames: "[name].mjs",
+                entryFileNames: "client/index.mjs",
+                banner: libraryHeader,
+                sourcemap: true,
+                intro: "'use client';"
+            },
+
+            jsx: {
+                mode: 'automatic',
+                factory: 'React.createElement',
+                importSource: 'react',
+                jsxImportSource: 'react/jsx-runtime'
+            },
+            treeshake: {
+                moduleSideEffects: false,
+                propertyReadSideEffects: false
+            },
+            plugins: [
+                typescript({ typescript: require("typescript") }),
+            ],
+            external: [
+                ...Object.keys(pkg.dependencies || {}),
+                ...Object.keys(pkg.peerDependencies || {}),
+                "react/jsx-runtime",
+                "node:fs",
+                "node:path",
+            ],
+
+        },
+        {
+            input: {
+                index: 'src/index.ts',
+            },
+            output:
+            {
+                dir: "dist",
+                format: "es",
+                entryFileNames: "index.mjs",
                 banner: libraryHeader,
                 sourcemap: true,
                 intro: "'use strict';"

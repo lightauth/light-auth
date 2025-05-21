@@ -19,10 +19,15 @@
   ],
   "type": "module",
   "exports": {
+    "./client": {
+      "import": "./dist/client/index.mjs",
+      "require": "./dist/client/index.cjs",
+      "types": "./src/client/index.ts"
+    },
     ".": {
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
-      "types": "./src/index.tsx"
+      "types": "./src/index.ts"
     },
     "./adapters": {
       "import": "./dist/adapters/index.mjs",

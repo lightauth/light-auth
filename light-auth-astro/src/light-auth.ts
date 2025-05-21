@@ -1,63 +1,82 @@
 import {
-  DEFAULT_BASE_PATH,
   type LightAuthConfig,
-  type LightAuthProvider,
   type LightAuthSession,
   type LightAuthUser,
-  type LightAuthComponents,
   createHttpHandlerFunction,
-  createFetchSessionFunction,
-  createFetchUserFunction,
-  createSigninFunction,
-  createSignoutFunction,
+  createFetchSessionServerFunction,
+  createFetchUserServerFunction,
+  createSigninServerFunction,
+  createSignoutServerFunction,
+  resolveBasePath,
 } from "@light-auth/core";
 
-import type { APIContext, APIRoute } from "astro";
+import type { APIRoute, AstroGlobal, AstroSharedContext } from "astro";
 
-export const createAstroLightAuthSessionFunction = (config: LightAuthConfig) => {
-  const sessionFunction = createFetchSessionFunction(config);
-  return async (req?: Request) => {
-    return await sessionFunction({ req });
+export const createAstroLightAuthSessionFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const sessionFunction = createFetchSessionServerFunction(config);
+  return async (context: AstroSharedContext) => {
+    return await sessionFunction({ context });
   };
 };
 
-export const createAstroLightAuthUserFunction = (config: LightAuthConfig) => {
-  const userFunction = createFetchUserFunction(config);
-  return async (req?: Request) => {
-    return await userFunction({ req });
+export const createAstroLightAuthUserFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const userFunction = createFetchUserServerFunction(config);
+  return async (context: AstroSharedContext) => {
+    return await userFunction({ context });
   };
 };
 
-export function createAstroSigninFunction(config: LightAuthConfig) {
-  const signInFunction = createSigninFunction(config);
-  return async (providerName: string) => {
-    return await signInFunction({ providerName });
+export function createAstroSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
+  const signInFunction = createSigninServerFunction(config);
+  return async (providerName: string, callbackUrl: string = "/", context: AstroSharedContext) => {
+    return await signInFunction({ providerName, callbackUrl, context });
   };
 }
 
-export function createAstroSignoutFunction(config: LightAuthConfig) {
-  const signOutFunction = createSignoutFunction(config);
-  return async () => {
-    return await signOutFunction();
+export function createAstroSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
+  const signOutFunction = createSignoutServerFunction(config);
+  return async (context: AstroSharedContext) => {
+    return await signOutFunction({ context });
   };
 }
 
-export const createAstroLightAuthHandlerFunction = (config: LightAuthConfig): { GET: APIRoute; POST: APIRoute } => {
+export const createAstroLightAuthHandlerFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+): { GET: APIRoute; POST: APIRoute } => {
   const lightAuthHandler = createHttpHandlerFunction(config);
 
   return {
-    GET: async (context?: APIContext) => {
+    GET: async (context?: AstroSharedContext) => {
       const response = await lightAuthHandler({ context });
       return response;
     },
-    POST: async (context?: APIContext) => {
+    POST: async (context?: AstroSharedContext) => {
       const response = await lightAuthHandler({ context });
       return response;
     },
   };
 };
 
-export function CreateLightAuth(config: LightAuthConfig) {
+export function CreateLightAuth<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
   // dynamic imports to avoid error if we are on the client side
@@ -80,11 +99,12 @@ export function CreateLightAuth(config: LightAuthConfig) {
 
   // @ts-ignore
   config.env = config.env || import.meta;
+  config.basePath = resolveBasePath(config);
 
   return {
     providers: config.providers,
     handlers: createAstroLightAuthHandlerFunction(config),
-    basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
+    basePath: config.basePath,
     getSession: createAstroLightAuthSessionFunction(config),
     getUser: createAstroLightAuthUserFunction(config),
     signIn: createAstroSigninFunction(config),

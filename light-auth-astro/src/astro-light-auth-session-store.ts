@@ -10,10 +10,8 @@ import {
   type LightAuthSessionStore,
   type LightAuthUser,
 } from "@light-auth/core";
-import type { APIContext } from "astro";
+import type { AstroSharedContext } from "astro";
 import * as cookieParser from "cookie";
-
-type AstroContext = APIContext<Record<string, any>, Record<string, string | undefined>>;
 
 /**
  * A concrete CookieStore implementation for Node.js server-side,
@@ -23,7 +21,7 @@ type AstroContext = APIContext<Record<string, any>, Record<string, string | unde
 export const astroLightAuthSessionStore: LightAuthSessionStore = {
   async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     config?: LightAuthConfig<Session, User>;
-    context?: AstroContext;
+    context?: AstroSharedContext;
     req?: Request;
   }): Promise<Session | null> {
     const { config, context, req } = args;
@@ -50,7 +48,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
 
   async deleteSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     config?: LightAuthConfig<Session, User>;
-    context?: AstroContext;
+    context?: AstroSharedContext;
   }): Promise<void> {
     const { config, context } = args;
     if (!config) throw new Error("light-auth: Config is required in deleteSession of astroLightAuthSessionStore");
@@ -65,7 +63,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
   async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     config: LightAuthConfig<Session, User>;
     session: Session;
-    context?: AstroContext;
+    context?: AstroSharedContext;
   }): Promise<void> {
     const { config, session, context } = args;
     if (!context) throw new Error("light-auth: Context is required in setSession of astroLightAuthSessionStore");

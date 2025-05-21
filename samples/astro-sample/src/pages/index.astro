@@ -3,18 +3,23 @@ import "../styles/global.css";
 // Component Imports
 import Layout from "@/layouts/main.astro";
 import LoginButtons from "@/components/LoginButtons.astro";
-import { getSession } from "@/lib/auth";
+import { getSession, getUser, signIn } from "@/lib/auth";
 import LogoutButton from "@/components/LogoutButton.astro";
-import { getUser } from "@/lib/auth";
-
-import Google from "../../public/google.svg";
+import {} from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
+import { actions } from "astro:actions";
+import Google from "../../public/google.svg";
 
 export const prerender = false;
 
-const session = await getSession(Astro.request);
-const user = await getUser(Astro.request);
+const session = await getSession(Astro);
+const user = await getUser(Astro);
+
+const result = Astro.getActionResult(actions.login);
+if (result && !result.error && result.data) {
+  return await signIn(result.data.providerName, result.data.callbackUrl, Astro);
+}
 ---
 
 <Layout title="Astro Authentication using light-auth">
@@ -55,8 +60,22 @@ const user = await getUser(Astro.request);
             <LogoutButton />
           </div>
         ) : (
-          <div class="flex flex-row justify-center items-center ">
-            <LoginButtons />
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-row justify-center items-center ">
+              <LoginButtons />
+            </div>
+            <div class="flex flex-row justify-center items-center ">
+              <div class="flex flex-col gap-2 w-100">
+                <form method="POST" action={actions.login}>
+                  <input type="hidden" name="providerName" value="google" />
+                  <input type="hidden" name="callbackUrl" value="/" />
+                  <Button id="btnLoginForm" variant="outline" type="submit" className="w-full">
+                    <Google height={20} width={20} class="mr-2" />
+                    Google from action
+                  </Button>
+                </form>
+              </div>
+            </div>
           </div>
         )
       }
@@ -65,7 +84,7 @@ const user = await getUser(Astro.request);
 </Layout>
 
 <script>
-  import { getSession } from "@/lib/auth";
+  import { getSession } from "@/lib/auth-client";
   const btnRefresh = document.getElementById("btnRefresh");
 
   if (btnRefresh) {

@@ -19,7 +19,6 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
     if (!config.router) throw new Error("light-auth: router is required");
 
     const req = await config.router.getRequest({ config, ...args });
-
     const headers = await config.router.getHeaders({ config, ...args });
 
     // check the origin of the request if cross-origin
@@ -32,9 +31,14 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
     // Get the auth segments from the URL
     let pathname = reqUrl.pathname;
     let pathSegments = pathname.split("/").filter((segment) => segment !== "");
+
     // Remove all segments from basePathSegments, regardless of their index
     const basePathSegments = config.basePath?.split("/").filter((segment) => segment !== "") || [];
+
+    console.log("pathSegments", pathSegments, "basePathSegments", basePathSegments);
+
     pathSegments = pathSegments.filter((segment) => !basePathSegments.includes(segment));
+    console.log("pathSegments", pathSegments);
 
     if (pathSegments.length < 1) throw new Error("light-auth: Not enough path segments found");
 

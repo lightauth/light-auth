@@ -33,7 +33,7 @@ export async function logoutAndRevokeTokenHandler<
   // get the provider name from the session
   const providerName = session?.providerName;
   // get the provider from the config
-  const provider = config.providers.find((p) => p.providerName === providerName);
+  const provider = config.providers?.find((p) => p.providerName === providerName);
 
   // get the user from the session store
   if (userAdapter) {

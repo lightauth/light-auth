@@ -1,6 +1,7 @@
 import * as sha2 from "@oslojs/crypto/sha2";
 import * as encoding from "@oslojs/encoding";
-import { LightAuthCookie, LightAuthCsrfToken } from "../models";
+import { LightAuthConfig, LightAuthCookie, LightAuthCsrfToken, LightAuthSession, LightAuthUser } from "../models";
+import { internalFetch } from "./internal-fetch";
 
 function createSha256(value: string): string {
   const codeChallengeBytes = sha2.sha256(new TextEncoder().encode(value));
@@ -11,6 +12,28 @@ function generateRandomCsrf(): string {
   const randomValues = new Uint8Array(32);
   crypto.getRandomValues(randomValues);
   return encoding.encodeBase64urlNoPadding(randomValues);
+}
+
+export async function getCsrfToken<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+  config: LightAuthConfig<Session, User>;
+  [key: string]: unknown;
+}) {
+  const isServerSide = typeof window === "undefined";
+  if (isServerSide) return;
+
+  const { config } = args;
+  // Get a csrf token from the server
+  const endpoint = `${config.basePath}/csrf`;
+  const csrfToken = await internalFetch<LightAuthCsrfToken>({ endpoint, method: "POST", ...args });
+
+  if (!csrfToken) throw new Error("light-auth: Failed to get csrf token");
+
+  // Check if the csrf token cookie, called light_auth_csrf_token exist
+  const csrfTokenCookie = document.cookie.split("; ").find((row) => row.startsWith("light_auth_csrf_token="));
+  if (csrfTokenCookie) window.document.cookie = `light_auth_csrf_token=; path=/; max-age=0;`;
+
+  // Set the csrf token in the cookie store
+  window.document.cookie = `light_auth_csrf_token=${csrfToken.csrfTokenHash}.${csrfToken.csrfToken}; path=/; secure=true}`;
 }
 
 /**
