@@ -1,8 +1,4 @@
-import { CreateLightAuthClient } from "@light-auth/express/client";
-
-export const { getSession, getUser, signIn, signOut } = CreateLightAuthClient({
-  basePath: "/api/auth",
-});
+import { signIn } from "./auth-client";
 
 document.addEventListener("DOMContentLoaded", function () {
   const btnLogin = document.getElementById("btnLogin");

@@ -1,20 +1,19 @@
 
 import typescript from "@rollup/plugin-typescript";
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
+import resolve from "@rollup/plugin-node-resolve";
+import commonjs from "@rollup/plugin-commonjs";
 import { terser } from 'rollup-plugin-terser';
-
+import babel from 'rollup-plugin-babel';
 export default
     {
-        input: {
-            index: 'lib/login.ts',
-        },
+        input: 'lib/login.ts',
+
         output:
         {
-            dir: "public",
-            format: "esm",
-            entryFileNames: "js/[name].js",
+            file: 'public/js/index.js',
+            format: "iife",
             sourcemap: true,
+            inlineDynamicImports: true,
         },
         treeshake: {
             moduleSideEffects: false,
@@ -22,8 +21,12 @@ export default
         },
         plugins: [
             typescript({ typescript: require("typescript") }),
-            resolve(), // Resolves node_modules
-            commonjs(), // Converts CommonJS to ES modules
+            resolve({
+                browser: true,
+                preferBuiltins: false,
+            }),
+            commonjs(),
+            babel(),
         ]
     }
 
