@@ -1,6 +1,7 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { CreateLightAuth } from "@light-auth/nuxt";
 import type { LightAuthProvider, LightAuthSession, LightAuthUser } from "@light-auth/core";
+import { MyLightAuthSession, MyLightAuthUser } from "~/utils/auth-client";
 const googleProvider: LightAuthProvider = {
   providerName: "google",
   arctic: new Google(process.env.GOOGLE_CLIENT_ID || "", process.env.GOOGLE_CLIENT_SECRET || "", "http://localhost:3000/api/auth/callback/google"),
@@ -16,19 +17,6 @@ const microsoftProvider: LightAuthProvider = {
     "http://localhost:3000/api/auth/callback/microsoft"
   ),
   scopes: ["offline_access"],
-};
-
-export type MyLightAuthSession = LightAuthSession & {
-  // Add any additional properties you want to include in your custom session type
-  firstName?: string;
-  lastName?: string;
-};
-
-export type MyLightAuthUser = LightAuthUser<MyLightAuthSession> & {
-  // Add any additional properties you want to include in your custom user type
-  email_verified?: boolean;
-  iss?: string;
-  sub?: string;
 };
 
 export const { providers, handlers, signIn, signOut, getSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({

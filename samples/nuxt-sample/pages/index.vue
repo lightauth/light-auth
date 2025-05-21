@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { getSession, getUser, signIn } from "#imports";
+import { getSession, getUser, signIn, signOut } from "#imports";
 
 const session = await getSession();
 const user = await getUser();
 
 const handleGetSession = async () => {
   try {
-    const session = await getSession();
+    session.refresh();
     console.log("Session:", session?.value);
   } catch (e: any) {
     console.log(e.message || "Failed to retrieve session");

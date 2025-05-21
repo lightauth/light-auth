@@ -1,2 +1,2 @@
-import { handlers } from "@/utils/auth";
+import { handlers } from "~/server/auth";
 export default defineEventHandler(handlers);

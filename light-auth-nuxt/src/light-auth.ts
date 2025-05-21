@@ -1,13 +1,15 @@
 import {
   createHttpHandlerFunction,
-  createSigninFunction,
-  createSignoutFunction,
+  createSigninServerFunction,
+  createSignoutServerFunction,
   type LightAuthConfig,
   type LightAuthSession,
   type LightAuthUser,
   resolveBasePath,
 } from "@light-auth/core";
 import { type EventHandlerRequest, type EventHandlerResponse, H3Event } from "h3";
+
+import { createNuxtJsLightAuthSessionFunction, createNuxtJsLightAuthUserFunction } from "./client/index";
 
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
@@ -17,7 +19,7 @@ import { type EventHandlerRequest, type EventHandlerResponse, H3Event } from "h3
 export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const signIn = createSigninFunction(config);
+  const signIn = createSigninServerFunction(config);
   return async (providerName?: string, callbackUrl: string = "/", event?: H3Event<EventHandlerRequest>) => {
     await signIn({ providerName, callbackUrl, event });
   };
@@ -31,70 +33,9 @@ export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthS
 export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const signOut = createSignoutFunction(config);
+  const signOut = createSignoutServerFunction(config);
   return async (revokeToken?: boolean, callbackUrl: string = "/", event?: H3Event<EventHandlerRequest>) => {
     await signOut({ revokeToken, callbackUrl, event });
-  };
-};
-
-// @ts-ignore
-type NuxtJsLightAuthAsyncData<T> = Ref<T | null | undefined> & {
-  // @ts-ignore
-  error: Ref<Error | null>;
-  refresh: () => Promise<void>;
-};
-
-/**
- * createNuxtJsLightAuthSessionFunction is a function that creates a light session function for Nuxt.js.
- * It takes the LightAuth createLightAuthSessionFunction base function and returns a user friendly function by
- * removing the req and res parameters, that are not needed in the Nuxt.js context.
- */
-export const createNuxtJsLightAuthSessionFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
-  config: LightAuthConfig<Session, User>
-) => {
-  return async () => {
-    // @ts-ignore
-    const { data, error, refresh } = await useFetch<Session>(`${config.basePath}/session`, { method: "post", key: "light-auth-session" });
-    return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<Session>;
-  };
-};
-
-/**
- * createNuxtJsLightAuthUserFunction is a function that creates a light user function for Nuxt.js.
- * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
- * removing the req and res parameters, that are not needed in the Nuxt.js context.
- */
-export const createNuxtJsLightAuthUserFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
-  config: LightAuthConfig<Session, User>
-) => {
-  // get the user from the server using the api endpoint, because
-  // to get user we need the session that is stored in the cookie store and we may need to delete / update it
-
-  return async () => {
-    // @ts-ignore
-    const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
-
-    if (!cachedSession.value) {
-      // @ts-ignore
-      return Object.assign(ref(null), { error: ref(new Error("No session found")), refresh: async () => {} }) as NuxtJsLightAuthAsyncData<User>;
-    }
-
-    // @ts-ignore
-    const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${cachedSession.value.userId}`, {
-      method: "post",
-      key: `light-auth-user${cachedSession.value.userId}`,
-    });
-
-    if (error.value) {
-      console.error("Error in createNuxtJsLightAuthUserFunction:", error.value);
-    }
-    return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<User>;
   };
 };
 

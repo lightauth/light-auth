@@ -34,11 +34,7 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
 
     // Remove all segments from basePathSegments, regardless of their index
     const basePathSegments = config.basePath?.split("/").filter((segment) => segment !== "") || [];
-
-    console.log("pathSegments", pathSegments, "basePathSegments", basePathSegments);
-
     pathSegments = pathSegments.filter((segment) => !basePathSegments.includes(segment));
-    console.log("pathSegments", pathSegments);
 
     if (pathSegments.length < 1) throw new Error("light-auth: Not enough path segments found");
 
