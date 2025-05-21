@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { signIn } from "@/lib/auth";
 import { ClientLoginButton } from "@/components/client/client-login-button";
 import googleSvg from "@/public/google.svg";
@@ -33,11 +33,6 @@ export default function LoginPage() {
                     Login with Google with POST action
                   </Button>
                 </form>
-
-                <Link href="/api/auth/login/google?callbackUrl=/profile" className={buttonVariants({ variant: "outline" })}>
-                  <Image src={googleSvg} alt="Google" width={18} height={18} />
-                  Login with Google direct link
-                </Link>
 
                 <ClientLoginButton />
 

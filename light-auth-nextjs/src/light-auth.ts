@@ -1,9 +1,9 @@
 import {
   createHttpHandlerFunction,
-  createFetchSessionFunction,
-  createFetchUserFunction,
-  createSigninFunction,
-  createSignoutFunction,
+  createFetchSessionServerFunction,
+  createFetchUserServerFunction,
+  createSigninServerFunction,
+  createSignoutServerFunction,
   LightAuthConfig,
   LightAuthProvider,
   LightAuthSession,
@@ -21,7 +21,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const createNextJsSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const signIn = createSigninFunction(config);
+  const signIn = createSigninServerFunction(config);
   return async (providerName?: string, callbackUrl: string = "/") => {
     await signIn({ providerName, callbackUrl });
   };
@@ -35,7 +35,7 @@ export const createNextJsSignIn = <Session extends LightAuthSession = LightAuthS
 export const createNextJsSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const signOut = createSignoutFunction(config);
+  const signOut = createSignoutServerFunction(config);
   return async (revokeToken?: boolean, callbackUrl: string = "/") => {
     await signOut({ revokeToken, callbackUrl });
   };
@@ -52,7 +52,7 @@ export const createNextJsLightAuthSessionFunction = <
 >(
   config: LightAuthConfig<Session, User>
 ): (() => Promise<Session | null | undefined>) => {
-  const lightAuthSession = createFetchSessionFunction(config);
+  const lightAuthSession = createFetchSessionServerFunction(config);
   return async () => await lightAuthSession();
 };
 
@@ -67,7 +67,7 @@ export const createNextJsLightAuthUserFunction = <
 >(
   config: LightAuthConfig<Session, User>
 ): (() => Promise<User | null | undefined>) => {
-  const lightAuthUser = createFetchUserFunction(config);
+  const lightAuthUser = createFetchUserServerFunction(config);
   return async () => await lightAuthUser();
 };
 
@@ -105,6 +105,11 @@ export const createNextJsLightAuthHandlerFunction = <
 export function CreateLightAuth<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
+  // check if we are on the server side
+  const isServerSide = typeof window === "undefined";
+  if (!isServerSide)
+    throw new Error("light-auth-nextjs: DO NOT use this function [CreateLightAuth] on the client side as you may expose sensitive data to the client.");
+
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
   // dynamic imports to avoid error if we are on the client side

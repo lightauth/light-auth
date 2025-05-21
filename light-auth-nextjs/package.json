@@ -24,9 +24,14 @@
   ],
   "exports": {
     ".": {
-      "types": "./src/index.tsx",
+      "types": "./src/index.ts",
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./client": {
+      "types": "./src/client/index.ts",
+      "import": "./dist/client/index.mjs",
+      "default": "./dist/client/index.mjs"
     }
   },
   "scripts": {

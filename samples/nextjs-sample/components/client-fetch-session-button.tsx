@@ -1,6 +1,6 @@
 "use client";
 
-import { getSession, getUser } from "@/lib/auth";
+import { getSession, getUser } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 export function ClientFetchSessionButton() {
   return (
