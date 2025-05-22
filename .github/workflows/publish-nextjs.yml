@@ -8,6 +8,7 @@ on:
   #     - "light-auth-nextjs/**"
   #     - ".github/workflows/publish-nextjs.yml"
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-and-publish:

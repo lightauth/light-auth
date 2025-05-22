@@ -1,0 +1,26 @@
+name: Dispatcher
+
+on:
+  workflow_dispatch: # This allows manual triggering of the dispatcher workflow
+
+jobs:
+  trigger-all:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger light-auth-core
+        uses: ./.github/workflows/light-auth-core.yml
+
+      - name: Trigger light-auth-astro
+        uses: ./.github/workflows/light-auth-astro.yml
+
+      - name: Trigger light-auth-express
+        uses: ./.github/workflows/light-auth-express.yml
+
+      - name: Trigger light-auth-nextjs
+        uses: ./.github/workflows/light-auth-nextjs.yml
+
+      - name: Trigger light-auth-nuxt
+        uses: ./.github/workflows/light-auth-nuxt.yml
+
+      - name: Trigger light-auth-sveltekit
+        uses: ./.github/workflows/light-auth-sveltekit.yml

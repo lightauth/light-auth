@@ -8,6 +8,7 @@ on:
   #     - "light-auth-sveltekit/**"
   #     - ".github/workflows/publish-sveltekit.yml"
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-and-publish:

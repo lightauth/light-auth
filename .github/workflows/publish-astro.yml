@@ -8,6 +8,7 @@ on:
   #     - "light-auth-astro/**"
   #     - ".github/workflows/publish-astro.yml"
   workflow_dispatch:
+  workflow_call:
 
 jobs:
   build-and-publish:
