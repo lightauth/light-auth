@@ -8,19 +8,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger light-auth-core
-        uses: ./.github/workflows/light-auth-core.yml
+        uses: ./.github/workflows/light-auth-core.yml@main
 
       - name: Trigger light-auth-astro
-        uses: ./.github/workflows/light-auth-astro.yml
+        uses: ./.github/workflows/light-auth-astro.yml@main
 
       - name: Trigger light-auth-express
-        uses: ./.github/workflows/light-auth-express.yml
+        uses: ./.github/workflows/light-auth-express.yml@main
 
       - name: Trigger light-auth-nextjs
-        uses: ./.github/workflows/light-auth-nextjs.yml
+        uses: ./.github/workflows/light-auth-nextjs.yml@main
 
       - name: Trigger light-auth-nuxt
-        uses: ./.github/workflows/light-auth-nuxt.yml
+        uses: ./.github/workflows/light-auth-nuxt.yml@main
 
       - name: Trigger light-auth-sveltekit
-        uses: ./.github/workflows/light-auth-sveltekit.yml
+        uses: ./.github/workflows/light-auth-sveltekit.yml@main
