@@ -48,13 +48,12 @@
   },
   "peerDependencies": {
     "@light-auth/core": "^0.0.8",
+    "@sveltejs/kit": "^2.21.1",
     "arctic": "^3.6.0",
     "jose": "^6.0.10"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
-    "@sveltejs/kit": "^2.16.0",
-    "svelte": "^5.0.0",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.2",
     "shx": "^0.4.0",

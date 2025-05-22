@@ -103,7 +103,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   }
 
   // @ts-ignore
-  config.env = config.env || import.meta;
+  config.env = config.env || import.meta.env;
   config.basePath = resolveBasePath(config);
 
   return {

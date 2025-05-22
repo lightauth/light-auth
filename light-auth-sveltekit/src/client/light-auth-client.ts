@@ -29,16 +29,18 @@ export const createSveltekitLightAuthUserFunction = <
   return async () => await userFunction();
 };
 
-export function createSveltekitSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) {
+export function createSveltekitSigninFunction<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(config: LightAuthConfig<Session, User>) {
   const signInFunction = createSigninClientFunction(config);
   return async (providerName: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
 }
 
-export function createSveltekitSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) {
+export function createSveltekitSignoutFunction<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(config: LightAuthConfig<Session, User>) {
   const signOutFunction = createSignoutClientFunction(config);
   return async (revokeToken: boolean = false, callbackUrl: string = "/") => await signOutFunction({ revokeToken, callbackUrl });
 }
@@ -46,7 +48,7 @@ export function createSveltekitSignoutFunction<Session extends LightAuthSession 
 export function CreateLightAuthClient<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User> | undefined = {}
 ) {
-  config.env = config.env || process.env;
+  config.env = config.env || import.meta.env;
   config.basePath = resolveBasePath(config);
 
   return {

@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   },
   ignore: ["**/node_modules/**", "**/dist/**", "**/users_db/**"],
 
-  modules: ["shadcn-nuxt"],
+  modules: ["shadcn-nuxt", "@nuxt/image"],
   shadcn: {
     /**
      * Prefix for all the imported component

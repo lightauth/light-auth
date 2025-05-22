@@ -55,7 +55,8 @@
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "shx": "^0.4.0",
-    "astro": "5.7.10"
+    "astro": "5.7.10",
+    "cookie": "^1.0.2"
   },
   "workspaces": [
     "../light-auth-core"

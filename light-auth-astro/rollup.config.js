@@ -36,7 +36,8 @@ export default
             external: [
                 ...Object.keys(pkg.dependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
-                ...Object.keys(pkg.devDependencies || {})
+                ...Object.keys(pkg.devDependencies || {}),
+                "@light-auth/core/adapters"
             ],
 
         },
@@ -70,7 +71,9 @@ export default
             external: [
                 ...Object.keys(pkg.dependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
-                ...Object.keys(pkg.devDependencies || {})
+                ...Object.keys(pkg.devDependencies || {}),
+                "@light-auth/core/adapters",
+                "@light-auth/core/client",
             ],
 
         }
