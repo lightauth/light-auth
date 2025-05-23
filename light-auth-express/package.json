@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/express",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "light auth framework for express, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -9,14 +9,17 @@
   },
   "license": "MIT",
   "keywords": [
-    "vue",
     "nodejs",
     "oauth",
-    "jwt",
     "oauth2",
+    "oidc",
+    "openid",
+    "jwt",
     "authentication",
-    "nuxt",
-    "light-auth"
+    "auth",
+    "light-auth",
+    "light-auth-express",
+    "express"
   ],
   "type": "module",
   "files": [
@@ -47,7 +50,7 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "@light-auth/core": "^0.1.0",
+    "@light-auth/core": "^0.1.1",
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
     "cookie": "^1.0.2"

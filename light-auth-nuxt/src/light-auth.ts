@@ -12,6 +12,40 @@ import { type EventHandlerRequest, type EventHandlerResponse, H3Event } from "h3
 import { createNuxtJsLightAuthSessionFunction, createNuxtJsLightAuthUserFunction } from "./client/index";
 
 /**
+ * createNuxtJsLightAuthSessionFunction is a function that creates a light session function for Nuxt.js.
+ * It takes the LightAuth createLightAuthSessionFunction base function and returns a user friendly function by
+ * removing the req and res parameters, that are not needed in the Nuxt.js context.
+ */
+export const createNuxtJsLightAuthSessionServerFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const isServerSide = typeof window === "undefined";
+  if (!isServerSide) throw new Error("light-auth: getSession function should not be called on the client side. prefer to use the client version.");
+
+  return createNuxtJsLightAuthSessionFunction(config);
+};
+
+/**
+ * createNuxtJsLightAuthUserFunction is a function that creates a light user function for Nuxt.js.
+ * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
+ * removing the req and res parameters, that are not needed in the Nuxt.js context.
+ */
+export const createNuxtJsLightAuthUserServerFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const isServerSide = typeof window === "undefined";
+  if (!isServerSide) throw new Error("light-auth: getUser function should not be called on the client side. prefer to use the client version.");
+
+  return createNuxtJsLightAuthUserFunction(config);
+};
+
+/**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.

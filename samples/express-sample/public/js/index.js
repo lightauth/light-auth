@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    /*! @light-auth/core v0.0.8 2025-05-21 */
+    /*! @light-auth/core v0.1.0 2025-05-23 */
 
     const DEFAULT_BASE_PATH = "/api/auth";
 
@@ -181,7 +181,7 @@
       };
     }
 
-    /*! @light-auth/express v0.0.8 2025-05-21 */
+    /*! @light-auth/express v0.1.0 2025-05-23 */
     const createExpressLightAuthSessionFunction = config => {
       const sessionFunction = createFetchSessionClientFunction(config);
       return async () => await sessionFunction();

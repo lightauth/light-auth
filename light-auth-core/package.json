@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "light auth core framework agnostic, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -9,13 +9,28 @@
   },
   "license": "MIT",
   "keywords": [
-    "react",
     "nodejs",
     "oauth",
-    "jwt",
     "oauth2",
+    "oidc",
+    "openid",
+    "jwt",
     "authentication",
-    "light-auth"
+    "auth",
+    "light-auth",
+    "light-auth-astro",
+    "astro",
+    "light-auth-express",
+    "express",
+    "light-auth-nextjs",
+    "nextjs",
+    "react",
+    "light-auth-nuxt",
+    "nuxt",
+    "vue",
+    "light-auth-sveltekit",
+    "sveltekit",
+    "svelte"
   ],
   "type": "module",
   "exports": {
@@ -53,7 +68,7 @@
     "clean": "shx rm -rf dist lib",
     "start": "rollup -c -w"
   },
-  "peerDependencies": {
+  "dependencies": {
     "cookie": "^1.0.2",
     "jose": "^6.0.10",
     "arctic": "^3.6.0"

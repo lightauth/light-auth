@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/sveltekit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "light auth framework for sveltekit, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -9,14 +9,18 @@
   },
   "license": "MIT",
   "keywords": [
-    "vue",
     "nodejs",
     "oauth",
-    "jwt",
     "oauth2",
+    "oidc",
+    "openid",
+    "jwt",
     "authentication",
-    "nuxt",
-    "light-auth"
+    "auth",
+    "light-auth",
+    "light-auth-sveltekit",
+    "sveltekit",
+    "svelte"
   ],
   "type": "module",
   "files": [
@@ -47,12 +51,14 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "@light-auth/core": "^0.1.0",
+    "@light-auth/core": "^0.1.1",
     "arctic": "^3.6.0",
     "jose": "^6.0.10"
   },
+  "peerDependencies": {
+    "@sveltejs/kit": "^2.21.1"
+  },
   "devDependencies": {
-    "@sveltejs/kit": "^2.21.1",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.21",
     "@types/react": "^19.1.2",

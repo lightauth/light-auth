@@ -1,3 +1,4 @@
+import type { OAuth2Tokens } from "arctic";
 import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
 
@@ -28,37 +29,48 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
 
       // we can update the session expiration time
       if (provider.arctic && typeof provider.arctic.refreshAccessToken === "function") {
-        let tokens = await provider.arctic.refreshAccessToken(user.refreshToken, scopes);
-
-        if (provider.onGetOAuth2Tokens) tokens = await provider.onGetOAuth2Tokens(tokens, args);
-
-        // Calculate the access token expiration time
-        // The access token expiration time is the number of seconds until the token expires
-        // The default expiration time is 3600 seconds (1 hour)
-        // https://www.ietf.org/rfc/rfc6749.html#section-4.2.2
-        let accessTokenExpiresIn: number = 3600; // default to 1 hour
-        if ("expires_in" in tokens.data && typeof tokens.data.expires_in === "number") {
-          accessTokenExpiresIn = Number(tokens.data.expires_in);
+        let tokens: OAuth2Tokens | null = null;
+        try {
+          tokens = await provider.arctic.refreshAccessToken(user.refreshToken, scopes);
+        } catch (error) {
+          if (typeof error === "object" && error !== null) {
+            let code = "code" in error && typeof error.code === "string" ? error.code : "unknown_error";
+            let description = "description" in error && typeof error.description === "string" ? error.description : "unknown_error";
+            console.warn("Error refreshing access token:", code, description);
+          }
         }
-        const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000);
-        // get the access token
-        const accessToken = tokens.accessToken();
-        let refresh_token: string | undefined;
-        if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
-        // update the user
-        user.accessToken = accessToken;
-        user.accessTokenExpiresAt = accessTokenExpiresAt;
-        if (refresh_token) user.refreshToken = refresh_token;
-        // update the user in the store
-        if (config.onUserSaving) {
-          const userSaving = await config.onUserSaving(user, tokens, args);
-          // if the user is not null, use it
-          // if the user is null, use the original user
-          user = userSaving ?? user;
-        }
-        await userAdapter.setUser({ user, ...args });
 
-        if (config.onUserSaved) await config.onUserSaved(user, args);
+        if (tokens) {
+          if (provider.onGetOAuth2Tokens) tokens = await provider.onGetOAuth2Tokens(tokens, args);
+
+          // Calculate the access token expiration time
+          // The access token expiration time is the number of seconds until the token expires
+          // The default expiration time is 3600 seconds (1 hour)
+          // https://www.ietf.org/rfc/rfc6749.html#section-4.2.2
+          let accessTokenExpiresIn: number = 3600; // default to 1 hour
+          if ("expires_in" in tokens.data && typeof tokens.data.expires_in === "number") {
+            accessTokenExpiresIn = Number(tokens.data.expires_in);
+          }
+          const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000);
+          // get the access token
+          const accessToken = tokens.accessToken();
+          let refresh_token: string | undefined;
+          if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
+          // update the user
+          user.accessToken = accessToken;
+          user.accessTokenExpiresAt = accessTokenExpiresAt;
+          if (refresh_token) user.refreshToken = refresh_token;
+          // update the user in the store
+          if (config.onUserSaving) {
+            const userSaving = await config.onUserSaving(user, tokens, args);
+            // if the user is not null, use it
+            // if the user is null, use the original user
+            user = userSaving ?? user;
+          }
+          await userAdapter.setUser({ user, ...args });
+
+          if (config.onUserSaved) await config.onUserSaved(user, args);
+        }
       }
     }
 

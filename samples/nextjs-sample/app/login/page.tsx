@@ -5,13 +5,14 @@ import { signIn } from "@/lib/auth";
 import { ClientLoginButton } from "@/components/client/client-login-button";
 import googleSvg from "@/public/google.svg";
 import Image from "next/image";
+import { ClientLoginActionButton } from "@/components/client/client-login-action-button";
 
 export default function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col">
       <div className="flex flex-col items-center justify-center p-4 ">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold">Invoice Manager</h1>
+          <h1 className="text-3xl font-bold">Login Page</h1>
           <p className="text-gray-600">Login to your account</p>
         </div>
         <Card className="w-full max-w-md">
@@ -34,7 +35,13 @@ export default function LoginPage() {
                   </Button>
                 </form>
 
-                <ClientLoginButton />
+                <ClientLoginActionButton providerName="google" callbackUrl="/profile">
+                  Login with Google with POST endpoint
+                </ClientLoginActionButton>
+
+                <ClientLoginButton providerName="google" callbackUrl="/profile">
+                  Login with Google with Client action
+                </ClientLoginButton>
 
                 <form
                   action={async () => {
