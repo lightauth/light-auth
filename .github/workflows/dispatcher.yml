@@ -7,6 +7,9 @@ jobs:
   trigger-all:
     runs-on: ubuntu-latest
     steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
       - name: Trigger light-auth-core
         run: gh workflow run light-auth-core.yml@main
         env:
