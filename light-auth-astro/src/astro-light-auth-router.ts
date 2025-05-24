@@ -1,4 +1,9 @@
-import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter, type LightAuthSession, type LightAuthUser } from "@light-auth/core";
+import {
+  buildFullUrl,
+  type LightAuthServerEnv,
+  type LightAuthCookie,
+  type LightAuthRouter,
+} from "@light-auth/core";
 import type { AstroSharedContext } from "astro";
 import * as cookieParser from "cookie";
 
@@ -54,15 +59,7 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
     return filteredHeaders;
   },
-  setCookies: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-    cookies,
-    context,
-  }: {
-    config: LightAuthConfig<Session, User>;
-    cookies?: LightAuthCookie[];
-    context?: AstroSharedContext;
-  }): void {
+  setCookies: function ({ cookies, context }: { cookies?: LightAuthCookie[]; context?: AstroSharedContext }): void {
     if (!context) throw new Error("AstroSharedContext is required in setCookies of expressLightAuthRouter");
 
     for (const cookie of cookies ?? []) {
@@ -101,13 +98,7 @@ export const astroLightAuthRouter: LightAuthRouter = {
     return cookies;
   },
 
-  getRequest: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-    context,
-  }: {
-    config: LightAuthConfig<Session, User>;
-    context?: AstroSharedContext;
-  }): Request {
+  getRequest: function ({ context }: { env: LightAuthServerEnv; basePath: string; context?: AstroSharedContext }): Request {
     if (!context) throw new Error("AstroSharedContext is required in getRequest of expressLightAuthRouter");
 
     return context.request;

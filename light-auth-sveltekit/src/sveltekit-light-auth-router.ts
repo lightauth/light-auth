@@ -1,4 +1,12 @@
-import { buildFullUrl, type LightAuthConfig, type LightAuthCookie, type LightAuthRouter, type LightAuthSession, type LightAuthUser } from "@light-auth/core";
+import {
+  buildFullUrl,
+  type LightAuthConfig,
+  type LightAuthCookie,
+  type LightAuthRouter,
+  type LightAuthServerEnv,
+  type LightAuthSession,
+  type LightAuthUser,
+} from "@light-auth/core";
 import { redirect, json, type RequestEvent } from "@sveltejs/kit";
 
 export const sveltekitLightAuthRouter: LightAuthRouter = {
@@ -46,15 +54,7 @@ export const sveltekitLightAuthRouter: LightAuthRouter = {
 
     return filteredHeaders;
   },
-  setCookies: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-    cookies,
-    event,
-  }: {
-    config: LightAuthConfig<Session, User>;
-    cookies?: LightAuthCookie[];
-    event?: RequestEvent;
-  }): void {
+  setCookies: function ({ cookies, event }: { env: LightAuthServerEnv; basePath: string; cookies?: LightAuthCookie[]; event?: RequestEvent }): void {
     if (!event) throw new Error("event is required in setCookies of sveltekitLightAuthRouter");
 
     for (const cookie of cookies ?? []) {
@@ -81,13 +81,7 @@ export const sveltekitLightAuthRouter: LightAuthRouter = {
     return cookies;
   },
 
-  getRequest: function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-    event,
-  }: {
-    config: LightAuthConfig<Session, User>;
-    event?: RequestEvent;
-  }): Request {
+  getRequest: function ({ event }: { env: LightAuthServerEnv; basePath: string; event?: RequestEvent }): Request {
     if (!event) throw new Error("RequestEvent is required in getRequest of sveltekitLightAuthRouter");
 
     return event.request;

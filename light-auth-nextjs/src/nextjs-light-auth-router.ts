@@ -1,4 +1,4 @@
-import { buildFullUrl, LightAuthConfig, LightAuthCookie, LightAuthRouter, LightAuthSession, LightAuthUser } from "@light-auth/core";
+import { buildFullUrl, type LightAuthCookie, type LightAuthRouter, type LightAuthServerEnv } from "@light-auth/core";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -50,13 +50,7 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return cookies;
   },
 
-  getRequest<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-    req,
-  }: {
-    config: LightAuthConfig<Session, User>;
-    req?: Request;
-  }) {
+  getRequest({ req }: { env: LightAuthServerEnv; basePath: string; req?: Request }) {
     if (!req) throw new Error("light-auth: No request object provided in getRequest of nextJsLightAuthRouter.");
     return req;
   },
@@ -100,10 +94,7 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return filteredHeaders;
   },
 
-  async returnJson<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    data: {} | null;
-    config: LightAuthConfig<Session, User>;
-  }): Promise<NextResponse> {
-    return NextResponse.json(args.data);
+  async returnJson({ data }: { data: {} | null; env: LightAuthServerEnv; basePath: string }): Promise<NextResponse> {
+    return NextResponse.json(data);
   },
 };

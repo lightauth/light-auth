@@ -41,7 +41,9 @@ export default
                 "next/headers",
                 "next/navigation",
                 "next/server",
-                "react/jsx-runtime"
+                "react/jsx-runtime",
+                "@light-auth/core/adapters",
+                "@light-auth/core/client"
             ],
 
         },
@@ -80,7 +82,9 @@ export default
                 "next/headers",
                 "next/navigation",
                 "next/server",
-                "react/jsx-runtime"
+                "react/jsx-runtime",
+                "@light-auth/core/adapters",
+                "@light-auth/core/client"
             ],
 
         }]

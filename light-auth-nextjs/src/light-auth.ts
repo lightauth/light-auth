@@ -4,10 +4,9 @@ import {
   createFetchUserServerFunction,
   createSigninServerFunction,
   createSignoutServerFunction,
-  LightAuthConfig,
-  LightAuthProvider,
-  LightAuthSession,
-  LightAuthUser,
+  type LightAuthConfig,
+  type LightAuthSession,
+  type LightAuthUser,
   resolveBasePath,
 } from "@light-auth/core";
 
@@ -130,7 +129,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
     });
   }
 
-  config.basePath = resolveBasePath(config);
+  config.basePath = resolveBasePath(config.basePath, config.env);
   config.env = config.env || process.env;
   return {
     providers: config.providers,

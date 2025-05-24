@@ -6,10 +6,10 @@ export async function getCsrfToken<Session extends LightAuthSession = LightAuthS
   [key: string]: unknown;
 }): Promise<BaseResponse> {
   const { config } = args;
-  const { router } = checkConfig<Session, User>(config);
-  const secret = buildSecret(config.env);
+  const { router, env, basePath } = checkConfig<Session, User>(config);
+  const secret = buildSecret(env);
 
   // create a new csrf token
   const csrfToken = createCsrfToken(secret);
-  return router.returnJson({ data: csrfToken, ...args });
+  return router.returnJson({ env, basePath, data: csrfToken, ...args });
 }

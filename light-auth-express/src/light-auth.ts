@@ -9,7 +9,7 @@ import {
   createSignoutServerFunction,
   resolveBasePath,
 } from "@light-auth/core";
-import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
+import { type Request as ExpressRequest, type Response as ExpressResponse, type NextFunction } from "express";
 
 export const createExpressLightAuthSessionFunction = <
   Session extends LightAuthSession = LightAuthSession,
@@ -110,7 +110,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
 
   // @ts-ignore
   config.env = config.env || process.env;
-  config.basePath = resolveBasePath(config);
+  config.basePath = resolveBasePath(config.basePath, config.env);
 
   return {
     providers: config.providers,

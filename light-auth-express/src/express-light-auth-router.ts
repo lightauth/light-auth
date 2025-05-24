@@ -1,5 +1,10 @@
-import { buildFullUrl, LightAuthConfig, LightAuthCookie, LightAuthRouter, LightAuthSession, LightAuthUser } from "@light-auth/core";
-import { Request as ExpressRequest, Response as ExpressResponse } from "express";
+import {
+  buildFullUrl,
+  type LightAuthCookie,
+  type LightAuthRouter,
+  type LightAuthServerEnv,
+} from "@light-auth/core";
+import { type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
 
 export const expressLightAuthRouter: LightAuthRouter = {
@@ -9,19 +14,15 @@ export const expressLightAuthRouter: LightAuthRouter = {
     return res;
   },
 
-  getRequest: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config: LightAuthConfig<Session, User>;
-    req?: ExpressRequest;
-    [key: string]: unknown;
-  }): Promise<Request> {
-    const { config, req } = args;
+  getRequest: async function (args: { env: LightAuthServerEnv; basePath: string; req?: ExpressRequest; [key: string]: unknown }): Promise<Request> {
+    const { req } = args;
     if (!req) throw new Error("Request is required in getRequest function of expressLightAuthRouter");
     const url = await this.getUrl({ ...args });
     const headers = await this.getHeaders({ ...args });
     return new Request(url, { method: req.method, headers: headers });
   },
 
-  getUrl: function ({ endpoint, req, args }: { endpoint?: string; req?: ExpressRequest; args?: any }): string {
+  getUrl: function ({ endpoint, req }: { endpoint?: string; req?: ExpressRequest }): string {
     const url = endpoint ?? req?.url;
     if (!url) throw new Error("light-auth: No url provided and no request object available in getUrl of expressLightAuthRouter.");
 

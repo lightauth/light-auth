@@ -3,11 +3,10 @@ import {
   decryptJwt,
   DEFAULT_SESSION_NAME,
   encryptJwt,
-  getSessionExpirationMaxAge,
-  LightAuthConfig,
-  LightAuthSession,
-  LightAuthSessionStore,
-  LightAuthUser,
+  type LightAuthServerEnv,
+  type LightAuthSession,
+  type LightAuthSessionStore,
+  type LightAuthUser,
 } from "@light-auth/core";
 
 /**
@@ -16,11 +15,7 @@ import {
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
-  }: {
-    config: LightAuthConfig<Session, User>;
-  }): Promise<Session | null> {
+  async getSession<Session extends LightAuthSession = LightAuthSession>({ env }: { env: LightAuthServerEnv; basePath: string }): Promise<Session | null> {
     const { cookies } = await import("next/headers");
 
     const cookieStore = await cookies();
@@ -29,7 +24,7 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
     if (!requestCookie) return null;
 
     try {
-      const decryptedSession = await decryptJwt(requestCookie.value, buildSecret(config.env));
+      const decryptedSession = await decryptJwt(requestCookie.value, buildSecret(env));
       return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
@@ -45,16 +40,17 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
   },
 
   async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
+    env,
     session,
   }: {
-    config: LightAuthConfig<Session, User>;
+    env: LightAuthServerEnv;
+    basePath: string;
     session: Session;
   }): Promise<void> {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
 
-    const value = await encryptJwt(session, buildSecret(config.env));
+    const value = await encryptJwt(session, buildSecret(env));
 
     // Check the size of the cookie value in bytes
     const encoder = new TextEncoder();

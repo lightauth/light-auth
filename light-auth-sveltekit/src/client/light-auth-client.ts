@@ -49,7 +49,7 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
   config: LightAuthConfig<Session, User> | undefined = {}
 ) {
   config.env = config.env || import.meta.env;
-  config.basePath = resolveBasePath(config);
+  config.basePath = resolveBasePath(config.basePath, config.env);
 
   return {
     basePath: config.basePath,

@@ -5,6 +5,7 @@ import {
   encryptJwt,
   getSessionExpirationMaxAge,
   type LightAuthConfig,
+  type LightAuthServerEnv,
   type LightAuthSession,
   type LightAuthSessionStore,
   type LightAuthUser,
@@ -17,20 +18,21 @@ import { type RequestEvent } from "@sveltejs/kit";
  * with appropriate Set-Cookie headers.
  */
 export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config?: LightAuthConfig<Session, User>;
+  async getSession<Session extends LightAuthSession = LightAuthSession>(args: {
+    env: LightAuthServerEnv;
+    basePath: string;
     event?: RequestEvent;
   }): Promise<Session | null> {
-    const { config, event } = args;
+    const { env, basePath, event } = args;
 
-    if (!config) throw new Error("light-auth: Config is required in getSession of sveltekitLightAuthSessionStore");
+    if (!env) throw new Error("light-auth: Env is required in getSession of sveltekitLightAuthSessionStore");
     if (!event) throw new Error("light-auth: Request is required in getSession of sveltekitLightAuthSessionStore");
 
     const sessionCookie = event.cookies.get(DEFAULT_SESSION_NAME);
     if (!sessionCookie) return null;
 
     try {
-      const decryptedSession = await decryptJwt(sessionCookie, buildSecret(config.env));
+      const decryptedSession = await decryptJwt(sessionCookie, buildSecret(env));
       return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
@@ -38,12 +40,13 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     }
   },
 
-  async deleteSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config?: LightAuthConfig<Session, User>;
+  async deleteSession<Session extends LightAuthSession = LightAuthSession>(args: {
+    env: LightAuthServerEnv;
+    basePath: string;
+    session: Session;
     event?: RequestEvent;
   }): Promise<void> {
-    const { config, event } = args;
-    if (!config) throw new Error("light-auth: Config is required in deleteSession of sveltekitLightAuthSessionStore");
+    const { event } = args;
     if (!event) throw new Error("light-auth: Request is required in deleteSession of sveltekitLightAuthSessionStore");
 
     event.cookies.set(DEFAULT_SESSION_NAME, "", {
@@ -52,16 +55,17 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     });
   },
 
-  async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config: LightAuthConfig<Session, User>;
+  async setSession<Session extends LightAuthSession = LightAuthSession>(args: {
+    env: LightAuthServerEnv;
+    basePath: string;
     session: Session;
     event?: RequestEvent;
   }): Promise<void> {
-    const { config, session, event } = args;
-    if (!config) throw new Error("light-auth: Config is required in deleteSession of sveltekitLightAuthSessionStore");
-    if (!event) throw new Error("light-auth: Request is required in deleteSession of sveltekitLightAuthSessionStore");
+    const { env, basePath, session, event } = args;
+    if (!env) throw new Error("light-auth: Env is required in setSession of sveltekitLightAuthSessionStore");
+    if (!event) throw new Error("light-auth: Request is required in setSession of sveltekitLightAuthSessionStore");
 
-    const value = await encryptJwt(session, buildSecret(config.env));
+    const value = await encryptJwt(session, buildSecret(env));
 
     // Check the size of the cookie value in bytes
     const encoder = new TextEncoder();

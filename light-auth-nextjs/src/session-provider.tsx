@@ -1,7 +1,7 @@
 "use client";
 
-import { DEFAULT_BASE_PATH, LightAuthSession } from "@light-auth/core";
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { DEFAULT_BASE_PATH, type LightAuthSession } from "@light-auth/core";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 interface SessionContextProps {
   session: LightAuthSession | null;

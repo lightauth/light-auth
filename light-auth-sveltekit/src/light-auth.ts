@@ -10,7 +10,7 @@ import {
   type LightAuthUser,
   resolveBasePath,
 } from "@light-auth/core";
-import { redirect, type RequestEvent } from "@sveltejs/kit";
+import { type RequestEvent } from "@sveltejs/kit";
 
 export const createSvelteKitLightAuthSessionFunction = <
   Session extends LightAuthSession = LightAuthSession,
@@ -105,7 +105,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   }
 
   config.env = config.env || process.env;
-  config.basePath = resolveBasePath(config);
+  config.basePath = resolveBasePath(config.basePath, config.env);
 
   return {
     providers: config.providers,

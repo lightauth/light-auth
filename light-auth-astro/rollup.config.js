@@ -17,7 +17,7 @@ export default
                 entryFileNames: "[name].mjs",
                 banner: libraryHeader,
                 sourcemap: true,
-                intro: "'use strict';"
+                intro: "'use strict';",
             },
 
             jsx: {

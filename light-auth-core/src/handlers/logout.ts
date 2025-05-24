@@ -14,18 +14,18 @@ export async function logoutAndRevokeTokenHandler<
 }): Promise<Response> {
   const { config, revokeToken = true, callbackUrl = "/", checkCsrf = true } = args;
 
-  const { userAdapter, router, sessionStore, env } = checkConfig(config);
+  const { userAdapter, router, sessionStore, env, basePath } = checkConfig(config);
 
   // get the session
-  const session = await sessionStore.getSession({ ...args });
+  const session = await sessionStore.getSession({ env, basePath, ...args });
 
-  if (!session || !session.id) return await router.redirectTo({ url: callbackUrl, ...args });
+  if (!session || !session.id) return await router.redirectTo({ env, basePath, url: callbackUrl, ...args });
 
   // Check if CSRF validation is required
   // it could be disable for direct call from a post action issued by the SSR framework
   if (checkCsrf) {
     const secret = buildSecret(env);
-    const cookies = await router.getCookies({ ...args });
+    const cookies = await router.getCookies({ env, basePath, ...args });
     const csrfIsValid = validateCsrfToken(cookies, secret);
     if (!csrfIsValid) throw new Error("Invalid CSRF token");
   }
@@ -37,11 +37,11 @@ export async function logoutAndRevokeTokenHandler<
 
   // get the user from the session store
   if (userAdapter) {
-    const user = await userAdapter.getUser({ userId: session.userId.toString(), ...args });
+    const user = await userAdapter.getUser({ env, basePath, userId: session.userId.toString(), ...args });
 
     if (user) {
       // delete the user
-      if (user) await userAdapter.deleteUser({ user, ...args });
+      if (user) await userAdapter.deleteUser({ env, basePath, user, ...args });
 
       var token = user?.accessToken;
 
@@ -61,7 +61,7 @@ export async function logoutAndRevokeTokenHandler<
 
   try {
     // delete the session cookie
-    await sessionStore.deleteSession({ ...args });
+    await sessionStore.deleteSession({ env, basePath, session, ...args });
   } catch {}
 
   try {
@@ -71,8 +71,8 @@ export async function logoutAndRevokeTokenHandler<
     const csrfCookieDelete: LightAuthCookie = { name: "light_auth_csrf_token", value: "", maxAge: 0 };
 
     // delete the cookies
-    await router.setCookies({ cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete, csrfCookieDelete], ...args });
+    await router.setCookies({ env, basePath, cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete, csrfCookieDelete], ...args });
   } catch {}
 
-  return await router.redirectTo({ url: callbackUrl, ...args });
+  return await router.redirectTo({ env, basePath, url: callbackUrl, ...args });
 }

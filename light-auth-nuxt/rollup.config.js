@@ -37,7 +37,10 @@ export default
                 ...Object.keys(pkg.devDependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
                 "nuxt/app",
-                "#app"
+                "#app",
+                "@light-auth/core/adapters",
+                "@light-auth/core/client",
+                "h3"
             ],
 
         },
@@ -73,7 +76,11 @@ export default
                 ...Object.keys(pkg.devDependencies || {}),
                 ...Object.keys(pkg.peerDependencies || {}),
                 "nuxt/app",
-                "#app"
+                "#app",
+                "@light-auth/core/adapters",
+                "@light-auth/core/client",
+                "h3"
+
             ],
 
         }

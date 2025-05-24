@@ -9,11 +9,11 @@ export async function providerCallbackHandler<
   const { config, providerName } = args;
   let currentRouter: LightAuthRouter | null = null;
   let callbackUrl = "/";
+  const { router, userAdapter, provider, sessionStore, env, basePath } = checkConfig(config, providerName);
   try {
-    const { router, userAdapter, provider, sessionStore } = checkConfig(config, providerName);
     currentRouter = router;
 
-    const url = await currentRouter.getUrl({ ...args });
+    const url = await currentRouter.getUrl({ env, basePath, ...args });
     const reqUrl = new URL(url);
     const code = reqUrl.searchParams.get("code");
     const state = reqUrl.searchParams.get("state");
@@ -22,6 +22,8 @@ export async function providerCallbackHandler<
 
     // get the cookies from headers
     const cookies = await currentRouter.getCookies({
+      env,
+      basePath,
       search: new RegExp(`^${provider.providerName}_light_auth_(code_verifier|state|callback_url)$`),
       ...args,
     });
@@ -87,7 +89,7 @@ export async function providerCallbackHandler<
       session = sessionSaving ?? session;
     }
 
-    await sessionStore.setSession({ ...args, config: args.config, session });
+    await sessionStore.setSession({ env, basePath, session, ...args });
 
     if (config.onSessionSaved) await config.onSessionSaved(session, args);
 
@@ -108,7 +110,7 @@ export async function providerCallbackHandler<
         // if the user is null, use the original user
         user = userSaving ?? user;
       }
-      await userAdapter.setUser({ user, ...args });
+      await userAdapter.setUser({ user, env, basePath, ...args });
 
       if (config.onUserSaved) await config.onUserSaved(user, args);
     }
@@ -119,7 +121,7 @@ export async function providerCallbackHandler<
       const callbackUrlCookieDelete: LightAuthCookie = { name: `${provider.providerName}_light_auth_callback_url`, value: "", path: "/", maxAge: 0 };
 
       // delete the cookies
-      await currentRouter.setCookies({ cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete], ...args });
+      await currentRouter.setCookies({ env, basePath, cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete], ...args });
     } catch (error) {}
   } catch (error) {
     console.error("Error in providerCallbackHandler:", error);
@@ -128,5 +130,5 @@ export async function providerCallbackHandler<
   // redirect to the callback URL
   // redirect is not in the try catch because we want to redirect even if there is an error
   // plus Next.JS router needs to be outside of the try catch
-  if (currentRouter) return await currentRouter.redirectTo({ url: callbackUrl, ...args });
+  if (currentRouter) return await currentRouter.redirectTo({ env, basePath, url: callbackUrl, ...args });
 }

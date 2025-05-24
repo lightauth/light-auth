@@ -4,6 +4,7 @@ import {
   DEFAULT_SESSION_NAME,
   encryptJwt,
   type LightAuthConfig,
+  type LightAuthServerEnv,
   type LightAuthSession,
   type LightAuthSessionStore,
   type LightAuthUser,
@@ -17,11 +18,12 @@ import { H3Event, type EventHandlerRequest, getCookie, setCookie, deleteCookie }
  * with appropriate Set-Cookie headers.
  */
 export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
+  async getSession<Session extends LightAuthSession = LightAuthSession>({
+    env,
     event,
   }: {
-    config: LightAuthConfig<Session, User>;
+    env: LightAuthServerEnv;
+    basePath: string;
     event?: H3Event<EventHandlerRequest>;
   }): Promise<Session | null> {
     if (!event) throw new Error("Event is required to get the session in nuxtJsLightAuthSessionStore.");
@@ -31,7 +33,7 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
     if (!requestCookie) return null;
 
     try {
-      const decryptedSession = await decryptJwt(requestCookie, buildSecret(config.env));
+      const decryptedSession = await decryptJwt(requestCookie, buildSecret(env));
       return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
@@ -39,29 +41,30 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
     }
   },
 
-  async deleteSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
+  async deleteSession<Session extends LightAuthSession = LightAuthSession>({
     event,
   }: {
-    config: LightAuthConfig<Session, User>;
+    env: LightAuthServerEnv;
+    basePath: string;
     event?: H3Event<EventHandlerRequest>;
   }): Promise<void> {
     if (!event) throw new Error("Event is required to get the session in nuxtJsLightAuthSessionStore.");
     deleteCookie(event, DEFAULT_SESSION_NAME);
   },
 
-  async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-    config,
+  async setSession<Session extends LightAuthSession = LightAuthSession>({
+    env,
     session,
     event,
   }: {
-    config: LightAuthConfig<Session, User>;
+    env: LightAuthServerEnv;
+    basePath: string;
     session: Session;
     event?: H3Event<EventHandlerRequest>;
   }): Promise<void> {
     if (!event) throw new Error("Event is required to set the session in nuxtJsLightAuthSessionStore.");
 
-    const value = await encryptJwt(session, buildSecret(config.env));
+    const value = await encryptJwt(session, buildSecret(env));
 
     // Check the size of the cookie value in bytes
     const encoder = new TextEncoder();

@@ -1,16 +1,16 @@
 import * as cookieParser from "cookie";
-import { type LightAuthConfig, type LightAuthSession, type LightAuthSessionStore, type LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthServerEnv, type LightAuthSession, type LightAuthSessionStore, type LightAuthUser } from "../models";
 import { DEFAULT_SESSION_NAME } from "../constants";
 import { buildSecret, getSessionExpirationMaxAge } from "./utils";
 import { decryptJwt, encryptJwt } from "./jwt";
 
 export const createLightAuthSessionStore = (): LightAuthSessionStore => {
   return {
-    getSession: async <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-      config,
+    getSession: async <Session extends LightAuthSession = LightAuthSession>({
+      env,
       req,
     }: {
-      config: LightAuthConfig<Session, User>;
+      env: LightAuthServerEnv;
       req?: Request;
     }): Promise<Session | null> => {
       if (!req) throw new Error("light-auth: Request is required in getSession function of light-auth session store");
@@ -25,25 +25,25 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
       if (!session) return null;
 
       try {
-        const decryptedSession = await decryptJwt(session, buildSecret(config.env));
+        const decryptedSession = await decryptJwt(session, buildSecret(env));
         return decryptedSession as Session;
       } catch (error) {
         console.error("Failed to decrypt session:", error);
         return null;
       }
     },
-    setSession: async <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-      config,
+    setSession: async <Session extends LightAuthSession = LightAuthSession>({
+      env,
       session,
       res,
     }: {
-      config: LightAuthConfig<Session, User>;
+      env: LightAuthServerEnv;
       session: Session;
       res?: Response;
     }) => {
       if (!res) throw new Error("light-auth: Response is required in setSession of light-auth session store");
 
-      const value = await encryptJwt(session, buildSecret(config.env));
+      const value = await encryptJwt(session, buildSecret(env));
 
       // Check the size of the cookie value in bytes
       const encoder = new TextEncoder();
@@ -66,11 +66,12 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
 
       return res;
     },
-    deleteSession: async <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-      config,
+    deleteSession: async <Session extends LightAuthSession = LightAuthSession>({
       res,
     }: {
-      config: LightAuthConfig<Session, User>;
+      env: LightAuthServerEnv;
+      session: Session;
+      basePath: string;
       res?: Response;
     }) => {
       if (!res) throw new Error("light-auth: Response is required in deleteSessions of light-auth session store");

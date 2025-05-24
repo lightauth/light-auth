@@ -18,7 +18,7 @@ export async function redirectToProviderLoginHandler<
   [key: string]: unknown;
 }): Promise<BaseResponse> {
   const { config, providerName, checkCsrf = true } = args;
-  const { provider, router, env } = checkConfig(config, providerName);
+  const { provider, router, env, basePath } = checkConfig(config, providerName);
 
   const state = generateState();
   const codeVerifier = generateCodeVerifier();
@@ -27,7 +27,7 @@ export async function redirectToProviderLoginHandler<
   // it could be disable for direct call from a post action issued by the SSR framework
   if (checkCsrf) {
     const secret = buildSecret(env);
-    const cookies = await router.getCookies({ ...args });
+    const cookies = await router.getCookies({ env, basePath, ...args });
     const csrfIsValid = validateCsrfToken(cookies, secret);
     if (!csrfIsValid) throw new Error("Invalid CSRF token");
   }
@@ -87,7 +87,7 @@ export async function redirectToProviderLoginHandler<
   const csrfCookieDelete: LightAuthCookie = { name: "light_auth_csrf_token", value: "", maxAge: 0 };
 
   // set the cookies in the response
-  const res = await router.setCookies({ cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie, csrfCookieDelete], ...args });
+  const res = await router.setCookies({ env, basePath, cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie, csrfCookieDelete], ...args });
 
-  return await router.redirectTo({ url: url.toString(), headers: newHeaders, res, ...args });
+  return await router.redirectTo({ env, basePath, url: url.toString(), headers: newHeaders, res, ...args });
 }

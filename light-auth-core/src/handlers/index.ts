@@ -17,14 +17,17 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
 ) {
   const httpHandler = async (args?: { [key: string]: unknown }): Promise<BaseResponse> => {
     if (!config.router) throw new Error("light-auth: router is required");
+    if (!config.env) throw new Error("light-auth: env is required");
+    if (!config.basePath) throw new Error("light-auth: basePath is required");
+    const { env, basePath } = config;
 
-    const req = await config.router.getRequest({ config, ...args });
-    const headers = await config.router.getHeaders({ config, ...args });
+    const req = await config.router.getRequest({ env, basePath, ...args });
+    const headers = await config.router.getHeaders({ env, basePath, ...args });
 
     // check the origin of the request if cross-origin
     await checkCsrfOrigin(headers);
 
-    const url = await config.router.getUrl({ config, ...args });
+    const url = await config.router.getUrl({ env, basePath, ...args });
     const reqUrl = new URL(url);
 
     // Get the auth segments from the URL

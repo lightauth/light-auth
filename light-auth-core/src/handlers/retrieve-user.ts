@@ -8,9 +8,9 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
   [key: string]: unknown;
 }): Promise<Response> {
   const { config, userId, ...restArgs } = args;
-  const { router, userAdapter, provider } = checkConfig(config);
+  const { router, userAdapter, provider, env, basePath } = checkConfig(config);
   try {
-    let user = await userAdapter.getUser({ config, userId, ...restArgs });
+    let user = await userAdapter.getUser<Session, User>({ env, basePath, userId, ...restArgs });
     const accessTokenExpiresAt = user?.accessTokenExpiresAt ? new Date(user.accessTokenExpiresAt) : new Date();
 
     // lower limit before trying to refresh the token is 10 minutes
@@ -67,17 +67,17 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
             // if the user is null, use the original user
             user = userSaving ?? user;
           }
-          await userAdapter.setUser({ user, ...args });
+          await userAdapter.setUser({ env, basePath, user, ...args });
 
           if (config.onUserSaved) await config.onUserSaved(user, args);
         }
       }
     }
 
-    if (user == null) return await router.returnJson({ data: null, ...args });
-    return await router.returnJson({ data: user, ...args });
+    if (user == null) return await router.returnJson({ env, basePath, data: null, ...args });
+    return await router.returnJson({ env, basePath, data: user, ...args });
   } catch (error) {
     console.error("Failed to get user:", error);
-    return await router.returnJson({ data: null, ...args });
+    return await router.returnJson({ env, basePath, data: null, ...args });
   }
 }

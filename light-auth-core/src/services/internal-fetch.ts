@@ -1,4 +1,5 @@
-import { type LightAuthConfig } from "../models";
+import { type LightAuthConfig, type LightAuthServerEnv } from "../models";
+import { checkConfig, resolveBasePath } from "./utils";
 
 /**
  * this function is used to make a request to the light auth server
@@ -15,6 +16,8 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
 }): Promise<T | null | undefined> {
   const { config, body, method = "GET" } = args;
   const { router } = config;
+  const env = config.env as Required<LightAuthServerEnv>;
+  const basePath = resolveBasePath(config.basePath, env);
 
   // check if we are on the server side or client side
   // if we are on the server side, we need to use the router to get the url and headers
@@ -26,11 +29,11 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
   // get all the headers from the request
   let requestHeaders: Headers | null = null;
 
-  if (router && isServerSide) requestHeaders = await router.getHeaders(args);
+  if (router && isServerSide) requestHeaders = await router.getHeaders({ env, basePath, ...args });
 
   // get the full url from the router if available
   let url = args.endpoint;
-  if (router && isServerSide) url = await router.getUrl(args);
+  if (router && isServerSide) url = await router.getUrl({ env, basePath, ...args });
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: method, headers: requestHeaders ?? new Headers(), body: bodyBytes })

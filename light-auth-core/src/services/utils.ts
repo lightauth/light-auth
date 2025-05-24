@@ -1,5 +1,5 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
-import { type LightAuthProvider, type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
+import { type LightAuthProvider, type LightAuthConfig, type LightAuthSession, type LightAuthUser, type LightAuthServerEnv } from "../models";
 
 /**
  * Checks the configuration and throws an error if any required fields are missing.
@@ -15,6 +15,9 @@ export function checkConfig<Session extends LightAuthSession = LightAuthSession,
   if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) {
     throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
   }
+
+  if (!config.basePath) config.basePath = resolveBasePath(config.basePath, config.env);
+
   if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
   if (config.router == null) throw new Error("light-auth: router is required");
   if (config.sessionStore == null) throw new Error("light-auth: sessionStore is required");
@@ -40,10 +43,8 @@ export function getSessionExpirationMaxAge() {
 }
 
 /** Resolves the basePath, defaults to "/api/default" if not provided or falsy */
-export function resolveBasePath<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config?: LightAuthConfig<Session, User>
-): string {
-  let resolvedBasePath = config?.basePath || config?.env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
+export function resolveBasePath(basePath: string | undefined | null, env: LightAuthServerEnv | null | undefined): string {
+  let resolvedBasePath = basePath || env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
 
   if (!resolvedBasePath.startsWith("/")) resolvedBasePath = `/${resolvedBasePath}`;
 

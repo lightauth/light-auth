@@ -4,6 +4,7 @@ import { type LightAuthSession, type LightAuthUser } from "./light-auth-session"
 import { type LightAuthUserAdapter } from "./light-auth-user-adapter";
 import { type LightAuthSessionStore } from "./light-auth-session-store";
 import { type LightAuthRouter } from "./light-auth-router";
+import type { LightAuthServerEnv } from "./light-auth-server-env";
 
 export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>> = {
   providers?: LightAuthProvider[];
@@ -15,5 +16,5 @@ export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession,
   userAdapter?: LightAuthUserAdapter;
   sessionStore?: LightAuthSessionStore;
   router?: LightAuthRouter;
-  env?: { [key: string]: string | undefined };
+  env?: LightAuthServerEnv;
 };

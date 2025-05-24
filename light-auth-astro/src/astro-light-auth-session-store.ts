@@ -4,11 +4,9 @@ import {
   DEFAULT_SESSION_NAME,
   encryptJwt,
   getSessionExpirationMaxAge,
-  type LightAuthConfig,
-  type LightAuthCookie,
+  type LightAuthServerEnv,
   type LightAuthSession,
   type LightAuthSessionStore,
-  type LightAuthUser,
 } from "@light-auth/core";
 import type { AstroSharedContext } from "astro";
 import * as cookieParser from "cookie";
@@ -19,13 +17,14 @@ import * as cookieParser from "cookie";
  * with appropriate Set-Cookie headers.
  */
 export const astroLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config?: LightAuthConfig<Session, User>;
+  async getSession<Session extends LightAuthSession = LightAuthSession>(args: {
+    env: LightAuthServerEnv;
+    basePath: string;
     context?: AstroSharedContext;
     req?: Request;
   }): Promise<Session | null> {
-    const { config, context, req } = args;
-    if (!config) throw new Error("light-auth: Config is required in getSession of astroLightAuthSessionStore");
+    const { env, basePath, context, req } = args;
+    if (!env) throw new Error("light-auth: Env is required in getSession of astroLightAuthSessionStore");
 
     const request = context?.request || req;
     if (!request) throw new Error("light-auth: Request is required in getSession of astroLightAuthSessionStore");
@@ -38,7 +37,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     if (!sessionCookie) return null;
 
     try {
-      const decryptedSession = await decryptJwt(sessionCookie, buildSecret(config.env));
+      const decryptedSession = await decryptJwt(sessionCookie, buildSecret(env));
       return decryptedSession as Session;
     } catch (error) {
       console.error("Failed to decrypt session cookie:", error);
@@ -46,12 +45,13 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     }
   },
 
-  async deleteSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config?: LightAuthConfig<Session, User>;
+  async deleteSession<Session extends LightAuthSession = LightAuthSession>(args: {
+    env: LightAuthServerEnv;
+    session: Session;
     context?: AstroSharedContext;
   }): Promise<void> {
-    const { config, context } = args;
-    if (!config) throw new Error("light-auth: Config is required in deleteSession of astroLightAuthSessionStore");
+    const { env, context } = args;
+    if (!env) throw new Error("light-auth: Env is required in deleteSession of astroLightAuthSessionStore");
     if (!context) throw new Error("light-auth: Context is required in deleteSession of astroLightAuthSessionStore");
 
     context.cookies.set(DEFAULT_SESSION_NAME, "", {
@@ -60,15 +60,15 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     });
   },
 
-  async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
-    config: LightAuthConfig<Session, User>;
+  async setSession<Session extends LightAuthSession = LightAuthSession>(args: {
+    env: LightAuthServerEnv;
     session: Session;
     context?: AstroSharedContext;
   }): Promise<void> {
-    const { config, session, context } = args;
+    const { env, session, context } = args;
     if (!context) throw new Error("light-auth: Context is required in setSession of astroLightAuthSessionStore");
 
-    const value = await encryptJwt(session, buildSecret(config.env));
+    const value = await encryptJwt(session, buildSecret(env));
 
     // Check the size of the cookie value in bytes
     const encoder = new TextEncoder();

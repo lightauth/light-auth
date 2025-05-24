@@ -127,8 +127,8 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
     });
   }
 
-  config.basePath = resolveBasePath(config);
   config.env = config.env || process.env;
+  config.basePath = resolveBasePath(config.basePath, config.env);
   return {
     providers: config.providers,
     handlers: createNuxtJsLightAuthHandlerFunction(config),
