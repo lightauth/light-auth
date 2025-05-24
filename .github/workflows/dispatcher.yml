@@ -11,31 +11,31 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Trigger light-auth-core
-        run: gh workflow run light-auth-core.yml
+        run: gh workflow run publish-core.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger light-auth-astro
-        run: gh workflow run light-auth-astro.yml
+        run: gh workflow run publish-astro.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger light-auth-express
-        run: gh workflow run light-auth-express.yml
+        run: gh workflow run publish-express.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger light-auth-nextjs
-        run: gh workflow run light-auth-nextjs.yml
+        run: gh workflow run publish-nextjs.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger light-auth-nuxt
-        run: gh workflow run light-auth-nuxt.yml
+        run: gh workflow run publish-nuxt.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trigger light-auth-sveltekit
-        run: gh workflow run light-auth-sveltekit.yml
+        run: gh workflow run publish-sveltekit.yml
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
