@@ -53,18 +53,24 @@ export function createFetchSessionServerFunction<
 export function createFetchUserServerFunction<
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
->(config: LightAuthConfig<Session, User>): (args?: { [key: string]: unknown }) => Promise<User | null | undefined> {
-  return async (args) => {
+>(config: LightAuthConfig<Session, User>) {
+  return async (args?: { userId?: string; [key: string]: unknown }) => {
     try {
       const isServerSide = typeof window === "undefined";
       if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
 
-      // get the user from the server using the api endpoint
-      const session = await internalFetch<Session>({ config, method: "POST", endpoint: `${config.basePath}/session`, ...args });
-      if (!session || !session.userId) return null;
+      let userId = args?.userId;
+      if (!userId) {
+        // get the user from the server using the api endpoint
+        const session = await internalFetch<Session>({ config, method: "POST", endpoint: `${config.basePath}/session`, ...args });
+        if (!session || !session.userId) return null;
+        userId = session.userId.toString();
+      }
+
+      if (!userId) return null;
 
       // get the user from the user adapter
-      const user = await internalFetch<User>({ config, method: "POST", endpoint: `${config.basePath}/user/${session.userId}`, ...args });
+      const user = await internalFetch<User>({ config, method: "POST", endpoint: `${config.basePath}/user/${userId}`, ...args });
       if (!user) return null;
 
       return user;

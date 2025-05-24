@@ -3,7 +3,7 @@ import { getSession, getUser } from "@/lib/auth";
 
 export default async function Home() {
   const session = await getSession();
-  const user = await getUser();
+  const user = await getUser(session?.userId.toString()); // Fetch user details based on session
 
   // Check if user is logged in from cookies
 
@@ -23,17 +23,13 @@ export default async function Home() {
             <div className="space-y-2">
               <h3 className="font-medium">Session:</h3>
               <div className="bg-gray-50 p-4 rounded-md">
-                <pre className="whitespace-pre-wrap text-sm break-all ">
-                  {JSON.stringify(session, null, 2)}
-                </pre>
+                <pre className="whitespace-pre-wrap text-sm break-all ">{JSON.stringify(session, null, 2)}</pre>
               </div>
             </div>
             <div className="space-y-2">
               <h3 className="font-medium">User:</h3>
               <div className="bg-gray-50 p-4 rounded-md">
-                <pre className="whitespace-pre-wrap text-sm break-all ">
-                  {JSON.stringify(user, null, 2)}
-                </pre>
+                <pre className="whitespace-pre-wrap text-sm break-all ">{JSON.stringify(user, null, 2)}</pre>
               </div>
             </div>
           </div>
@@ -44,10 +40,7 @@ export default async function Home() {
             </div>
 
             <div className="mt-4">
-              <Link
-                href="/login"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
+              <Link href="/login" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                 Go to Login Page
               </Link>
             </div>

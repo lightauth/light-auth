@@ -10,12 +10,9 @@ export const metadata: Metadata = {
   title: "Auth Test App",
   description: "A simple app to test login and logout functionality",
 };
+export const dynamic = "force-dynamic"; // Force dynamic rendering for this page
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>

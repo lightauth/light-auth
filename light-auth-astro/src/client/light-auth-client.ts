@@ -26,7 +26,7 @@ export const createAstroLightAuthUserFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserClientFunction(config);
-  return async () => await userFunction();
+  return async (userId?: string) => await userFunction({ userId });
 };
 
 export function createAstroSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

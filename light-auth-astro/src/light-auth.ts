@@ -31,8 +31,8 @@ export const createAstroLightAuthUserFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserServerFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await userFunction({ context });
+  return async (context: AstroSharedContext, userId?: string) => {
+    return await userFunction({ userId, context });
   };
 };
 

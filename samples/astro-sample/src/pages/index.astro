@@ -16,6 +16,7 @@ export const prerender = false;
 const session = await getSession(Astro);
 const user = await getUser(Astro);
 
+// result of the action to perform a POST login
 const result = Astro.getActionResult(actions.login);
 if (result && !result.error && result.data) {
   return await signIn(result.data.providerName, result.data.callbackUrl, Astro);

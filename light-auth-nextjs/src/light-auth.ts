@@ -65,13 +65,10 @@ export const createNextJsLightAuthUserFunction = <
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
-): (() => Promise<User | null | undefined>) => {
+) => {
   const lightAuthUser = createFetchUserServerFunction(config);
-  return async () => await lightAuthUser();
+  return async (userId?: string) => await lightAuthUser({ userId });
 };
-
-type NextJsLightAuthHandlerFunction = (req: NextRequest, res: NextResponse, ...params: any[]) => Promise<NextResponse>;
-type NextJsLightAuthHandlerFullFunction = { GET: NextJsLightAuthHandlerFunction; POST: NextJsLightAuthHandlerFunction };
 
 /**
  * createNextJsLightAuthHandlerFunction is a function that creates the light auth handler for Next.js.
@@ -83,15 +80,15 @@ export const createNextJsLightAuthHandlerFunction = <
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
-): NextJsLightAuthHandlerFullFunction => {
+) => {
   const lightAuthHandler = createHttpHandlerFunction(config);
   return {
-    GET: async (req: NextRequest, res: NextResponse, ...params: any[]) => {
-      const response = await lightAuthHandler({ req, res, ...params });
+    GET: async (req: NextRequest, ...params: any[]) => {
+      const response = await lightAuthHandler({ req, ...params });
       return response;
     },
-    POST: async (req: NextRequest, res: NextResponse, ...params: any[]) => {
-      const response = await lightAuthHandler({ req, res, ...params });
+    POST: async (req: NextRequest, ...params: any[]) => {
+      const response = await lightAuthHandler({ req, ...params });
       return response;
     },
   };

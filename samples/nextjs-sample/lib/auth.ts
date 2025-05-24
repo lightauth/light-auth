@@ -2,6 +2,7 @@ import { Google, MicrosoftEntraId } from "arctic";
 import { CreateLightAuth } from "@light-auth/nextjs";
 import { LightAuthProvider } from "@light-auth/core";
 import { MyLightAuthSession, MyLightAuthUser } from "./auth-session-user";
+import { lightAuthSupabaseUserAdapter } from "./light-auth-supabase-user-adapter";
 const googleProvider: LightAuthProvider = {
   providerName: "google",
   arctic: new Google(process.env.GOOGLE_CLIENT_ID || "", process.env.GOOGLE_CLIENT_SECRET || "", "http://localhost:3000/api/auth/callback/google"),
@@ -21,6 +22,7 @@ const microsoftProvider: LightAuthProvider = {
 
 export const { providers, handlers, signIn, signOut, getSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({
   providers: [googleProvider, microsoftProvider],
+  userAdapter: lightAuthSupabaseUserAdapter,
 
   onSessionSaving: async (session, tokens) => {
     if (!tokens) return session;

@@ -31,8 +31,8 @@ export const createSvelteKitLightAuthUserFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserServerFunction(config);
-  return async (event?: RequestEvent) => {
-    return await userFunction({ event });
+  return async (userId?: string, event?: RequestEvent) => {
+    return await userFunction({ userId, event });
   };
 };
 

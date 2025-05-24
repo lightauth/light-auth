@@ -9,13 +9,13 @@ export function ClientFetchSessionButton() {
       onClick={async () => {
         const session = await getSession();
         console.log("Session:", session);
-        const user = await getUser();
+        const user = await getUser(session?.userId.toString());
         console.log("User:", user);
       }}
       variant="outline"
       className="w-full"
     >
-      Fetch Session from client side
+      Fetch Session from client side !
     </Button>
   );
 }

@@ -74,19 +74,24 @@ export const createNuxtJsLightAuthUserFunction = <
   // get the user from the server using the api endpoint, because
   // to get user we need the session that is stored in the cookie store and we may need to delete / update it
 
-  return async () => {
-    // @ts-ignore
-    const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
+  return async (userId?: string) => {
+    let userIdToUse = userId;
 
-    if (!cachedSession.value) {
+    if (!userIdToUse) {
       // @ts-ignore
-      return Object.assign(ref(null), { error: ref(new Error("No session found")), refresh: async () => {} }) as NuxtJsLightAuthAsyncData<User>;
+      const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
+
+      if (!cachedSession.value) {
+        // @ts-ignore
+        return Object.assign(ref(null), { error: ref(new Error("No session found")), refresh: async () => {} }) as NuxtJsLightAuthAsyncData<User>;
+      }
+      userIdToUse = cachedSession.value.userId;
     }
 
     // @ts-ignore
-    const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${cachedSession.value.userId}`, {
+    const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${userIdToUse}`, {
       method: "post",
-      key: `light-auth-user${cachedSession.value.userId}`,
+      key: `light-auth-user${userIdToUse}`,
     });
 
     if (error.value) {
