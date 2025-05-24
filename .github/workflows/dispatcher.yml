@@ -13,29 +13,29 @@ jobs:
       - name: Trigger light-auth-core
         run: gh workflow run publish-core.yml
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
 
       - name: Trigger light-auth-astro
         run: gh workflow run publish-astro.yml
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
 
       - name: Trigger light-auth-express
         run: gh workflow run publish-express.yml
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
 
       - name: Trigger light-auth-nextjs
         run: gh workflow run publish-nextjs.yml
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
 
       - name: Trigger light-auth-nuxt
         run: gh workflow run publish-nuxt.yml
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
 
       - name: Trigger light-auth-sveltekit
         run: gh workflow run publish-sveltekit.yml
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
