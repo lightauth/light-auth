@@ -33,18 +33,20 @@ export function createAstroSigninFunction<Session extends LightAuthSession = Lig
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninClientFunction(config);
-  return async (providerName: string) => await signInFunction({ providerName });
+  return async (providerName?: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
 }
 
 export function createAstroSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signOutFunction = createSignoutClientFunction(config);
-  return async () => await signOutFunction();
+  return async (revokeToken: boolean = false, callbackUrl: string = "/") => await signOutFunction({ revokeToken, callbackUrl });
 }
 
+type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;
+
 export function CreateLightAuthClient<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
+  config: LightAuthConfigClient | undefined = {}
 ) {
   // @ts-ignore
   config.env = config.env || import.meta;

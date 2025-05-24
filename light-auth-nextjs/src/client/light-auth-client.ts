@@ -33,7 +33,7 @@ export function createNextJsSigninFunction<Session extends LightAuthSession = Li
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninClientFunction(config);
-  return async (providerName: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
+  return async (providerName?: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
 }
 
 export function createNextJsSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

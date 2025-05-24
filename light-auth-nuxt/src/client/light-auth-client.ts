@@ -101,8 +101,10 @@ export const createNuxtJsLightAuthUserFunction = <
   };
 };
 
+type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;
+
 export function CreateLightAuthClient<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User> | undefined = {}
+  config: LightAuthConfigClient | undefined = {}
 ) {
   config.env = config.env || process.env;
   config.basePath = resolveBasePath(config.basePath, config.env);
