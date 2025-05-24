@@ -19,7 +19,7 @@ export const createSvelteKitLightAuthSessionFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   const sessionFunction = createFetchSessionServerFunction(config);
-  return async (event?: RequestEvent) => {
+  return async (event: RequestEvent) => {
     return await sessionFunction({ event });
   };
 };
@@ -31,7 +31,7 @@ export const createSvelteKitLightAuthUserFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserServerFunction(config);
-  return async (userId?: string, event?: RequestEvent) => {
+  return async (event: RequestEvent, userId?: string) => {
     return await userFunction({ userId, event });
   };
 };
@@ -41,7 +41,7 @@ export function createSvelteKitSigninFunction<
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(config: LightAuthConfig<Session, User>) {
   const signInFunction = createSigninServerFunction(config);
-  return async (providerName: string, callbackUrl: string = "/", event: RequestEvent) => {
+  return async (event: RequestEvent, providerName?: string, callbackUrl: string = "/") => {
     return await signInFunction({ providerName, callbackUrl, event });
   };
 }
@@ -51,7 +51,7 @@ export function createSvelteKitSignoutFunction<
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(config: LightAuthConfig<Session, User>) {
   const signOutFunction = createSignoutServerFunction(config);
-  return async (revokeToken: boolean, callbackUrl: string = "/", event: RequestEvent) => {
+  return async (event: RequestEvent, revokeToken: boolean = false, callbackUrl: string = "/") => {
     return await signOutFunction({ revokeToken, callbackUrl, event });
   };
 }

@@ -40,7 +40,7 @@ export function createAstroSigninFunction<Session extends LightAuthSession = Lig
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninServerFunction(config);
-  return async (providerName: string, callbackUrl: string = "/", context: AstroSharedContext) => {
+  return async (context: AstroSharedContext, providerName?: string, callbackUrl: string = "/") => {
     return await signInFunction({ providerName, callbackUrl, context });
   };
 }
@@ -49,8 +49,8 @@ export function createAstroSignoutFunction<Session extends LightAuthSession = Li
   config: LightAuthConfig<Session, User>
 ) {
   const signOutFunction = createSignoutServerFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await signOutFunction({ context });
+  return async (context: AstroSharedContext, revokeToken: boolean = false, callbackUrl: string = "/") => {
+    return await signOutFunction({ revokeToken, callbackUrl, context });
   };
 }
 

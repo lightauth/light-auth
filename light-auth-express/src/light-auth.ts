@@ -30,8 +30,8 @@ export const createExpressLightAuthUserFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserServerFunction(config);
-  return async (req: ExpressRequest, res: ExpressResponse) => {
-    return await userFunction({ req, res });
+  return async (req: ExpressRequest, res: ExpressResponse, userId?: string) => {
+    return await userFunction({ req, res, userId });
   };
 };
 
@@ -39,7 +39,7 @@ export function createExpressSigninFunction<Session extends LightAuthSession = L
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninServerFunction(config);
-  return async (providerName: string, callbackUrl: string = "/", req: ExpressRequest, res: ExpressResponse) => {
+  return async (req: ExpressRequest, res: ExpressResponse, providerName?: string, callbackUrl: string = "/") => {
     return await signInFunction({ providerName, callbackUrl, req, res });
   };
 }
@@ -48,7 +48,7 @@ export function createExpressSignoutFunction<Session extends LightAuthSession = 
   config: LightAuthConfig<Session, User>
 ) {
   const signOutFunction = createSignoutServerFunction(config);
-  return async (revokeToken: boolean = false, callbackUrl: string = "/", req: ExpressRequest, res: ExpressResponse) => {
+  return async (req: ExpressRequest, res: ExpressResponse, revokeToken: boolean = false, callbackUrl: string = "/") => {
     return await signOutFunction({ revokeToken, callbackUrl, req, res });
   };
 }

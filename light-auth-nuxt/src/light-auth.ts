@@ -54,7 +54,7 @@ export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthS
   config: LightAuthConfig<Session, User>
 ) => {
   const signIn = createSigninServerFunction(config);
-  return async (providerName?: string, callbackUrl: string = "/", event?: H3Event<EventHandlerRequest>) => {
+  return async (event: H3Event<EventHandlerRequest>, providerName?: string, callbackUrl: string = "/") => {
     await signIn({ providerName, callbackUrl, event });
   };
 };
@@ -68,7 +68,7 @@ export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuth
   config: LightAuthConfig<Session, User>
 ) => {
   const signOut = createSignoutServerFunction(config);
-  return async (revokeToken?: boolean, callbackUrl: string = "/", event?: H3Event<EventHandlerRequest>) => {
+  return async (event: H3Event<EventHandlerRequest>, revokeToken?: boolean, callbackUrl: string = "/") => {
     await signOut({ revokeToken, callbackUrl, event });
   };
 };

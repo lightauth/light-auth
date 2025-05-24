@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "light auth core framework agnostic, using arctic",
   "author": {
     "name": "Sébastien Pertus",
