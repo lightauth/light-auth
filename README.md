@@ -20,7 +20,7 @@ It provides essential authentication features with minimal configuration, making
 
 Light Auth shines across your favorite frameworks! Whether you’re building with  
 
-| Icon & Name                                   | NPM Package                                                                 | GitHub Sample                                                                                 |
+| Framework                                   | NPM Package                                                                 | GitHub Sample                                                                                 |
 |-----------------------------------------------|-----------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
 | ![NextJS](https://github.com/lightauth/.github/blob/main/images/nextjs.svg) **Next.js**   | [light-auth-nextjs](https://www.npmjs.com/package/@light-auth/nextjs)       | [Next.js Sample](https://github.com/lightauth/light-auth-nextjs-sample-one)           |
 | ![Astro](https://github.com/lightauth/.github/blob/main/images/astro.svg) **Astro**       | [light-auth-astro](https://www.npmjs.com/package/@light-auth/astro)         | [Astro Sample](https://github.com/lightauth/light-auth-astro-sample-one)              |
