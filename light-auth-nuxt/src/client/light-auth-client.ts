@@ -7,6 +7,10 @@ import {
   resolveBasePath,
 } from "@light-auth/core/client";
 
+import { ref, type Ref } from "vue";
+// @ts-ignore
+import { useFetch, useNuxtData } from "#imports";
+
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
@@ -35,9 +39,7 @@ export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuth
   };
 };
 
-// @ts-ignore
 type NuxtJsLightAuthAsyncData<T> = Ref<T | null | undefined> & {
-  // @ts-ignore
   error: Ref<Error | null>;
   refresh: () => Promise<void>;
 };
@@ -53,8 +55,7 @@ export const createNuxtJsLightAuthSessionFunction = <
 >(
   config: LightAuthConfig<Session, User>
 ) => {
-  return async () => {
-    // @ts-ignore
+  return async (): Promise<NuxtJsLightAuthAsyncData<LightAuthSession>> => {
     const { data, error, refresh } = await useFetch<Session>(`${config.basePath}/session`, { method: "post", key: "light-auth-session" });
     return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<Session>;
   };
@@ -78,17 +79,14 @@ export const createNuxtJsLightAuthUserFunction = <
     let userIdToUse = userId;
 
     if (!userIdToUse) {
-      // @ts-ignore
       const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
 
       if (!cachedSession.value) {
-        // @ts-ignore
         return Object.assign(ref(null), { error: ref(new Error("No session found")), refresh: async () => {} }) as NuxtJsLightAuthAsyncData<User>;
       }
-      userIdToUse = cachedSession.value.userId;
+      userIdToUse = cachedSession.value.userId.toString();
     }
 
-    // @ts-ignore
     const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${userIdToUse}`, {
       method: "post",
       key: `light-auth-user${userIdToUse}`,
