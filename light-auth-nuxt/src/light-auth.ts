@@ -1,4 +1,6 @@
 import {
+  createFetchSessionServerFunction,
+  createFetchUserServerFunction,
   createHttpHandlerFunction,
   createSigninServerFunction,
   createSignoutServerFunction,
@@ -9,40 +11,34 @@ import {
 } from "@light-auth/core";
 import { type EventHandlerRequest, type EventHandlerResponse, H3Event } from "h3";
 
-import { createNuxtJsLightAuthSessionFunction, createNuxtJsLightAuthUserFunction } from "./client/index";
-
 /**
- * createNuxtJsLightAuthSessionFunction is a function that creates a light session function for Nuxt.js.
+ * createNextJsLightAuthSessionFunction is a function that creates a light session function for Next.js.
  * It takes the LightAuth createLightAuthSessionFunction base function and returns a user friendly function by
- * removing the req and res parameters, that are not needed in the Nuxt.js context.
+ * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNuxtJsLightAuthSessionServerFunction = <
+export const createNuxtLightAuthSessionFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
 ) => {
-  const isServerSide = typeof window === "undefined";
-  if (!isServerSide) throw new Error("light-auth: getSession function should not be called on the client side. prefer to use the client version.");
-
-  return createNuxtJsLightAuthSessionFunction(config);
+  const lightAuthSession = createFetchSessionServerFunction(config);
+  return async (event: H3Event<EventHandlerRequest>) => await lightAuthSession({ event });
 };
 
 /**
- * createNuxtJsLightAuthUserFunction is a function that creates a light user function for Nuxt.js.
+ * createNextJsLightAuthUserFunction is a function that creates a light user function for Next.js.
  * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
- * removing the req and res parameters, that are not needed in the Nuxt.js context.
+ * removing the req and res parameters, that are not needed in the Next.js context.
  */
-export const createNuxtJsLightAuthUserServerFunction = <
+export const createNuxtLightAuthUserFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
   config: LightAuthConfig<Session, User>
 ) => {
-  const isServerSide = typeof window === "undefined";
-  if (!isServerSide) throw new Error("light-auth: getUser function should not be called on the client side. prefer to use the client version.");
-
-  return createNuxtJsLightAuthUserFunction(config);
+  const lightAuthUser = createFetchUserServerFunction(config);
+  return async (event: H3Event<EventHandlerRequest>, userId?: string) => await lightAuthUser({ event, userId });
 };
 
 /**
@@ -50,7 +46,7 @@ export const createNuxtJsLightAuthUserServerFunction = <
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export const createNuxtLightAuthSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
   const signIn = createSigninServerFunction(config);
@@ -64,7 +60,7 @@ export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthS
  * It takes the LightAuth createSignoutFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export const createNuxtLightAuthSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
   const signOut = createSignoutServerFunction(config);
@@ -80,7 +76,7 @@ type NuxtJsLightAuthHandlerFunction = (event: H3Event<EventHandlerRequest>) => E
  * It takes the LightAuth createHttpHandlerFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsLightAuthHandlerFunction = <
+export const createNuxtLightAuthHandlerFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
@@ -131,11 +127,11 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   config.basePath = resolveBasePath(config.basePath, config.env);
   return {
     providers: config.providers,
-    handlers: createNuxtJsLightAuthHandlerFunction(config),
+    handlers: createNuxtLightAuthHandlerFunction(config),
     basePath: config.basePath,
-    signIn: createNuxtJsSignIn(config),
-    signOut: createNuxtJsSignOut(config),
-    getSession: createNuxtJsLightAuthSessionFunction(config),
-    getUser: createNuxtJsLightAuthUserFunction(config),
+    signIn: createNuxtLightAuthSignIn(config),
+    signOut: createNuxtLightAuthSignOut(config),
+    getSession: createNuxtLightAuthSessionFunction(config),
+    getUser: createNuxtLightAuthUserFunction(config),
   };
 }
