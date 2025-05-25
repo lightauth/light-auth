@@ -15,6 +15,11 @@
     "allowJs": false, /* Allow JavaScript files to be compiled. */
     "declaration": true, /* Generates corresponding '.d.ts' file. */
     "verbatimModuleSyntax": true, /* Preserve the original module syntax in the output. */
+    "paths": {
+      "#imports": [
+        "./node_modules/nuxt/dist/app/composables"
+      ]
+    }
   },
   "include": [
     "src"

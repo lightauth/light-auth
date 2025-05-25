@@ -9,6 +9,8 @@ import {
 
 import { ref, type Ref } from "vue";
 
+import { useFetch, useNuxtData } from "#imports";
+
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
@@ -54,8 +56,10 @@ export const createNuxtJsLightAuthSessionFunction = <
   config: LightAuthConfig<Session, User>
 ) => {
   return async (): Promise<NuxtJsLightAuthAsyncData<LightAuthSession>> => {
-    // @ts-ignore
-    const { data, error, refresh } = await useFetch<Session>(`${config.basePath}/session`, { method: "post", key: "light-auth-session" });
+    const { data, error, refresh } = await useFetch(`${config.basePath}/session`, { method: "post", key: "light-auth-session", 
+      body: {
+      }
+     });
     return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<Session>;
   };
 };
@@ -78,7 +82,6 @@ export const createNuxtJsLightAuthUserFunction = <
     let userIdToUse = userId;
 
     if (!userIdToUse) {
-      // @ts-ignore
       const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
 
       if (!cachedSession.value) {
@@ -86,8 +89,6 @@ export const createNuxtJsLightAuthUserFunction = <
       }
       userIdToUse = cachedSession.value.userId.toString();
     }
-    // @ts-ignore
-
     const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${userIdToUse}`, {
       method: "post",
       key: `light-auth-user${userIdToUse}`,

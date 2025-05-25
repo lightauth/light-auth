@@ -17,7 +17,7 @@ export async function getSessionHandler<
     ...args,
   });
 
-  if (!session || !session.id || !session.userId) return await router.returnJson({ env, basePath, data: null, ...args });
+  if (!session || !session.id || !session.userId) return await router.returnJson({ env, basePath, data: {}, ...args });
 
   // check if session is expired
   if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
@@ -26,7 +26,7 @@ export async function getSessionHandler<
     try {
       await sessionStore.deleteSession({ env, basePath, session, ...args });
     } catch {}
-    return await router.returnJson({ env, basePath, data: null, ...args });
+    return await router.returnJson({ env, basePath, data: {}, ...args });
   }
 
   // get the max age from the environment variable or use the default value

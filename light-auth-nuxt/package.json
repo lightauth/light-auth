@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/nuxt",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "light auth framework for nuxt, using arctic",
   "author": {
     "name": "Sébastien Pertus",
