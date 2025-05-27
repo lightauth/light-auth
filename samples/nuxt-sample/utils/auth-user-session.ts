@@ -1,5 +1,4 @@
 import type { LightAuthSession, LightAuthUser } from "@light-auth/core";
-import { CreateLightAuthClient } from "@light-auth/nuxt/client";
 
 export type MyLightAuthSession = LightAuthSession & {
   // Add any additional properties you want to include in your custom session type
@@ -13,5 +12,3 @@ export type MyLightAuthUser = LightAuthUser<MyLightAuthSession> & {
   iss?: string;
   sub?: string;
 };
-
-export const { signIn, signOut, getSession, getUser } = CreateLightAuthClient<MyLightAuthSession, MyLightAuthUser>();

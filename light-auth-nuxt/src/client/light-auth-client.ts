@@ -9,14 +9,14 @@ import {
 
 import { ref, type Ref } from "vue";
 
-import { useFetch, useNuxtData } from "#imports";
+import { useFetch, useNuxtData, type AsyncDataRequestStatus } from "#imports";
 
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
   const signIn = createSigninClientFunction(config);
@@ -30,7 +30,7 @@ export const createNuxtJsSignIn = <Session extends LightAuthSession = LightAuthS
  * It takes the LightAuth createSignoutFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
   const signOut = createSignoutClientFunction(config);
@@ -39,28 +39,24 @@ export const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuth
   };
 };
 
-type NuxtJsLightAuthAsyncData<T> = Ref<T | null | undefined> & {
-  error: Ref<Error | null>;
+/** Represents the result of a Nuxt useFetch operation*/
+export interface FetchResult<T> {
+  data: Ref<T | null>;
+  pending: Ref<boolean>;
+  error: Ref<any | null>;
+  status: Ref<AsyncDataRequestStatus>;
   refresh: () => Promise<void>;
-};
+  clear: () => void;
+}
 
 /**
  * createNuxtJsLightAuthSessionFunction is a function that creates a light session function for Nuxt.js.
  * It takes the LightAuth createLightAuthSessionFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsLightAuthSessionFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
-  config: LightAuthConfig<Session, User>
-) => {
-  return async (): Promise<NuxtJsLightAuthAsyncData<LightAuthSession>> => {
-    const { data, error, refresh } = await useFetch(`${config.basePath}/session`, { method: "post", key: "light-auth-session", 
-      body: {
-      }
-     });
-    return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<Session>;
+const createNuxtJsLightAuthSessionFunction = <Session extends LightAuthSession>(config: LightAuthConfig) => {
+  return (): Promise<FetchResult<Session>> => {
+    return useFetch(`${config.basePath}/session`, { method: "post", key: "light-auth-session", body: {} }) as Promise<FetchResult<Session>>;
   };
 };
 
@@ -69,35 +65,33 @@ export const createNuxtJsLightAuthSessionFunction = <
  * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Nuxt.js context.
  */
-export const createNuxtJsLightAuthUserFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
-  config: LightAuthConfig<Session, User>
-) => {
+const createNuxtJsLightAuthUserFunction = <User extends LightAuthUser = LightAuthUser<LightAuthSession>>(config: LightAuthConfig) => {
   // get the user from the server using the api endpoint, because
   // to get user we need the session that is stored in the cookie store and we may need to delete / update it
 
-  return async (userId?: string) => {
+  return (userId?: string): Promise<FetchResult<User>> => {
     let userIdToUse = userId;
 
     if (!userIdToUse) {
       const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
 
-      if (!cachedSession.value) {
-        return Object.assign(ref(null), { error: ref(new Error("No session found")), refresh: async () => {} }) as NuxtJsLightAuthAsyncData<User>;
+      if (!cachedSession.value?.userId) {
+        return Promise.resolve<FetchResult<User>>({
+          data: ref(null),
+          pending: ref(false),
+          error: ref(new Error("No session found")),
+          refresh: async () => {},
+          clear: () => {},
+          status: ref("error"),
+        } as FetchResult<User>);
       }
       userIdToUse = cachedSession.value.userId.toString();
     }
-    const { data, error, refresh } = await useFetch<LightAuthUser>(`${config.basePath}/user/${userIdToUse}`, {
+
+    return useFetch(`${config.basePath}/user/${userIdToUse}`, {
       method: "post",
       key: `light-auth-user${userIdToUse}`,
-    });
-
-    if (error.value) {
-      console.error("Error in createNuxtJsLightAuthUserFunction:", error.value);
-    }
-    return Object.assign(data, { error, refresh }) as NuxtJsLightAuthAsyncData<User>;
+    }) as Promise<FetchResult<User>>;
   };
 };
 
@@ -111,8 +105,8 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    getSession: createNuxtJsLightAuthSessionFunction(config),
-    getUser: createNuxtJsLightAuthUserFunction(config),
+    useSession: createNuxtJsLightAuthSessionFunction<Session>(config),
+    useUser: createNuxtJsLightAuthUserFunction<User>(config),
     signIn: createNuxtJsSignIn(config),
     signOut: createNuxtJsSignOut(config),
   };

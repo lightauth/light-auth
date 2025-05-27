@@ -1,32 +1,30 @@
 <script setup lang="ts">
-import { getSession, getUser, signIn, signOut } from "#imports";
+import { CreateLightAuthClient } from "@light-auth/nuxt/client";
 
-const session = await getSession();
-const user = await getUser();
+const { useSession, useUser, signOut, signIn } = useLightAuth();
+
+const { data: session, refresh: refreshSession, clear: clearSession } = await useSession();
+const { data: user, refresh: refreshUser } = await useUser();
+
+// const { data: session2, refresh: refreshSession2 } = await useFetch(`/api/auth/session`, { method: "post", key: "light-auth-session", body: {} });
+
+console.log("Session:", session?.value);
+// console.log("Session2:", session2?.value);
+console.log("User:", user?.value);
 
 const handleGetSession = async () => {
   try {
-    session.refresh();
+    refreshSession();
     console.log("Session:", session?.value);
   } catch (e: any) {
     console.log(e.message || "Failed to retrieve session");
-  }
-};
-
-const handleGetUser = async (forceRefresh: boolean = false) => {
-  try {
-    if (forceRefresh) await user.refresh();
-
-    console.log("User:", user?.value);
-  } catch (e: any) {
-    console.log(e.message || "Failed to retrieve user");
   }
 };
 </script>
 
 <template>
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
-    <div class="text-center" v-if="session != null">
+    <div class="text-center" v-if="session">
       <h1 class="text-2xl font-bold mb-4">You are logged in!</h1>
       <button
         @click="signOut()"
@@ -34,7 +32,8 @@ const handleGetUser = async (forceRefresh: boolean = false) => {
       >
         Logout
       </button>
-      <!-- <p class="text-gray-600 mb-6 text-center" v-if="userData != null">{{ userData?.name }}</p> -->
+
+      <p class="text-gray-600 mb-6 text-center" v-if="session != null">{{ session?.email }}</p>
       <p class="text-gray-600 mb-6 text-center" v-if="user != null">{{ user?.firstName }} {{ user?.lastName }} {{ user?.iss }}</p>
     </div>
 
@@ -66,7 +65,7 @@ const handleGetUser = async (forceRefresh: boolean = false) => {
       >
         <span>retrieve session</span>
       </button>
-
+      <!--
       <button
         @click="handleGetUser()"
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -79,7 +78,7 @@ const handleGetUser = async (forceRefresh: boolean = false) => {
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
       >
         <span>retrieve and refresh user</span>
-      </button>
+      </button> -->
 
       <button
         @click="signIn('microsoft')"

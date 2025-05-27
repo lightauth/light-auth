@@ -1,7 +1,8 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { CreateLightAuth } from "@light-auth/nuxt";
-import type { LightAuthProvider, LightAuthSession, LightAuthUser } from "@light-auth/core";
-import { MyLightAuthSession, MyLightAuthUser } from "~/utils/auth-client";
+import type { LightAuthProvider } from "@light-auth/core";
+import { MyLightAuthSession, MyLightAuthUser } from "~/utils/auth-user-session";
+
 const googleProvider: LightAuthProvider = {
   providerName: "google",
   arctic: new Google(process.env.GOOGLE_CLIENT_ID || "", process.env.GOOGLE_CLIENT_SECRET || "", "http://localhost:3000/api/auth/callback/google"),
