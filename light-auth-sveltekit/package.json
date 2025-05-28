@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/sveltekit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "light auth framework for sveltekit, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -51,7 +51,7 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "@light-auth/core": "^0.2.0",
+    "@light-auth/core": "^0.2.1",
     "arctic": "^3.6.0",
     "jose": "^6.0.10"
   },

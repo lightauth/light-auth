@@ -61,6 +61,7 @@ export function createCustomFetch<T>(key: string, fetcher: () => Promise<T | nul
     default: () => null,
     // @ts-ignore
     transform: (data) => data ?? false, // Ensure we return false instead of null to avoid hydration issues
+    // avoid  WARN  [nuxt] useAsyncData must return a value (it should not be undefined) or the request may be duplicated on the client side.
   });
 
   // Map AsyncData to FetchResult<T>
@@ -115,22 +116,7 @@ export const createNuxtJsLightAuthUserFunction = <
     const headers = new Headers(useRequestHeaders(["cookie"]));
     const url = useRequestURL();
 
-    let sessionUrlEndpoint = `${config.basePath}/session`;
-    let userUrlEndpoint = `${config.basePath}/user/${userId}`;
-
-    if (url) {
-      const incomingHeaders = new Headers();
-      incomingHeaders.set("host", url.host);
-      sessionUrlEndpoint = buildFullUrl({ url: sessionUrlEndpoint, incomingHeaders });
-    }
-
-    if (!userId) {
-      // get the user from the server using the api endpoint
-      const session = await internalFetch<Session>({ config, method: "POST", endpoint: sessionUrlEndpoint, headers, event });
-      if (!session || !session.userId) return null;
-      userId = session.userId.toString();
-      userUrlEndpoint = `${config.basePath}/user/${userId}`;
-    }
+    let userUrlEndpoint = userId ? `${config.basePath}/user/${userId}` : `${config.basePath}/user`;
 
     if (url) {
       const incomingHeaders = new Headers();
@@ -138,14 +124,12 @@ export const createNuxtJsLightAuthUserFunction = <
       userUrlEndpoint = buildFullUrl({ url: userUrlEndpoint, incomingHeaders });
     }
 
-    if (!userId) return null;
     // get the user from the user adapter
     const user = await internalFetch<User>({ config, method: "POST", endpoint: userUrlEndpoint, headers, event });
-
     return user ?? null;
   };
 
-  return (userId?: string) => createCustomFetch<User>(`light-auth-user-${userId}`, () => userFunction(userId));
+  return (userId?: string) => createCustomFetch<User>(`light-auth-user-${userId ?? "from-session"}`, () => userFunction(userId));
 };
 
 type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;

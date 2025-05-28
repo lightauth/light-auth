@@ -60,18 +60,11 @@ export function createFetchUserClientFunction<
     try {
       const isServerSide = typeof window === "undefined";
       if (isServerSide) throw new Error("light-auth-client: getUser function should not be called on the server side");
-      let userId = args?.userId;
 
-      if (!userId) {
-        // get the user from the server using the api endpoint
-        const session = await internalFetch<Session>({ config, method: "POST", endpoint: `${config.basePath}/session`, ...args });
-        if (!session || !session.userId) return null;
-        userId = session.userId.toString();
-      }
+      const endpoint = args?.userId ? `${config.basePath}/user/${args.userId}` : `${config.basePath}/user`;
 
-      if (!userId) return null;
       // get the user from the user adapter
-      const user = await internalFetch<User>({ config, method: "POST", endpoint: `${config.basePath}/user/${userId}`, ...args });
+      const user = await internalFetch<User>({ config, method: "POST", endpoint, ...args });
 
       if (!user) return null;
 
