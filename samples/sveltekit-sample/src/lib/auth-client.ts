@@ -14,4 +14,4 @@ export type MyLightAuthUser = LightAuthUser<MyLightAuthSession> & {
 	sub?: string;
 };
 
-export const { signIn, signOut, getSession, getUser } = CreateLightAuthClient<MyLightAuthSession, MyLightAuthUser>();
+export const { signIn, signOut, getAuthSession, getUser } = CreateLightAuthClient<MyLightAuthSession, MyLightAuthUser>();

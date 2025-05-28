@@ -69,7 +69,7 @@ export const SessionProvider = ({
   const [loading, setLoading] = useState(false);
   const [isOnline, setIsOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
 
-  const getSession = async () => {
+  const getAuthSession = async () => {
     if (!isOnline) return;
     setLoading(true);
 
@@ -84,8 +84,8 @@ export const SessionProvider = ({
   };
 
   useEffect(() => {
-    getSession();
-    const interval = setInterval(getSession, interval_ms);
+    getAuthSession();
+    const interval = setInterval(getAuthSession, interval_ms);
 
     let removeListeners: (() => void) | undefined;
 
@@ -93,7 +93,7 @@ export const SessionProvider = ({
       const listeners: Array<[string, EventListenerOrEventListenerObject]> = [];
 
       if (refresh_on_window_focus) {
-        const handleFocus = () => getSession();
+        const handleFocus = () => getAuthSession();
         window.addEventListener("focus", handleFocus);
         listeners.push(["focus", handleFocus]);
       }
@@ -101,7 +101,7 @@ export const SessionProvider = ({
       if (refresh_on_online) {
         const handleOnline = () => {
           setIsOnline(true);
-          getSession();
+          getAuthSession();
         };
         const handleOffline = () => setIsOnline(false);
         window.addEventListener("online", handleOnline);
@@ -120,5 +120,5 @@ export const SessionProvider = ({
     };
   }, [interval_ms, isOnline, refresh_on_window_focus, refresh_on_online]);
 
-  return <SessionContext.Provider value={{ session: sessionState, loading, refresh: getSession }}>{children}</SessionContext.Provider>;
+  return <SessionContext.Provider value={{ session: sessionState, loading, refresh: getAuthSession }}>{children}</SessionContext.Provider>;
 };

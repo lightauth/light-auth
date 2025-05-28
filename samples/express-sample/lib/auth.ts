@@ -20,7 +20,7 @@ const microsoftProvider: LightAuthProvider = {
   scopes: ["offline_access"],
 };
 
-export const { providers, handlers, middleware, signIn, signOut, getSession, getUser } = CreateLightAuth({
+export const { providers, handlers, middleware, signIn, signOut, getAuthSession, getUser } = CreateLightAuth({
   providers: [googleProvider, microsoftProvider],
   basePath: "/api/auth", // Optional: specify a custom base path for the handlers
 });

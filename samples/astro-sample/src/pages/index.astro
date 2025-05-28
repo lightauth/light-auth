@@ -3,7 +3,7 @@ import "../styles/global.css";
 // Component Imports
 import Layout from "@/layouts/main.astro";
 import LoginButtons from "@/components/LoginButtons.astro";
-import { getSession, getUser, signIn } from "@/lib/auth";
+import { getAuthSession, getUser, signIn } from "@/lib/auth";
 import LogoutButton from "@/components/LogoutButton.astro";
 import { Button } from "@/components/ui/button";
 import { LogIn } from "lucide-react";
@@ -12,7 +12,7 @@ import Google from "../../public/google.svg";
 
 export const prerender = false;
 
-const session = await getSession(Astro);
+const session = await getAuthSession(Astro);
 const user = await getUser(Astro);
 
 // result of the action to perform a POST login
@@ -84,12 +84,12 @@ if (result && !result.error && result.data) {
 </Layout>
 
 <script>
-  import { getSession } from "@/lib/auth-client";
+  import { getAuthSession } from "@/lib/auth-client";
   const btnRefresh = document.getElementById("btnRefresh");
 
   if (btnRefresh) {
     btnRefresh.onclick = async () => {
-      const session = await getSession();
+      const session = await getAuthSession();
       console.log("Session:", session);
     };
   }

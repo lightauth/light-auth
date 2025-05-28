@@ -53,7 +53,7 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    getSession: createNextJsLightAuthSessionFunction(config),
+    getAuthSession: createNextJsLightAuthSessionFunction(config),
     getUser: createNextJsLightAuthUserFunction(config),
     signIn: createNextJsSigninFunction(config),
     signOut: createNextJsSignoutFunction(config),

@@ -1,5 +1,5 @@
 import express, { NextFunction, type Request, type Response } from "express";
-import { getSession, getUser, handlers, middleware, signIn, signOut } from "../lib/auth";
+import { getAuthSession, getUser, handlers, middleware, signIn, signOut } from "../lib/auth";
 import * as path from "node:path";
 import * as dotenv from "dotenv";
 
@@ -34,11 +34,11 @@ app.get("/login", async (req: Request, res: Response) => {
 
 app.post("/login", async (req: Request, res: Response) => {
   const providerName = req.body.providerName;
-  await signIn(providerName, "/", req, res);
+  await signIn(req, res, providerName, "/");
 });
 
 app.get("/logout", async (req: Request, res: Response) => {
-  await signOut(false, "/", req, res);
+  await signOut(req, res, false, "/");
 });
 
 // Routes

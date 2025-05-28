@@ -54,7 +54,7 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    getSession: createAstroLightAuthSessionFunction(config),
+    getAuthSession: createAstroLightAuthSessionFunction(config),
     getUser: createAstroLightAuthUserFunction(config),
     signIn: createAstroSigninFunction(config),
     signOut: createAstroSignoutFunction(config),

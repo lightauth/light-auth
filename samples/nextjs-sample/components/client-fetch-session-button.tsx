@@ -1,13 +1,13 @@
 "use client";
 
-import { getSession, getUser } from "@/lib/auth-client";
+import { getAuthSession, getUser } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 export function ClientFetchSessionButton() {
   return (
     <Button
       type="button"
       onClick={async () => {
-        const session = await getSession();
+        const session = await getAuthSession();
         console.log("Session:", session);
         const user = await getUser(session?.userId.toString());
         console.log("User:", user);

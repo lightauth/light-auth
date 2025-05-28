@@ -131,7 +131,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
     basePath: config.basePath,
     signIn: createNuxtLightAuthSignIn(config),
     signOut: createNuxtLightAuthSignOut(config),
-    getSession: createNuxtLightAuthSessionFunction(config),
+    getAuthSession: createNuxtLightAuthSessionFunction(config),
     getUser: createNuxtLightAuthUserFunction(config),
   };
 }

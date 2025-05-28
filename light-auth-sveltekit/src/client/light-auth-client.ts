@@ -55,7 +55,7 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    getSession: createSveltekitLightAuthSessionFunction(config),
+    getAuthSession: createSveltekitLightAuthSessionFunction(config),
     getUser: createSveltekitLightAuthUserFunction(config),
     signIn: createSveltekitSigninFunction(config),
     signOut: createSveltekitSignoutFunction(config),

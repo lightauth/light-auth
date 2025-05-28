@@ -26,11 +26,6 @@ export interface FetchResult<T> {
   clear: () => void;
 }
 
-type getReqHeaders = () => Readonly<Record<string, string>>;
-type getReqURL = () => URL;
-type getAsyncData = <T>(key: string, fetcher: () => Promise<T | null>, opts: any) => FetchResult<T | null>;
-type getReqEvent = () => any;
-
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
  * It takes the LightAuth createSigninFunction base function and returns a user friendly function by
@@ -61,7 +56,7 @@ const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuthSession
 
 export type AsyncDataRequestStatus = "idle" | "pending" | "success" | "error";
 
-export function createCustomFetch<T>(key: string, getAsyncData: getAsyncData, fetcher: () => Promise<T | null>): FetchResult<T | null> {
+export function createCustomFetch<T>(key: string, fetcher: () => Promise<T | null>): FetchResult<T | null> {
   const data = useAsyncData<T | null>(key, fetcher, {
     server: true,
     lazy: false,
@@ -79,17 +74,13 @@ export const createNuxtJsLightAuthSessionFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
-  config: LightAuthConfig<Session, User>,
-  getReqHeaders: getReqHeaders,
-  getReqURL: getReqURL,
-  getAsyncData: getAsyncData,
-  getReqEvent: getReqEvent
+  config: LightAuthConfig<Session, User>
 ) => {
   const sessionFunction = async () => {
     try {
-      const event = getReqEvent();
-      const headers = new Headers(getReqHeaders());
-      const url = getReqURL();
+      const event = useRequestEvent();
+      const headers = new Headers(useRequestHeaders());
+      const url = useRequestURL();
 
       let urlEndpoint = `${config.basePath}/session`;
 
@@ -113,23 +104,19 @@ export const createNuxtJsLightAuthSessionFunction = <
     }
   };
 
-  return () => createCustomFetch<Session>("light-auth-session", getAsyncData, sessionFunction);
+  return () => createCustomFetch<Session>("light-auth-session", sessionFunction);
 };
 
 export const createNuxtJsLightAuthUserFunction = <
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(
-  config: LightAuthConfig<Session, User>,
-  getReqHeaders: getReqHeaders,
-  getReqURL: getReqURL,
-  getAsyncData: getAsyncData,
-  getReqEvent: getReqEvent
+  config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = async (userId?: string) => {
-    const event = getReqEvent();
-    const headers = new Headers(getReqHeaders());
-    const url = getReqURL();
+    const event = useRequestEvent();
+    const headers = new Headers(useRequestHeaders());
+    const url = useRequestURL();
 
     let userUrlEndpoint = userId ? `${config.basePath}/user/${userId}` : `${config.basePath}/user`;
 
@@ -144,25 +131,21 @@ export const createNuxtJsLightAuthUserFunction = <
     return user ?? null;
   };
 
-  return (userId?: string) => createCustomFetch<User>(`light-auth-user-${userId ?? "from-session"}`, getAsyncData, () => userFunction(userId));
+  return (userId?: string) => createCustomFetch<User>(`light-auth-user-${userId ?? "from-session"}`, () => userFunction(userId));
 };
 
 type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;
 
 export function CreateLightAuthClient<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfigClient | undefined = {},
-  getReqHeaders: getReqHeaders,
-  getReqURL: getReqURL,
-  getAsyncData: getAsyncData,
-  getReqEvent: getReqEvent
+  config: LightAuthConfigClient | undefined = {}
 ) {
   config.env = config.env || process.env;
   config.basePath = resolveBasePath(config.basePath, config.env);
 
   return {
     basePath: config.basePath,
-    useSession: createNuxtJsLightAuthSessionFunction<Session, User>(config, getReqHeaders, getReqURL, getAsyncData, getReqEvent),
-    useUser: createNuxtJsLightAuthUserFunction<Session, User>(config, getReqHeaders, getReqURL, getAsyncData, getReqEvent),
+    useSession: createNuxtJsLightAuthSessionFunction<Session, User>(config),
+    useUser: createNuxtJsLightAuthUserFunction<Session, User>(config),
     signIn: createNuxtJsSignIn<Session, User>(config),
     signOut: createNuxtJsSignOut<Session, User>(config),
   };

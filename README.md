@@ -60,7 +60,7 @@ const githubProvider = {
   arctic: new GitHub(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, REDIRECT)
 };
 
-export const { providers, handlers, signIn, signOut, getSession, getUser } = CreateLightAuth({
+export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth({
   providers: [googleProvider, githubProvider]
 ```
 
@@ -74,10 +74,10 @@ export const { GET, POST } = handlers;
 ### 4) Use Light Auth
 
 ``` tsx
-import { getSession, signIn  } from "@/lib/auth";
+import { getAuthSession, signIn  } from "@/lib/auth";
 
 export default async function Home() {
-  const session = await getSession();
+  const session = await getAuthSession();
 
   return (
     <div>

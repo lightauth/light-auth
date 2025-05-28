@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { CreateLightAuthClient } from "@light-auth/nuxt/client";
-const { getSession } = CreateLightAuthClient();
-const session = await getSession();
+const { useSession } = CreateLightAuthClient();
+const { data: session, refresh: refreshSession } = useSession();
 </script>
 
 <template>
   <div>
     <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
-      <div class="text-center" v-if="session != null">
+      <div class="text-center" v-if="session">
         <h1 class="text-2xl font-bold mb-4">You are logged in!</h1>
-        <p class="text-gray-600 mb-6 text-center" v-if="session != null">{{ session.email }}</p>
+        <p class="text-gray-600 mb-6 text-center" v-if="session">{{ session.email }}</p>
       </div>
-      <div class="text-center" v-if="session == null">
+      <div class="text-center" v-if="!session">
         <h1 class="text-2xl font-bold mb-4">You are not logged in!</h1>
         <a
           href="/login"

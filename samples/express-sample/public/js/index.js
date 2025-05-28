@@ -210,14 +210,14 @@
       config.basePath = resolveBasePath(config);
       return {
         basePath: config.basePath,
-        getSession: createExpressLightAuthSessionFunction(config),
+        getAuthSession: createExpressLightAuthSessionFunction(config),
         getUser: createExpressLightAuthUserFunction(config),
         signIn: createExpressSigninFunction(config),
         signOut: createExpressSignoutFunction(config)
       };
     }
 
-    const { getSession, getUser, signIn, signOut } = CreateLightAuthClient({
+    const { getAuthSession, getUser, signIn, signOut } = CreateLightAuthClient({
         basePath: "/api/auth",
     });
 

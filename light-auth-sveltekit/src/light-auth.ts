@@ -111,7 +111,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
     providers: config.providers,
     handlers: createSvelteKitLightAuthHandlerFunction(config),
     basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
-    getSession: createSvelteKitLightAuthSessionFunction(config),
+    getAuthSession: createSvelteKitLightAuthSessionFunction(config),
     getUser: createSvelteKitLightAuthUserFunction(config),
     signIn: createSvelteKitSigninFunction(config),
     signOut: createSvelteKitSignoutFunction(config),

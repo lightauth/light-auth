@@ -15,6 +15,6 @@ export interface LightAuthComponents {
   signIn?: (args: any) => any;
   signOut?: (args: any) => any;
   basePath?: string;
-  getSession?: (args: any) => any;
+  getAuthSession?: (args: any) => any;
   getUser?: (args: any) => any;
 }

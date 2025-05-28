@@ -20,7 +20,7 @@ const microsoftProvider: LightAuthProvider = {
   scopes: ["offline_access"],
 };
 
-export const { providers, handlers, signIn, signOut, getSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({
+export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({
   providers: [googleProvider, microsoftProvider],
   userAdapter: lightAuthSupabaseUserAdapter,
 

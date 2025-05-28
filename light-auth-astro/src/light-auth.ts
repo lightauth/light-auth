@@ -110,7 +110,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
     providers: config.providers,
     handlers: createAstroLightAuthHandlerFunction(config),
     basePath: config.basePath,
-    getSession: createAstroLightAuthSessionFunction(config),
+    getAuthSession: createAstroLightAuthSessionFunction(config),
     getUser: createAstroLightAuthUserFunction(config),
     signIn: createAstroSigninFunction(config),
     signOut: createAstroSignoutFunction(config),

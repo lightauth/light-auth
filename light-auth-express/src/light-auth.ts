@@ -117,7 +117,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
     handlers: createExpressLightAuthHandlerFunction(config),
     middleware: createExpressLightAuthMiddlewareFunction(config),
     basePath: config.basePath,
-    getSession: createExpressLightAuthSessionFunction(config),
+    getAuthSession: createExpressLightAuthSessionFunction(config),
     getUser: createExpressLightAuthUserFunction(config),
     signIn: createExpressSigninFunction(config),
     signOut: createExpressSignoutFunction(config),

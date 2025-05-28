@@ -1,9 +1,9 @@
-import { signIn, getSession } from '$lib/server/auth';
+import { signIn, getAuthSession } from '$lib/server/auth';
 import { redirect } from '@sveltejs/kit';
 import type { Actions } from './$types';
 
 export const load = async (event) => {
-	const session = await getSession(event);
+	const session = await getAuthSession(event);
 	return { session };
 };
 
@@ -17,7 +17,7 @@ export const actions = {
 			if (typeof providerName !== 'string') throw new Error('Invalid provider');
 			if (typeof callbackUrl !== 'string') throw new Error('Invalid callback URL');
 
-			await signIn(providerName, callbackUrl, event);
+			await signIn(event, providerName, callbackUrl);
 		} catch (error) {
 			const r = error as { status: number; location: string };
 			if (r?.status === 302) redirect(r.status, r.location);
