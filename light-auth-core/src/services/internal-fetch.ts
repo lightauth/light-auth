@@ -12,9 +12,10 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
   endpoint: string;
   method: string;
   body?: any;
+  headers?: Headers;
   [key: string]: unknown;
 }): Promise<T | null | undefined> {
-  const { config, body, method = "GET" } = args;
+  const { config, body, method = "GET", headers } = args;
   const { router } = config;
   const env = config.env as Required<LightAuthServerEnv>;
   const basePath = resolveBasePath(config.basePath, env);
@@ -27,12 +28,13 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
   const bodyBytes = body ? new TextEncoder().encode(body.toString()) : undefined;
 
   // get all the headers from the request
-  let requestHeaders: Headers | null = null;
+  let requestHeaders: Headers | null = headers ?? null;
 
   if (router && isServerSide) requestHeaders = await router.getHeaders({ env, basePath, ...args });
 
   // get the full url from the router if available
   let url = args.endpoint;
+
   if (router && isServerSide) url = await router.getUrl({ env, basePath, ...args });
 
   const request = bodyBytes

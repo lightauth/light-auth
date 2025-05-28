@@ -64,6 +64,7 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
     if (!event) return url;
 
     const headersData = getHeaders(event);
+
     const incomingHeaders = new Headers();
     for (const [key, value] of Object.entries(headersData)) if (value) incomingHeaders.append(key, value);
 

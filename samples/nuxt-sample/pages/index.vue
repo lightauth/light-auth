@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { CreateLightAuthClient } from "@light-auth/nuxt/client";
 
-const { useSession, useUser, signOut, signIn } = useLightAuth();
+const { useSession, useUser, signOut, signIn } = CreateLightAuthClient();
 
-const { data: session, refresh: refreshSession, clear: clearSession } = await useSession();
-const { data: user, refresh: refreshUser } = await useUser();
+const { data: session, refresh: refreshSession } = useSession();
+const { data: user, refresh: refreshUser } = useUser();
 
-// const { data: session2, refresh: refreshSession2 } = await useFetch(`/api/auth/session`, { method: "post", key: "light-auth-session", body: {} });
+// const { data: user, refresh: refreshUser } = await useUser();
 
-console.log("Session:", session?.value);
-// console.log("Session2:", session2?.value);
-console.log("User:", user?.value);
+// // const { data: session2, refresh: refreshSession2 } = await useFetch(`/api/auth/session`, { method: "post", key: "light-auth-session", body: {} });
+
+// console.log("Session:", session?.value);
+// // console.log("Session2:", session2?.value);
+// console.log("User:", user?.value);
 
 const handleGetSession = async () => {
   try {
@@ -20,27 +22,46 @@ const handleGetSession = async () => {
     console.log(e.message || "Failed to retrieve session");
   }
 };
+
+// const {
+//   data: session,
+//   status,
+//   error,
+//   refresh,
+//   clear,
+// } = useAsyncData(
+//   "light-auth-session-fetch",
+//   async () => {
+//     const session = await $fetch("/api/auth/session", { method: "POST", headers: useRequestHeaders(["cookie"]) });
+//     console.log("Session data fetched:", session);
+//     return session;
+//   },
+//   {
+//     server: true,
+//     lazy: false,
+//   }
+// );
 </script>
 
 <template>
   <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
     <div class="text-center" v-if="session">
       <h1 class="text-2xl font-bold mb-4">You are logged in!</h1>
-      <button
+      <!-- <button
         @click="signOut()"
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
       >
         Logout
-      </button>
+      </button> -->
 
       <p class="text-gray-600 mb-6 text-center" v-if="session != null">{{ session?.email }}</p>
-      <p class="text-gray-600 mb-6 text-center" v-if="user != null">{{ user?.firstName }} {{ user?.lastName }} {{ user?.iss }}</p>
+      <p class="text-gray-600 mb-6 text-center" v-if="user != null">{{ user }}</p>
     </div>
 
     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
     <p class="text-gray-600 mb-6 text-center">Please sign in using one of the following providers:</p>
 
-    <div class="space-y-4">
+    <!-- <div class="space-y-4">
       <form action="api/actions/login" method="POST" class="flex flex-col gap-4">
         <input type="hidden" name="providerName" value="google" />
         <input type="hidden" name="callbackUrl" value="/dashboard" />
@@ -65,7 +86,7 @@ const handleGetSession = async () => {
       >
         <span>retrieve session</span>
       </button>
-      <!--
+      
       <button
         @click="handleGetUser()"
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
@@ -78,7 +99,7 @@ const handleGetSession = async () => {
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
       >
         <span>retrieve and refresh user</span>
-      </button> -->
+      </button>
 
       <button
         @click="signIn('microsoft')"
@@ -102,6 +123,6 @@ const handleGetSession = async () => {
         </svg>
         <span>Sign in with Microsoft</span>
       </button>
-    </div>
+    </div> -->
   </div>
 </template>

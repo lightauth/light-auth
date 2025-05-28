@@ -44,7 +44,7 @@ export function createFetchSessionClientFunction<
       // get the session from the server using the api endpoint
       const session = await internalFetch<Session>({ config, method: "POST", endpoint: `${config.basePath}/session`, ...args });
 
-      return session;
+      return session ?? null;
     } catch (error) {
       console.error("Error:", error);
       return null;

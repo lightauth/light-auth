@@ -1,7 +1,10 @@
+import { buildFullUrl, internalFetch } from "@light-auth/core";
 import {
   type LightAuthConfig,
   type LightAuthSession,
   type LightAuthUser,
+  createFetchSessionClientFunction,
+  createFetchUserClientFunction,
   createSigninClientFunction,
   createSignoutClientFunction,
   resolveBasePath,
@@ -9,7 +12,7 @@ import {
 
 import { ref, type Ref } from "vue";
 
-import { useFetch, useNuxtData, type AsyncDataRequestStatus } from "#imports";
+import { useAsyncData, useRequestHeaders, useRequestEvent, useRequestURL } from "nuxt/app";
 
 /**
  * createNuxtJsSignIn is a function that creates a sign-in function for Nuxt.js.
@@ -39,9 +42,11 @@ const createNuxtJsSignOut = <Session extends LightAuthSession = LightAuthSession
   };
 };
 
+export type AsyncDataRequestStatus = "idle" | "pending" | "success" | "error";
+
 /** Represents the result of a Nuxt useFetch operation*/
 export interface FetchResult<T> {
-  data: Ref<T | null>;
+  data: Ref<T>;
   pending: Ref<boolean>;
   error: Ref<any | null>;
   status: Ref<AsyncDataRequestStatus>;
@@ -49,50 +54,96 @@ export interface FetchResult<T> {
   clear: () => void;
 }
 
-/**
- * createNuxtJsLightAuthSessionFunction is a function that creates a light session function for Nuxt.js.
- * It takes the LightAuth createLightAuthSessionFunction base function and returns a user friendly function by
- * removing the req and res parameters, that are not needed in the Nuxt.js context.
- */
-const createNuxtJsLightAuthSessionFunction = <Session extends LightAuthSession>(config: LightAuthConfig) => {
-  return (): Promise<FetchResult<Session>> => {
-    return useFetch(`${config.basePath}/session`, { method: "post", key: "light-auth-session", body: {} }) as Promise<FetchResult<Session>>;
+export function createCustomFetch<T>(key: string, fetcher: () => Promise<T | null>): FetchResult<T | null> {
+  const asyncData = useAsyncData<T | null>(key, fetcher, {
+    server: true,
+    lazy: false,
+  });
+
+  // Map AsyncData to FetchResult<T>
+  return asyncData as FetchResult<T | null>;
+}
+
+export const createNuxtJsLightAuthSessionFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const sessionFunction = async () => {
+    try {
+      const event = useRequestEvent();
+      const headers = new Headers(useRequestHeaders(["cookie"]));
+      const url = useRequestURL();
+
+      let urlEndpoint = `${config.basePath}/session`;
+
+      if (url) {
+        const incomingHeaders = new Headers();
+        incomingHeaders.set("host", url.host);
+        urlEndpoint = buildFullUrl({ url: urlEndpoint, incomingHeaders });
+      }
+
+      const session = await internalFetch<Session>({
+        config,
+        method: "POST",
+        endpoint: urlEndpoint,
+        event,
+        headers,
+      });
+
+      return session ?? null;
+    } catch (error) {
+      console.error("Error fetching session:", error);
+      throw error;
+    }
   };
+
+  return () => createCustomFetch<Session>("light-auth-session", sessionFunction);
 };
 
-/**
- * createNuxtJsLightAuthUserFunction is a function that creates a light user function for Nuxt.js.
- * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
- * removing the req and res parameters, that are not needed in the Nuxt.js context.
- */
-const createNuxtJsLightAuthUserFunction = <User extends LightAuthUser = LightAuthUser<LightAuthSession>>(config: LightAuthConfig) => {
-  // get the user from the server using the api endpoint, because
-  // to get user we need the session that is stored in the cookie store and we may need to delete / update it
+export const createNuxtJsLightAuthUserFunction = <
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const userFunction = async (userId?: string) => {
+    const event = useRequestEvent();
+    const headers = new Headers(useRequestHeaders(["cookie"]));
+    const url = useRequestURL();
 
-  return (userId?: string): Promise<FetchResult<User>> => {
-    let userIdToUse = userId;
+    let sessionUrlEndpoint = `${config.basePath}/session`;
+    let userUrlEndpoint = `${config.basePath}/user/${userId}`;
 
-    if (!userIdToUse) {
-      const { data: cachedSession } = useNuxtData<LightAuthSession>("light-auth-session");
-
-      if (!cachedSession.value?.userId) {
-        return Promise.resolve<FetchResult<User>>({
-          data: ref(null),
-          pending: ref(false),
-          error: ref(new Error("No session found")),
-          refresh: async () => {},
-          clear: () => {},
-          status: ref("error"),
-        } as FetchResult<User>);
-      }
-      userIdToUse = cachedSession.value.userId.toString();
+    if (url) {
+      const incomingHeaders = new Headers();
+      incomingHeaders.set("host", url.host);
+      sessionUrlEndpoint = buildFullUrl({ url: sessionUrlEndpoint, incomingHeaders });
     }
 
-    return useFetch(`${config.basePath}/user/${userIdToUse}`, {
-      method: "post",
-      key: `light-auth-user${userIdToUse}`,
-    }) as Promise<FetchResult<User>>;
+    if (!userId) {
+      // get the user from the server using the api endpoint
+      const session = await internalFetch<Session>({ config, method: "POST", endpoint: sessionUrlEndpoint, headers, event });
+      if (!session || !session.userId) return null;
+      userId = session.userId.toString();
+      userUrlEndpoint = `${config.basePath}/user/${userId}`;
+    }
+
+    if (url) {
+      const incomingHeaders = new Headers();
+      incomingHeaders.set("host", url.host);
+      userUrlEndpoint = buildFullUrl({ url: userUrlEndpoint, incomingHeaders });
+    }
+
+    if (!userId) return null;
+    // get the user from the user adapter
+    const user = await internalFetch<User>({ config, method: "POST", endpoint: userUrlEndpoint, headers, event });
+
+    return user ?? null;
   };
+
+  return (userId?: string) => createCustomFetch<User>(`light-auth-user-${userId}`, () => userFunction(userId));
 };
 
 type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;
@@ -105,9 +156,9 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    useSession: createNuxtJsLightAuthSessionFunction<Session>(config),
-    useUser: createNuxtJsLightAuthUserFunction<User>(config),
-    signIn: createNuxtJsSignIn(config),
-    signOut: createNuxtJsSignOut(config),
+    useSession: createNuxtJsLightAuthSessionFunction<Session, User>(config),
+    useUser: createNuxtJsLightAuthUserFunction<Session, User>(config),
+    signIn: createNuxtJsSignIn<Session, User>(config),
+    signOut: createNuxtJsSignOut<Session, User>(config),
   };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/nuxt",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "description": "light auth framework for nuxt, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -28,12 +28,18 @@
   ],
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": [
+        "./src/index.ts",
+        "./dist/index.d.ts"
+      ],
       "import": "./dist/index.mjs",
       "default": "./dist/index.mjs"
     },
     "./client": {
-      "types": "./dist/client/index.d.ts",
+      "types": [
+        "./src/client/index.ts",
+        "./dist/client/index.d.ts"
+      ],
       "import": "./dist/client/index.mjs",
       "default": "./dist/client/index.mjs"
     }
@@ -47,7 +53,7 @@
   "dependencies": {
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
-    "@light-auth/core": "^0.1.8"
+    "@light-auth/core": "^0.1.9"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",

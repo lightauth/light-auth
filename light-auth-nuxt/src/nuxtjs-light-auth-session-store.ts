@@ -10,7 +10,7 @@ import {
   type LightAuthUser,
 } from "@light-auth/core";
 
-import { H3Event, type EventHandlerRequest, getCookie, setCookie, deleteCookie } from "h3";
+import { H3Event, type EventHandlerRequest, getCookie, setCookie, deleteCookie, parseCookies } from "h3";
 
 /**
  * A concrete CookieStore implementation for Node.js server-side,
@@ -29,7 +29,6 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
     if (!event) throw new Error("Event is required to get the session in nuxtJsLightAuthSessionStore.");
 
     const requestCookie = getCookie(event, DEFAULT_SESSION_NAME);
-
     if (!requestCookie) return null;
 
     try {
