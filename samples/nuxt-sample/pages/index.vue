@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { CreateLightAuthClient } from "@light-auth/nuxt/client";
 import { useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent } from "#imports";
+const { useSession, useUser, signOut, signIn } = CreateLightAuthClient(undefined, useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent);
 
 // const moduleImports = await import("#imports");
 // Object.entries(moduleImports)
 //   .filter(([name, exported]) => name.startsWith("useRequest"))
 //   .forEach(([name, exported]) => console.log(name, exported));
 
-const { useSession, useUser, signOut, signIn } = CreateLightAuthClient(undefined, useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent);
 
 const { data: session, refresh: refreshSession } = useSession();
 const { data: user, refresh: refreshUser } = useUser();

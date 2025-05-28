@@ -1,7 +1,7 @@
 import { type LightAuthConfig, type LightAuthCookie, type LightAuthServerEnv, type LightAuthSession, type LightAuthUser } from "../models";
 import { type LightAuthRouter } from "../models/light-auth-router";
 import { buildFullUrl } from "./utils";
-import * as cookieParser from "cookie";
+import { parse, serialize } from "./cookieParser";
 
 export const createLightAuthRouter = (): LightAuthRouter => {
   return {
@@ -19,7 +19,7 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       const cookies = req?.headers.get("cookie");
       if (!cookies) return [];
 
-      const requestCookies = cookieParser.parse(cookies);
+      const requestCookies = parse(cookies);
       const result: LightAuthCookie[] = [];
 
       const searchRegex = typeof search === "string" ? new RegExp(search, "i") : search;
@@ -38,7 +38,7 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       }
 
       for (const cookie of cookies) {
-        const stateCookie = cookieParser.serialize(cookie.name, cookie.value, {
+        const stateCookie = serialize(cookie.name, cookie.value, {
           path: cookie.path,
           httpOnly: cookie.httpOnly,
           secure: cookie.secure,

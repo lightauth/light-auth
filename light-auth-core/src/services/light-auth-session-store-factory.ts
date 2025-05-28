@@ -1,5 +1,6 @@
-import * as cookieParser from "cookie";
-import { type LightAuthConfig, type LightAuthServerEnv, type LightAuthSession, type LightAuthSessionStore, type LightAuthUser } from "../models";
+import { parse, serialize } from "./cookieParser";
+
+import { type LightAuthServerEnv, type LightAuthSession, type LightAuthSessionStore, type LightAuthUser } from "../models";
 import { DEFAULT_SESSION_NAME } from "../constants";
 import { buildSecret, getSessionExpirationMaxAge } from "./utils";
 import { decryptJwt, encryptJwt } from "./jwt";
@@ -18,7 +19,7 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
       const cookieHeader = req.headers.get("Cookie");
       if (!cookieHeader) return null;
 
-      const requestCookies = cookieParser.parse(cookieHeader);
+      const requestCookies = parse(cookieHeader);
       if (!requestCookies) return null;
 
       const session = requestCookies[DEFAULT_SESSION_NAME];
@@ -54,7 +55,7 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
       // get the cookie expiration time
       const maxAge = getSessionExpirationMaxAge();
 
-      const cookieString = cookieParser.serialize(DEFAULT_SESSION_NAME, value, {
+      const cookieString = serialize(DEFAULT_SESSION_NAME, value, {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
@@ -76,7 +77,7 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
     }) => {
       if (!res) throw new Error("light-auth: Response is required in deleteSessions of light-auth session store");
 
-      const serialized = cookieParser.serialize(DEFAULT_SESSION_NAME, "", {
+      const serialized = serialize(DEFAULT_SESSION_NAME, "", {
         httpOnly: true,
         path: "/",
         maxAge: 0,

@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/core",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "light auth core framework agnostic, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -69,7 +69,6 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "cookie": "^1.0.2",
     "jose": "^6.0.10",
     "arctic": "^3.6.0"
   },
