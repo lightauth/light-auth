@@ -58,6 +58,9 @@ export function createCustomFetch<T>(key: string, fetcher: () => Promise<T | nul
   const asyncData = useAsyncData<T | null>(key, fetcher, {
     server: true,
     lazy: false,
+    default: () => null,
+    // @ts-ignore
+    transform: (data) => data ?? false, // Ensure we return false instead of null to avoid hydration issues
   });
 
   // Map AsyncData to FetchResult<T>
@@ -91,7 +94,6 @@ export const createNuxtJsLightAuthSessionFunction = <
         event,
         headers,
       });
-
       return session ?? null;
     } catch (error) {
       console.error("Error fetching session:", error);
