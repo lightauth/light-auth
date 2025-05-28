@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { CreateLightAuthClient } from "@light-auth/nuxt/client";
+import { useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent } from "#imports";
 
-const { useSession, useUser, signOut, signIn } = CreateLightAuthClient();
+// const moduleImports = await import("#imports");
+// Object.entries(moduleImports)
+//   .filter(([name, exported]) => name.startsWith("useRequest"))
+//   .forEach(([name, exported]) => console.log(name, exported));
+
+const { useSession, useUser, signOut, signIn } = CreateLightAuthClient(undefined, useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent);
 
 const { data: session, refresh: refreshSession } = useSession();
 const { data: user, refresh: refreshUser } = useUser();
@@ -61,7 +67,7 @@ const handleGetSession = async () => {
     <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
     <p class="text-gray-600 mb-6 text-center">Please sign in using one of the following providers:</p>
 
-    <!-- <div class="space-y-4">
+    <div class="space-y-4">
       <form action="api/actions/login" method="POST" class="flex flex-col gap-4">
         <input type="hidden" name="providerName" value="google" />
         <input type="hidden" name="callbackUrl" value="/dashboard" />
@@ -73,7 +79,7 @@ const handleGetSession = async () => {
         </button>
       </form>
 
-      <button
+      <!--   <button
         @click="signIn('google')"
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
       >
@@ -122,7 +128,7 @@ const handleGetSession = async () => {
           <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
         </svg>
         <span>Sign in with Microsoft</span>
-      </button>
-    </div> -->
+      </button>-->
+    </div>
   </div>
 </template>
