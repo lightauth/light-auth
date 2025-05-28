@@ -3,16 +3,12 @@ import {
   type LightAuthConfig,
   type LightAuthSession,
   type LightAuthUser,
-  createFetchSessionClientFunction,
-  createFetchUserClientFunction,
   createSigninClientFunction,
   createSignoutClientFunction,
   resolveBasePath,
 } from "@light-auth/core/client";
 
-import { ref, type Ref } from "vue";
-
-// import { useAsyncData, useRequestHeaders, useRequestEvent, useRequestURL } from "nuxt/app";
+import { type Ref } from "vue";
 
 import { useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent } from "#imports";
 
