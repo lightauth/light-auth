@@ -4,7 +4,7 @@
     <img src="https://github.com/lightauth/.github/blob/main/images/light-auth.svg" alt="Light Auth Logo" width="120"/>
 </p>
 
-![LightAuth](https://github.com/lightauth/.github/blob/main/images/light-auth.svg) [Light Auth](https://lightauth.github.io) is a lightweight authentication solution designed for simplicity and ease of integration.
+[Light Auth](https://lightauth.github.io) is a lightweight authentication solution designed for simplicity and ease of integration.
 
 It provides essential authentication features with minimal configuration, making it ideal for small projects, prototypes, or applications that require straightforward user sign-in functionality.
 
@@ -36,7 +36,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 >
 > You will find examples for all others frameworks in each relevant repository
 >
-> The ![LightAuth](https://github.com/lightauth/.github/blob/main/images/light-auth.svg) [Light Auth](https://lightauth.github.io) documentation has also a lot of code examples for various scenario.
+> The [Light Auth](https://lightauth.github.io) documentation has also a lot of code examples for various scenario.
 
 ### 1) Install Light Auth
 
