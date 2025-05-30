@@ -28,7 +28,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 | ![SvelteKit](https://github.com/lightauth/.github/blob/main/images/sveltekit.svg) **SvelteKit** | [light-auth-sveltekit](https://www.npmjs.com/package/@light-auth/sveltekit) | [SvelteKit Sample](https://github.com/lightauth/light-auth-sveltekit-sample-one)      |
 | ![Express](https://github.com/lightauth/.github/blob/main/images/express.svg) **Express** | [light-auth-express](https://www.npmjs.com/package/@light-auth/express)     | [Express Sample](https://github.com/lightauth/light-auth-express-sample-one)          |
 
-![LightAuth](https://github.com/lightauth/.github/blob/main/images/light-auth.svg) **Light Auth** integrates seamlessly, letting you add authentication with a sparkle ✨ to any stack!
+**Light Auth** integrates seamlessly, letting you add authentication with a sparkle ✨ to any stack!
 
 ## Getting Started
 
