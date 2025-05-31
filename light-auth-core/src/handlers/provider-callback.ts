@@ -100,7 +100,7 @@ export async function providerCallbackHandler<
         ...sessionWithoutExpiresAt,
         picture: claims.picture,
         accessToken: accessToken,
-        accessTokenExpiresAt: accessTokenExpiresAt,
+        accessTokenExpiresAt: new Date(accessTokenExpiresAt),
         refreshToken: refresh_token,
       } as User;
 

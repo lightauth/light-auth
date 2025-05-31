@@ -8,35 +8,41 @@ import {
   createSigninServerFunction,
   createSignoutServerFunction,
   resolveBasePath,
+  createSetSessionServerFunction,
+  createSetUserServerFunction,
 } from "@light-auth/core";
 
-import type { APIRoute, AstroGlobal, AstroSharedContext } from "astro";
+import type { APIRoute, AstroSharedContext } from "astro";
 
-export const createAstroLightAuthSessionFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createGetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const sessionFunction = createFetchSessionServerFunction(config);
-  return async (context: AstroSharedContext) => {
-    return await sessionFunction({ context });
-  };
+  const getSession = createFetchSessionServerFunction(config);
+  return async (context: AstroSharedContext) => await getSession({ context });
 };
 
-export const createAstroLightAuthUserFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createSetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const userFunction = createFetchUserServerFunction(config);
-  return async (context: AstroSharedContext, userId?: string) => {
-    return await userFunction({ userId, context });
-  };
+  const setSession = createSetSessionServerFunction(config);
+  return async (context: AstroSharedContext, session: Session) => await setSession({ context, session });
 };
 
-export function createAstroSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export const createGetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const getUser = createFetchUserServerFunction(config);
+  return async (context: AstroSharedContext, userId?: string) => await getUser({ userId, context });
+};
+
+const createSetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const setUser = createSetUserServerFunction(config);
+  return async (context: AstroSharedContext, user: User) => await setUser({ context, user });
+};
+
+export function createSignin<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninServerFunction(config);
@@ -45,7 +51,7 @@ export function createAstroSigninFunction<Session extends LightAuthSession = Lig
   };
 }
 
-export function createAstroSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export function createSignout<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signOutFunction = createSignoutServerFunction(config);
@@ -54,10 +60,7 @@ export function createAstroSignoutFunction<Session extends LightAuthSession = Li
   };
 }
 
-export const createAstroLightAuthHandlerFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+export const createHandler = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ): { GET: APIRoute; POST: APIRoute } => {
   const lightAuthHandler = createHttpHandlerFunction(config);
@@ -108,11 +111,13 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
 
   return {
     providers: config.providers,
-    handlers: createAstroLightAuthHandlerFunction(config),
+    handlers: createHandler(config),
     basePath: config.basePath,
-    getAuthSession: createAstroLightAuthSessionFunction(config),
-    getUser: createAstroLightAuthUserFunction(config),
-    signIn: createAstroSigninFunction(config),
-    signOut: createAstroSignoutFunction(config),
+    getAuthSession: createGetAuthSession(config),
+    setAuthSession: createSetAuthSession(config),
+    getUser: createGetAuthUser(config),
+    setUser: createSetAuthUser(config),
+    signIn: createSignin(config),
+    signOut: createSignout(config),
   };
 }

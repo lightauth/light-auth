@@ -16,7 +16,6 @@ export const lightAuthSupabaseUserAdapter: LightAuthUserAdapter = {
     const { error, data } = await supabase.from("users").select("*").eq("userId", userId.toString()).single();
 
     if (error) {
-      console.error("Error getting user:", error);
       return null;
     }
 

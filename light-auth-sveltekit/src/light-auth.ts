@@ -9,57 +9,53 @@ import {
   type LightAuthSession,
   type LightAuthUser,
   resolveBasePath,
+  createSetUserServerFunction,
 } from "@light-auth/core";
 import { type RequestEvent } from "@sveltejs/kit";
 
-export const createSvelteKitLightAuthSessionFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createGetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const sessionFunction = createFetchSessionServerFunction(config);
-  return async (event: RequestEvent) => {
-    return await sessionFunction({ event });
-  };
+  const getSession = createFetchSessionServerFunction(config);
+  return async (event: RequestEvent) => await getSession({ event });
 };
 
-export const createSvelteKitLightAuthUserFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createSetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const userFunction = createFetchUserServerFunction(config);
-  return async (event: RequestEvent, userId?: string) => {
-    return await userFunction({ userId, event });
-  };
+  const setSession = createFetchSessionServerFunction(config);
+  return async (event: RequestEvent, session: Session) => await setSession({ event, session });
 };
 
-export function createSvelteKitSigninFunction<
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(config: LightAuthConfig<Session, User>) {
-  const signInFunction = createSigninServerFunction(config);
-  return async (event: RequestEvent, providerName?: string, callbackUrl: string = "/") => {
-    return await signInFunction({ providerName, callbackUrl, event });
-  };
+const createGetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const getUser = createFetchUserServerFunction(config);
+  return async (event: RequestEvent, userId?: string) => await getUser({ userId, event });
+};
+
+const createSetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const setUser = createSetUserServerFunction(config);
+  return async (event: RequestEvent, user: User) => await setUser({ event, user });
+};
+
+function createSignin<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
+  const signIn = createSigninServerFunction(config);
+  return async (event: RequestEvent, providerName?: string, callbackUrl: string = "/") => await signIn({ providerName, callbackUrl, event });
 }
 
-export function createSvelteKitSignoutFunction<
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(config: LightAuthConfig<Session, User>) {
-  const signOutFunction = createSignoutServerFunction(config);
-  return async (event: RequestEvent, revokeToken: boolean = false, callbackUrl: string = "/") => {
-    return await signOutFunction({ revokeToken, callbackUrl, event });
-  };
+function createSignout<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) {
+  const signOut = createSignoutServerFunction(config);
+  return async (event: RequestEvent, revokeToken: boolean = false, callbackUrl: string = "/") => await signOut({ revokeToken, callbackUrl, event });
 }
 
-export const createSvelteKitLightAuthHandlerFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createHandler = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
   const lightAuthHandler = createHttpHandlerFunction(config);
@@ -109,11 +105,13 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
 
   return {
     providers: config.providers,
-    handlers: createSvelteKitLightAuthHandlerFunction(config),
+    handlers: createHandler(config),
     basePath: config.basePath || DEFAULT_BASE_PATH, // Default base path for the handlers
-    getAuthSession: createSvelteKitLightAuthSessionFunction(config),
-    getUser: createSvelteKitLightAuthUserFunction(config),
-    signIn: createSvelteKitSigninFunction(config),
-    signOut: createSvelteKitSignoutFunction(config),
+    getAuthSession: createGetAuthSession(config),
+    setAuthSession: createSetAuthSession(config),
+    getUser: createGetUser(config),
+    setUser: createSetUser(config),
+    signIn: createSignin(config),
+    signOut: createSignout(config),
   };
 }

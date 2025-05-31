@@ -49,6 +49,53 @@ export function createFetchSessionServerFunction<
   };
 }
 
+export function createSetSessionServerFunction<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(config: LightAuthConfig<Session, User>): (args?: { session: Session; [key: string]: unknown }) => Promise<Session | null | undefined> {
+  return async (args?: { session: Session; [key: string]: unknown }) => {
+    try {
+      const isServerSide = typeof window === "undefined";
+      if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+
+      // get the session from the server using the api endpoint
+      const newSession = await internalFetch<Session>({
+        config,
+        method: "POST",
+        body: JSON.stringify(args?.session),
+        endpoint: `${config.basePath}/set_session`,
+        ...args,
+      });
+      return newSession ?? null;
+    } catch (error) {
+      console.error("Error:", error);
+      return null;
+    }
+  };
+}
+
+export function createSetUserServerFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+): (args?: { user: User; [key: string]: unknown }) => Promise<User | null | undefined> {
+  return async (args?: { user: User; [key: string]: unknown }) => {
+    try {
+      const isServerSide = typeof window === "undefined";
+      if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+
+      const newUser = await internalFetch<User>({
+        config,
+        method: "POST",
+        body: JSON.stringify(args?.user),
+        endpoint: `${config.basePath}/set_user`,
+        ...args,
+      });
+      return newUser ?? null;
+    } catch (error) {
+      console.error("Error:", error);
+      return null;
+    }
+  };
+}
 export function createFetchUserServerFunction<
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>

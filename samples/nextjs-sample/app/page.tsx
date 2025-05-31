@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAuthSession, getUser } from "@/lib/auth";
 import { ClientFetchSessionButton } from "@/components/client-fetch-session-button";
+import { ClientSetSessionButton } from "@/components/client-set-session-button";
 
 export default async function Home() {
   const session = await getAuthSession();
@@ -14,6 +15,9 @@ export default async function Home() {
 
       <div className="flex flex-col items-center justify-center p-4 ">
         <ClientFetchSessionButton />
+      </div>
+      <div className="flex flex-col items-center justify-center p-4 ">
+        <ClientSetSessionButton />
       </div>
 
       <div className="bg-white shadow-md rounded-lg p-6 border border-gray-200">

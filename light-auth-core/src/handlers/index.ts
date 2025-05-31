@@ -6,6 +6,8 @@ import { redirectToProviderLoginHandler } from "./redirect-to-provider";
 import { getCsrfToken } from "./retrieve-csrf";
 import { getSessionHandler } from "./retrieve-session";
 import { getUserHandler } from "./retrieve-user";
+import { setSessionHandler } from "./save-session";
+import { setUserHandler } from "./save-user";
 
 /**
  * Creates the HTTP handlers (get, set) function for LightAuth.
@@ -55,8 +57,14 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
       newResponse = await getCsrfToken({ config, ...args });
     } else if (pathSegments[0] === "session" && req.method === "POST") {
       newResponse = await getSessionHandler({ config, ...args });
+    } else if (pathSegments[0] === "set_session" && req.method === "POST") {
+      const session = await req.json();
+      newResponse = await setSessionHandler({ config, ...args, session });
     } else if (pathSegments[0] === "user" && req.method === "POST") {
       newResponse = await getUserHandler({ config, userId: pathSegments[1], ...args });
+    } else if (pathSegments[0] === "set_user" && req.method === "POST") {
+      const user = await req.json();
+      newResponse = await setUserHandler({ config, ...args, user });
     } else if (pathSegments[0] === "login" && providerName && req.method === "GET") {
       newResponse = await redirectToProviderLoginHandler({ config, providerName, callbackUrl, checkCsrf: true, ...args });
     } else if (pathSegments[0] === "logout" && req.method === "GET") {

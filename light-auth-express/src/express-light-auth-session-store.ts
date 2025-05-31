@@ -69,7 +69,7 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
       secure: true,
       sameSite: "lax",
       path: "/",
-      expires: session.expiresAt,
+      expires: new Date(session.expiresAt),
     });
 
     return res;

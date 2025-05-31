@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/express",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "light auth framework for express, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -50,7 +50,7 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "@light-auth/core": "^0.2.5",
+    "@light-auth/core": "^0.2.6",
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
     "cookie": "^1.0.2"

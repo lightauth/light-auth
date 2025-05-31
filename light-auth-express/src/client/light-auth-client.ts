@@ -4,39 +4,49 @@ import {
   type LightAuthUser,
   createFetchSessionClientFunction,
   createFetchUserClientFunction,
+  createSetSessionClientFunction,
+  createSetUserClientFunction,
   createSigninClientFunction,
   createSignoutClientFunction,
   resolveBasePath,
 } from "@light-auth/core/client";
 
-export const createExpressLightAuthSessionFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createGetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const sessionFunction = createFetchSessionClientFunction(config);
-  return async () => await sessionFunction();
+  const getSession = createFetchSessionClientFunction(config);
+  return async () => await getSession();
 };
 
-export const createExpressLightAuthUserFunction = <
-  Session extends LightAuthSession = LightAuthSession,
-  User extends LightAuthUser<Session> = LightAuthUser<Session>
->(
+const createSetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const userFunction = createFetchUserClientFunction(config);
-  return async () => await userFunction();
+  const setSession = createSetSessionClientFunction(config);
+  return async (session: Session) => await setSession(session, config);
 };
 
-export function createExpressSigninFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+const createGetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const getUser = createFetchUserClientFunction(config);
+  return async () => await getUser();
+};
+
+const createSetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+) => {
+  const setUser = createSetUserClientFunction(config);
+  return async (user: User) => await setUser(user, config);
+};
+
+export function createSignin<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signInFunction = createSigninClientFunction(config);
   return async (providerName?: string, callbackUrl: string = "/") => await signInFunction({ providerName, callbackUrl });
 }
 
-export function createExpressSignoutFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+export function createSignout<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) {
   const signOutFunction = createSignoutClientFunction(config);
@@ -54,9 +64,11 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
 
   return {
     basePath: config.basePath,
-    getAuthSession: createExpressLightAuthSessionFunction(config),
-    getUser: createExpressLightAuthUserFunction(config),
-    signIn: createExpressSigninFunction(config),
-    signOut: createExpressSignoutFunction(config),
+    getAuthSession: createGetAuthSession(config),
+    setAuthSession: createSetAuthSession(config),
+    getUser: createGetUser(config),
+    setUser: createSetUser(config),
+    signIn: createSignin(config),
+    signOut: createSignout(config),
   };
 }

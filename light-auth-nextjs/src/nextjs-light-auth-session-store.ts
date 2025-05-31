@@ -63,8 +63,9 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
       secure: true,
       sameSite: "lax",
       path: "/",
-      expires: session.expiresAt,
+      expires: new Date(session.expiresAt),
     });
+    console.log("Set session in cookie store:", session);
   },
   generateSessionId(): string {
     return Math.random().toString(36).slice(2);

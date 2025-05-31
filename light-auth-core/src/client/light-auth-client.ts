@@ -39,12 +39,38 @@ export function createFetchSessionClientFunction<
   return async (args) => {
     try {
       const isServerSide = typeof window === "undefined";
-      if (isServerSide) throw new Error("light-auth-client: signout function should not be called on the server side");
+      if (isServerSide) throw new Error("light-auth-client: fetchSession function should not be called on the server side");
 
       // get the session from the server using the api endpoint
       const session = await internalFetch<Session>({ config, method: "POST", endpoint: `${config.basePath}/session`, ...args });
 
       return session ?? null;
+    } catch (error) {
+      console.error("Error:", error);
+      return null;
+    }
+  };
+}
+
+export function createSetSessionClientFunction<
+  Session extends LightAuthSession = LightAuthSession,
+  User extends LightAuthUser<Session> = LightAuthUser<Session>
+>(config: LightAuthConfig<Session, User>): (session: Session, args?: { [key: string]: unknown }) => Promise<Session | null | undefined> {
+  return async (session, args) => {
+    try {
+      const isServerSide = typeof window === "undefined";
+      if (isServerSide) throw new Error("light-auth-client: setSession function should not be called on the server side");
+
+      // get the session from the server using the api endpoint
+      const updatedSession = await internalFetch<Session>({
+        config,
+        method: "POST",
+        body: JSON.stringify(session),
+        endpoint: `${config.basePath}/set_session`,
+        ...args,
+      });
+
+      return updatedSession ?? null;
     } catch (error) {
       console.error("Error:", error);
       return null;
@@ -71,6 +97,30 @@ export function createFetchUserClientFunction<
       return user;
     } catch (error) {
       console.error("light-auth: Error in createLightAuthUserFunction:", error);
+      return null;
+    }
+  };
+}
+
+export function createSetUserClientFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
+  config: LightAuthConfig<Session, User>
+): (user: User, args?: { [key: string]: unknown }) => Promise<User | null | undefined> {
+  return async (user, args) => {
+    try {
+      const isServerSide = typeof window === "undefined";
+      if (isServerSide) throw new Error("light-auth-client: setUser function should not be called on the server side");
+
+      const updatedUser = await internalFetch<User>({
+        config,
+        method: "POST",
+        body: JSON.stringify(user),
+        endpoint: `${config.basePath}/set_user`,
+        ...args,
+      });
+
+      return updatedUser ?? null;
+    } catch (error) {
+      console.error("Error:", error);
       return null;
     }
   };

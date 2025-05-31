@@ -8,9 +8,9 @@ import type { LightAuthServerEnv } from "./light-auth-server-env";
 
 export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>> = {
   providers?: LightAuthProvider[];
-  onSessionSaving?: (session: Session, claims: OAuth2Tokens, metadata?: { [key: string]: unknown }) => Session | null | Promise<Session | null>;
+  onSessionSaving?: (session: Session, claims?: OAuth2Tokens, metadata?: { [key: string]: unknown }) => Session | null | Promise<Session | null>;
   onSessionSaved?: (session: Session, metadata?: { [key: string]: unknown }) => void | Promise<void>;
-  onUserSaving?: (user: User, claims: OAuth2Tokens, metadata?: { [key: string]: unknown }) => User | null | Promise<User | null>;
+  onUserSaving?: (user: User, claims?: OAuth2Tokens, metadata?: { [key: string]: unknown }) => User | null | Promise<User | null>;
   onUserSaved?: (user: User, metadata?: { [key: string]: unknown }) => void | Promise<void>;
   basePath?: string;
   userAdapter?: LightAuthUserAdapter;

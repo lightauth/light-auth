@@ -20,6 +20,9 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
     if (!userIdId) return await router.returnJson({ env, basePath, data: null, ...args });
 
     let user = await userAdapter.getUser<Session, User>({ env, basePath, userId: userIdId, ...restArgs });
+
+    if (!user) return await router.returnJson({ env, basePath, data: null, ...args });
+
     const accessTokenExpiresAt = user?.accessTokenExpiresAt ? new Date(user.accessTokenExpiresAt) : new Date();
 
     // lower limit before trying to refresh the token is 10 minutes
