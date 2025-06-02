@@ -133,6 +133,9 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
 
   config.basePath = resolveBasePath(config.basePath, config.env);
   config.env = config.env || process.env;
+
+  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+
   return {
     providers: config.providers,
     handlers: createHandler(config),

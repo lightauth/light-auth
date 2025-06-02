@@ -12,9 +12,8 @@ export function checkConfig<Session extends LightAuthSession = LightAuthSession,
   providerName?: string
 ): Required<LightAuthConfig<Session, User>> & { provider: LightAuthProvider } {
   if (!config.env) throw new Error("light-auth: env is required");
-  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) {
-    throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
-  }
+
+  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
 
   if (!config.basePath) config.basePath = resolveBasePath(config.basePath, config.env);
 
