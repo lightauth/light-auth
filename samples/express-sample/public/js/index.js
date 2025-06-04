@@ -1,13 +1,13 @@
 (function () {
     'use strict';
 
-    /*! @light-auth/core v0.1.0 2025-05-23 */
+    /*! @light-auth/core v0.2.6 2025-06-04 */
 
     const DEFAULT_BASE_PATH = "/api/auth";
 
     /** Resolves the basePath, defaults to "/api/default" if not provided or falsy */
-    function resolveBasePath(config) {
-      let resolvedBasePath = config?.basePath || config?.env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
+    function resolveBasePath(basePath, env) {
+      let resolvedBasePath = basePath || env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
       if (!resolvedBasePath.startsWith("/")) resolvedBasePath = `/${resolvedBasePath}`;
       // Ensure the base path does not end with "/"
       if (resolvedBasePath.endsWith("/")) resolvedBasePath = resolvedBasePath.slice(0, -1);
@@ -26,22 +26,33 @@
       const {
         config,
         body,
-        method = "GET"
+        method = "GET",
+        headers
       } = args;
       const {
         router
       } = config;
+      const env = config.env;
+      const basePath = resolveBasePath(config.basePath, env);
       // check if we are on the server side or client side
       // if we are on the server side, we need to use the router to get the url and headers
       // if we are on the client side, we can use the window object to get the url and headers
       const isServerSide = typeof window === "undefined";
       const bodyBytes = body ? new TextEncoder().encode(body.toString()) : undefined;
       // get all the headers from the request
-      let requestHeaders = null;
-      if (router && isServerSide) requestHeaders = await router.getHeaders(args);
+      let requestHeaders = headers ?? null;
+      if (router && isServerSide) requestHeaders = await router.getHeaders({
+        env,
+        basePath,
+        ...args
+      });
       // get the full url from the router if available
       let url = args.endpoint;
-      if (router && isServerSide) url = await router.getUrl(args);
+      if (router && isServerSide) url = await router.getUrl({
+        env,
+        basePath,
+        ...args
+      });
       const request = bodyBytes ? new Request(url.toString(), {
         method: method,
         headers: requestHeaders ?? new Headers(),
@@ -137,7 +148,7 @@
       return async args => {
         try {
           const isServerSide = typeof window === "undefined";
-          if (isServerSide) throw new Error("light-auth-client: signout function should not be called on the server side");
+          if (isServerSide) throw new Error("light-auth-client: fetchSession function should not be called on the server side");
           // get the session from the server using the api endpoint
           const session = await internalFetch({
             config,
@@ -145,7 +156,27 @@
             endpoint: `${config.basePath}/session`,
             ...args
           });
-          return session;
+          return session ?? null;
+        } catch (error) {
+          console.error("Error:", error);
+          return null;
+        }
+      };
+    }
+    function createSetSessionClientFunction(config) {
+      return async (session, args) => {
+        try {
+          const isServerSide = typeof window === "undefined";
+          if (isServerSide) throw new Error("light-auth-client: setSession function should not be called on the server side");
+          // get the session from the server using the api endpoint
+          const updatedSession = await internalFetch({
+            config,
+            method: "POST",
+            body: JSON.stringify(session),
+            endpoint: `${config.basePath}/set_session`,
+            ...args
+          });
+          return updatedSession ?? null;
         } catch (error) {
           console.error("Error:", error);
           return null;
@@ -157,19 +188,12 @@
         try {
           const isServerSide = typeof window === "undefined";
           if (isServerSide) throw new Error("light-auth-client: getUser function should not be called on the server side");
-          // get the user from the server using the api endpoint
-          const session = await internalFetch({
-            config,
-            method: "POST",
-            endpoint: `${config.basePath}/session`,
-            ...args
-          });
-          if (!session || !session.userId) return null;
+          const endpoint = args?.userId ? `${config.basePath}/user/${args.userId}` : `${config.basePath}/user`;
           // get the user from the user adapter
           const user = await internalFetch({
             config,
             method: "POST",
-            endpoint: `${config.basePath}/user/${session.userId}`,
+            endpoint,
             ...args
           });
           if (!user) return null;
@@ -180,40 +204,69 @@
         }
       };
     }
+    function createSetUserClientFunction(config) {
+      return async (user, args) => {
+        try {
+          const isServerSide = typeof window === "undefined";
+          if (isServerSide) throw new Error("light-auth-client: setUser function should not be called on the server side");
+          const updatedUser = await internalFetch({
+            config,
+            method: "POST",
+            body: JSON.stringify(user),
+            endpoint: `${config.basePath}/set_user`,
+            ...args
+          });
+          return updatedUser ?? null;
+        } catch (error) {
+          console.error("Error:", error);
+          return null;
+        }
+      };
+    }
 
-    /*! @light-auth/express v0.1.0 2025-05-23 */
-    const createExpressLightAuthSessionFunction = config => {
-      const sessionFunction = createFetchSessionClientFunction(config);
-      return async () => await sessionFunction();
+    /*! @light-auth/express v0.2.6 2025-06-04 */
+    const createGetAuthSession = config => {
+      const getSession = createFetchSessionClientFunction(config);
+      return async () => await getSession();
     };
-    const createExpressLightAuthUserFunction = config => {
-      const userFunction = createFetchUserClientFunction(config);
-      return async () => await userFunction();
+    const createSetAuthSession = config => {
+      const setSession = createSetSessionClientFunction(config);
+      return async session => await setSession(session, config);
     };
-    function createExpressSigninFunction(config) {
+    const createGetUser = config => {
+      const getUser = createFetchUserClientFunction(config);
+      return async () => await getUser();
+    };
+    const createSetUser = config => {
+      const setUser = createSetUserClientFunction(config);
+      return async user => await setUser(user, config);
+    };
+    function createSignin(config) {
       const signInFunction = createSigninClientFunction(config);
       return async (providerName, callbackUrl = "/") => await signInFunction({
         providerName,
         callbackUrl
       });
     }
-    function createExpressSignoutFunction(config) {
+    function createSignout(config) {
       const signOutFunction = createSignoutClientFunction(config);
       return async (revokeToken = false, callbackUrl = "/") => await signOutFunction({
         revokeToken,
         callbackUrl
       });
     }
-    function CreateLightAuthClient(config) {
+    function CreateLightAuthClient(config = {}) {
       // @ts-ignore
       config.env = config.env || ({ url: (document.currentScript && document.currentScript.tagName.toUpperCase() === 'SCRIPT' && document.currentScript.src || new URL('index.js', document.baseURI).href) });
-      config.basePath = resolveBasePath(config);
+      config.basePath = resolveBasePath(config.basePath, config.env);
       return {
         basePath: config.basePath,
-        getAuthSession: createExpressLightAuthSessionFunction(config),
-        getUser: createExpressLightAuthUserFunction(config),
-        signIn: createExpressSigninFunction(config),
-        signOut: createExpressSignoutFunction(config)
+        getAuthSession: createGetAuthSession(config),
+        setAuthSession: createSetAuthSession(config),
+        getUser: createGetUser(config),
+        setUser: createSetUser(config),
+        signIn: createSignin(config),
+        signOut: createSignout(config)
       };
     }
 
@@ -228,6 +281,14 @@
                 event.preventDefault();
                 console.log("btnLogin clicked");
                 signIn("google");
+            });
+        }
+        const btnRefreshSession = document.getElementById("btnRefreshSession");
+        if (btnRefreshSession) {
+            btnRefreshSession.addEventListener("click", async (event) => {
+                event.preventDefault();
+                const session = await getAuthSession();
+                console.log("Session refreshed:", session);
             });
         }
     });

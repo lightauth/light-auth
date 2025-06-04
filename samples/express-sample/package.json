@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "build": "npm run clean && rollup -c --bundleConfigAsCjs",
-        "dev": "npx tsx watch --env-file=.env src/app.ts & rollup -cw --bundleConfigAsCjs & npm run build:css -w",
+        "dev": "rollup -c --bundleConfigAsCjs && npx tsx watch --env-file=.env src/app.ts",
         "build:css": "npx @tailwindcss/cli -i ./public/css/style.css -o ./public/css/output.css --watch"
     },
     "dependencies": {

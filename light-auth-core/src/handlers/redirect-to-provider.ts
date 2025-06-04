@@ -17,6 +17,7 @@ export async function redirectToProviderLoginHandler<
   [key: string]: unknown;
 }): Promise<BaseResponse> {
   const { config, providerName, checkCsrf = true } = args;
+
   const { provider, router, env, basePath } = checkConfig(config, providerName);
 
   const state = generateState();

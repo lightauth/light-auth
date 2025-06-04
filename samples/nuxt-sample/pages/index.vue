@@ -29,24 +29,6 @@ const handleGetSession = async () => {
   }
 };
 
-// const {
-//   data: session,
-//   status,
-//   error,
-//   refresh,
-//   clear,
-// } = useAsyncData(
-//   "light-auth-session-fetch",
-//   async () => {
-//     const session = await $fetch("/api/auth/session", { method: "POST", headers: useRequestHeaders(["cookie"]) });
-//     console.log("Session data fetched:", session);
-//     return session;
-//   },
-//   {
-//     server: true,
-//     lazy: false,
-//   }
-// );
 </script>
 
 <template>
@@ -79,12 +61,6 @@ const handleGetSession = async () => {
         </button>
       </form>
 
-      <!--   <button
-        @click="signIn('google')"
-        class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-      >
-        <NuxtImg src="google.svg" alt="Google" class="h-4 w-4" /> Sign in with Google using POST action Sign in with Google from Client side
-      </button>
 
       <button
         @click="handleGetSession()"
@@ -92,7 +68,7 @@ const handleGetSession = async () => {
       >
         <span>retrieve session</span>
       </button>
-      
+      <!--  
       <button
         @click="handleGetUser()"
         class="w-full flex items-center justify-center gap-3 px-4 py-3 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"

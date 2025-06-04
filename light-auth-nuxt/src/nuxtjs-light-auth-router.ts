@@ -103,7 +103,10 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
     }
   },
 
-  returnJson({ data }: { data: {} | null }) {
-    return data;
+  returnJson({ data, event, init }: { data: {} | null; event?: H3Event<EventHandlerRequest>; init?: ResponseInit | undefined }): Response {
+    return Response.json(data, {
+      ...(init ?? {}),
+      status: init?.status ?? 200,
+    });
   },
 };

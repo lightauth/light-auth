@@ -1,4 +1,4 @@
-import { signIn } from "./auth-client";
+import { signIn, getAuthSession } from "./auth-client";
 
 document.addEventListener("DOMContentLoaded", function () {
   const btnLogin = document.getElementById("btnLogin");
@@ -7,6 +7,15 @@ document.addEventListener("DOMContentLoaded", function () {
       event.preventDefault();
       console.log("btnLogin clicked");
       signIn("google");
+    });
+  }
+
+  const btnRefreshSession = document.getElementById("btnRefreshSession");
+  if (btnRefreshSession) {
+    btnRefreshSession.addEventListener("click", async (event) => {
+      event.preventDefault();
+      const session = await getAuthSession();
+      console.log("Session refreshed:", session);
     });
   }
 });

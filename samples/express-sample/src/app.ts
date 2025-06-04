@@ -19,6 +19,7 @@ app.set("trust proxy", true);
 
 app.use(express.static(path.join(import.meta.dirname, "..", "public")));
 app.use(express.static(path.join(import.meta.dirname, "..", "public", "js")));
+app.use(express.static(path.join(import.meta.dirname, "..", "public", "css")));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 

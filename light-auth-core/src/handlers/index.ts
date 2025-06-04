@@ -1,5 +1,6 @@
 import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkCsrfOrigin, createCsrfToken } from "../services/csrf";
+import { createLightAuthRateLimiter } from "../services/light-auth-rate-limiter-factory";
 import { logoutAndRevokeTokenHandler } from "./logout";
 import { providerCallbackHandler } from "./provider-callback";
 import { redirectToProviderLoginHandler } from "./redirect-to-provider";
@@ -31,6 +32,20 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
 
     const url = await config.router.getUrl({ env, basePath, ...args });
     const reqUrl = new URL(url);
+
+    if (config.rateLimiter) {
+      const limitResponse = await config.rateLimiter.onRateLimit({ env, url, headers, basePath, ...args });
+      if (limitResponse) {
+        // If the rate limiter returns a response, return it immediately
+        return config.router.returnJson({
+          env,
+          basePath,
+          ...limitResponse,
+          ...args,
+        });
+      }
+    }
+    // If the rate limiter does not return a response, continue processing the request
 
     // Get the auth segments from the URL
     let pathname = reqUrl.pathname;

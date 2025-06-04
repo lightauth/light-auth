@@ -1,15 +1,16 @@
-import {
-  buildFullUrl,
-  type LightAuthServerEnv,
-  type LightAuthCookie,
-  type LightAuthRouter,
-} from "@light-auth/core";
+import { buildFullUrl, type LightAuthServerEnv, type LightAuthCookie, type LightAuthRouter } from "@light-auth/core";
 import type { AstroSharedContext } from "astro";
 import * as cookieParser from "cookie";
 
 export const astroLightAuthRouter: LightAuthRouter = {
-  returnJson: function ({ data, context }: { data: {} | null; context?: AstroSharedContext }): Response {
-    return new Response(JSON.stringify(data));
+  returnJson: function ({ data, context, init }: { data: {} | null; context?: AstroSharedContext; init?: ResponseInit | undefined }): Response {
+    const json = data ? JSON.stringify(data) : undefined;
+    const status = init?.status ?? 200;
+
+    return new Response(json, {
+      ...(init ?? {}),
+      status,
+    });
   },
 
   getUrl: function ({ endpoint, context, req }: { endpoint?: string; context?: AstroSharedContext; req?: Request }): string {
@@ -59,6 +60,7 @@ export const astroLightAuthRouter: LightAuthRouter = {
 
     return filteredHeaders;
   },
+
   setCookies: function ({ cookies, context }: { cookies?: LightAuthCookie[]; context?: AstroSharedContext }): void {
     if (!context) throw new Error("AstroSharedContext is required in setCookies of expressLightAuthRouter");
 

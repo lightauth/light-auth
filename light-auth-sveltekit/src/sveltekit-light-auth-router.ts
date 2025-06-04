@@ -10,8 +10,11 @@ import {
 import { redirect, json, type RequestEvent } from "@sveltejs/kit";
 
 export const sveltekitLightAuthRouter: LightAuthRouter = {
-  returnJson: function ({ data }: { data: unknown | null }): Response {
-    return json(data);
+  returnJson: function ({ data, init }: { data: unknown | null; init?: ResponseInit | undefined }): Response {
+    return json(data, {
+      ...(init ?? {}),
+      status: init?.status ?? 200,
+    });
   },
 
   getUrl: function ({ endpoint, event, args }: { endpoint?: string; event?: RequestEvent; args?: Record<string, unknown> }): string {
@@ -54,7 +57,18 @@ export const sveltekitLightAuthRouter: LightAuthRouter = {
 
     return filteredHeaders;
   },
-  setCookies: function ({ cookies, event }: { env: LightAuthServerEnv; basePath: string; cookies?: LightAuthCookie[]; event?: RequestEvent }): void {
+
+  setCookies: function ({
+    cookies,
+    event,
+    init,
+  }: {
+    env: LightAuthServerEnv;
+    basePath: string;
+    cookies?: LightAuthCookie[];
+    event?: RequestEvent;
+    init?: ResponseInit | undefined;
+  }): void {
     if (!event) throw new Error("event is required in setCookies of sveltekitLightAuthRouter");
 
     for (const cookie of cookies ?? []) {
@@ -65,6 +79,22 @@ export const sveltekitLightAuthRouter: LightAuthRouter = {
         maxAge: cookie.maxAge,
         path: cookie.path ?? "/",
       });
+    }
+
+    if (init?.headers) {
+      let headersObj: Record<string, string> = {};
+      if (init.headers instanceof Headers) {
+        init.headers.forEach((value, key) => {
+          headersObj[key] = value;
+        });
+      } else if (Array.isArray(init.headers)) {
+        for (const [key, value] of init.headers) {
+          headersObj[key] = value;
+        }
+      } else {
+        headersObj = { ...init.headers };
+      }
+      event.setHeaders(headersObj);
     }
   },
 

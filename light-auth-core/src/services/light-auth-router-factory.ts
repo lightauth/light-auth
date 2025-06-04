@@ -5,14 +5,21 @@ import { parse, serialize } from "./cookieParser";
 
 export const createLightAuthRouter = (): LightAuthRouter => {
   return {
-    redirectTo({ url }: { url: string }) {
-      const res = new Response("Redirecting...", {
-        status: 302,
-        headers: {
-          Location: url,
-        },
+    redirectTo({ url, init }: { url: string; init?: ResponseInit | undefined }) {
+      const status = init?.status ?? 302;
+      const headers = new Headers(init?.headers);
+
+      const response = new Response("Redirecting...", {
+        ...(init ?? {}),
+        status,
+        headers,
       });
-      return res;
+
+      if (!headers.has("location")) {
+        headers.set("Location", url);
+      }
+
+      return response;
     },
 
     getCookies({ req, search }: { req?: Request; search?: string | RegExp }): LightAuthCookie[] {
@@ -30,11 +37,18 @@ export const createLightAuthRouter = (): LightAuthRouter => {
       return result;
     },
 
-    setCookies({ res, cookies }: { res?: Response; cookies?: LightAuthCookie[] }) {
-      if (!res) throw new Error("light-auth: Response object is required to set cookies.");
+    setCookies({ res, cookies, init }: { res?: Response; cookies?: LightAuthCookie[]; init?: ResponseInit | undefined }) {
+      const status = init?.status ?? 200;
+      const headers = new Headers(init?.headers);
+
+      const response = new Response(null, {
+        ...(init ?? {}),
+        status,
+        headers,
+      });
 
       if (!cookies || cookies.length === 0) {
-        return res;
+        return response;
       }
 
       for (const cookie of cookies) {
@@ -45,21 +59,30 @@ export const createLightAuthRouter = (): LightAuthRouter => {
           sameSite: cookie.sameSite,
           maxAge: cookie.maxAge,
         });
-        res.headers.set("Set-Cookie", stateCookie);
+        response.headers.set("Set-Cookie", stateCookie);
       }
       return res;
     },
-    returnJson({ res, data }: { res?: Response; data: any }) {
-      if (!res) throw new Error("light-auth: Response object is required to write JSON.");
-      const json = JSON.stringify(data);
-      const response = new Response(json, {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(json).toString(),
-        },
+
+    returnJson({ res, data, init }: { res?: Response; data: any; init?: ResponseInit | undefined }) {
+      const json = data ? JSON.stringify(data) : undefined;
+      const status = init?.status ?? 200;
+      const headers = new Headers(init?.headers);
+
+      if (!headers.has("content-length")) {
+        const encoder = new TextEncoder();
+        headers.set("content-length", encoder.encode(json).byteLength.toString());
+      }
+
+      if (!headers.has("content-type")) {
+        headers.set("content-type", "application/json");
+      }
+
+      return new Response(json, {
+        ...(init ?? {}),
+        status,
+        headers,
       });
-      return response;
     },
 
     getHeaders({ req, search }: { req?: Request; search?: string | RegExp }): Headers {

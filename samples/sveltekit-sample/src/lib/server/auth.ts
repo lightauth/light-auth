@@ -1,6 +1,6 @@
 import { Google, MicrosoftEntraId } from 'arctic';
 
-import type { LightAuthProvider } from '@light-auth/core';
+import { type LightAuthProvider } from '@light-auth/core';
 import { CreateLightAuth } from '@light-auth/sveltekit';
 import { env } from '$env/dynamic/private';
 import type { MyLightAuthSession, MyLightAuthUser } from '$lib/auth-client';

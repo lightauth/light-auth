@@ -94,7 +94,10 @@ export const nextJsLightAuthRouter: LightAuthRouter = {
     return filteredHeaders;
   },
 
-  async returnJson({ data }: { data: {} | null; env: LightAuthServerEnv; basePath: string }): Promise<NextResponse> {
-    return NextResponse.json(data);
+  async returnJson({ data, init }: { data: {} | null; init?: ResponseInit; env: LightAuthServerEnv; basePath: string }): Promise<NextResponse> {
+    return NextResponse.json(data, {
+      ...(init ?? {}),
+      status: init?.status ?? 200,
+    });
   },
 };

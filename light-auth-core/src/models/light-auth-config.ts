@@ -5,6 +5,7 @@ import { type LightAuthUserAdapter } from "./light-auth-user-adapter";
 import { type LightAuthSessionStore } from "./light-auth-session-store";
 import { type LightAuthRouter } from "./light-auth-router";
 import type { LightAuthServerEnv } from "./light-auth-server-env";
+import type { LightAuthRateLimiter } from "./light-auth-rate-limit";
 
 export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>> = {
   providers?: LightAuthProvider[];
@@ -15,6 +16,7 @@ export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession,
   basePath?: string;
   userAdapter?: LightAuthUserAdapter;
   sessionStore?: LightAuthSessionStore;
+  rateLimiter?: LightAuthRateLimiter;
   router?: LightAuthRouter;
   env?: LightAuthServerEnv;
 };

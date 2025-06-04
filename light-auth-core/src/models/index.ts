@@ -10,3 +10,4 @@ export * from "./light-auth-user-adapter";
 export * from "./light-auth-cookie";
 export * from "./light-auth-csrf";
 export * from "./light-auth-server-env";
+export * from "./light-auth-rate-limit";

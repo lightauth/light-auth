@@ -1,6 +1,6 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { CreateLightAuth } from "@light-auth/nuxt";
-import type { LightAuthProvider } from "@light-auth/core";
+import { type LightAuthProvider } from "@light-auth/core";
 import { MyLightAuthSession, MyLightAuthUser } from "~/utils/auth-user-session";
 
 const googleProvider: LightAuthProvider = {

@@ -1,15 +1,15 @@
-import {
-  buildFullUrl,
-  type LightAuthCookie,
-  type LightAuthRouter,
-  type LightAuthServerEnv,
-} from "@light-auth/core";
+import { buildFullUrl, type LightAuthCookie, type LightAuthRouter, type LightAuthServerEnv } from "@light-auth/core";
 import { type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
 
 export const expressLightAuthRouter: LightAuthRouter = {
-  returnJson: function ({ res, data }: { res?: ExpressResponse; data: {} | null }): ExpressResponse {
+  returnJson: function ({ res, data, init }: { res?: ExpressResponse; data: {} | null; init?: ResponseInit }): ExpressResponse {
     if (!res) throw new Error("Response is required in writeJson function of expressLightAuthRouter");
+
+    const status = init?.status ?? 200;
+    const headers = new Headers(init?.headers);
+    res.status(status);
+    res.setHeaders(headers);
     res.json(data);
     return res;
   },
@@ -92,8 +92,13 @@ export const expressLightAuthRouter: LightAuthRouter = {
     return headers;
   },
 
-  setCookies: function ({ res, cookies }: { res?: ExpressResponse; cookies?: LightAuthCookie[] }): ExpressResponse {
+  setCookies: function ({ res, cookies, init }: { res?: ExpressResponse; cookies?: LightAuthCookie[]; init?: ResponseInit }): ExpressResponse {
     if (!res) throw new Error("Response is required in setCookies of expressLightAuthRouter");
+
+    const status = init?.status ?? 200;
+    const headers = new Headers(init?.headers);
+    res.status(status);
+    res.setHeaders(headers);
 
     if (cookies) {
       for (const cookie of cookies) {
