@@ -1,6 +1,6 @@
 import { Google, MicrosoftEntraId } from "arctic";
 import { CreateLightAuth } from "@light-auth/nextjs";
-import { LightAuthProvider } from "@light-auth/core";
+import { createLightAuthRateLimiter, LightAuthProvider } from "@light-auth/core";
 import { MyLightAuthSession, MyLightAuthUser } from "./auth-session-user";
 import { lightAuthSupabaseUserAdapter } from "./light-auth-supabase-user-adapter";
 const googleProvider: LightAuthProvider = {
@@ -22,6 +22,14 @@ const microsoftProvider: LightAuthProvider = {
 
 export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({
   providers: [googleProvider, microsoftProvider],
+
+  rateLimiter: createLightAuthRateLimiter({
+    maxRequestsPerTimeWindowsMs: 100,
+    timeWindowMs: 1000, // 1 second,
+    errorMessage: "Too many requests, please try again later.",
+    statusCode: 429,
+  }),
+
   userAdapter: lightAuthSupabaseUserAdapter,
 
   onSessionSaving: async (session, tokens) => {

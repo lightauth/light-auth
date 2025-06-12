@@ -25,25 +25,8 @@ export type LightAuthSession = {
  */
 export type LightAuthUser<T extends LightAuthSession = LightAuthSession> = Omit<T, "expiresAt" | "id"> & {
   // we are not using expiresAt in the user object as session can be updated anytime and we don't want to call update on user for this
-  picture?: string;
-  accessToken?: string;
-  accessTokenExpiresAt?: Date;
-  refreshToken?: string;
+  picture?: string | null | undefined;
+  accessToken?: string | null | undefined;
+  accessTokenExpiresAt?: Date | null | undefined;
+  refreshToken?: string | null | undefined;
 };
-
-/**
- * LightAuthAsyncSessionData interface represents the session data returned after an authentication attempt.
- *
- * It includes the session object, a refresh function, an error object, and a status string.
- *
- * The status string can be either "success" or "error".
- */
-// export type LightAuthSessionStore<T = Record<string, any>> = {
-//   isAuthenticated: boolean;
-//   session: LightAuthSession | null;
-//   error: Error | null;
-//   status: "success" | "error";
-// } & T;
-
-// create a type for the session store with the following properties: isAuthenticated, session, error, status.
-// we should be able to add more properties to the session store as needed
