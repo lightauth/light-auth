@@ -14,12 +14,12 @@ export interface LightAuthSessionStore {
     basePath: string;
     session: Session;
     [key: string]: unknown;
-  }) => Promise<BaseResponse> | BaseResponse;
+  }) => Promise<Session> | Session;
   deleteSession: <Session extends LightAuthSession = LightAuthSession>(args: {
     env: LightAuthServerEnv;
     basePath: string;
     session: Session;
     [key: string]: unknown;
-  }) => Promise<BaseResponse> | BaseResponse;
+  }) => Promise<void> | void;
   generateSessionId: () => string;
 }

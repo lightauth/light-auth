@@ -11,7 +11,7 @@ export async function getSessionHandler<
   const { config } = args;
   const { sessionStore, router, basePath, env } = checkConfig<Session, User>(config);
 
-  const session = await sessionStore.getSession<Session>({
+  let session = await sessionStore.getSession<Session>({
     env,
     basePath,
     ...args,
@@ -38,7 +38,8 @@ export async function getSessionHandler<
     // we can update the session expiration time
     session.expiresAt = new Date(Date.now() + maxAge * 1000);
     // update the session store
-    await sessionStore.setSession({ env, basePath, ...args, session });
+    session = await sessionStore.setSession({ env, basePath, ...args, session });
+    if (config.onSessionSaved) await config.onSessionSaved(session, args);
   }
 
   return await router.returnJson({ env, basePath, data: session, ...args });

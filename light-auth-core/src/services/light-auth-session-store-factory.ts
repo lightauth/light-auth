@@ -65,7 +65,7 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
 
       res.headers.append("Set-Cookie", cookieString);
 
-      return res;
+      return session;
     },
     deleteSession: async <Session extends LightAuthSession = LightAuthSession>({
       res,
@@ -83,8 +83,6 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
         maxAge: 0,
       });
       res.headers.append("Set-Cookie", serialized);
-
-      return res;
     },
     generateSessionId(): string {
       return Math.random().toString(36).slice(2);

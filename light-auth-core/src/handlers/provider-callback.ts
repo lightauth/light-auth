@@ -89,8 +89,7 @@ export async function providerCallbackHandler<
       session = sessionSaving ?? session;
     }
 
-    await sessionStore.setSession({ env, basePath, session, ...args });
-
+    session = await sessionStore.setSession({ env, basePath, session, ...args });
     if (config.onSessionSaved) await config.onSessionSaved(session, args);
 
     if (userAdapter) {
@@ -110,9 +109,9 @@ export async function providerCallbackHandler<
         // if the user is null, use the original user
         user = userSaving ?? user;
       }
-      const updatedUser = await userAdapter.setUser({ user, env, basePath, ...args });
+      user = await userAdapter.setUser({ user, env, basePath, ...args });
 
-      if (config.onUserSaved) await config.onUserSaved(updatedUser, args);
+      if (config.onUserSaved) await config.onUserSaved(user, args);
     }
     // delete the cookies
     try {

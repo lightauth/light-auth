@@ -12,7 +12,6 @@ export async function setSessionHandler<
   let { session } = args;
   const { sessionStore, router, basePath, env } = checkConfig<Session, User>(config);
 
-
   if (!session || !session.id || !session.userId) return await router.returnJson({ env, basePath, data: null, ...args });
 
   // get the max age from the environment variable or use the default value
@@ -26,8 +25,8 @@ export async function setSessionHandler<
     session = sessionSaving ?? session;
   }
 
-  await sessionStore.setSession({ env, basePath, ...args, session });
-
+  session = await sessionStore.setSession({ env, basePath, ...args, session });
   if (config.onSessionSaved) await config.onSessionSaved(session, args);
+
   return await router.returnJson({ env, basePath, data: session, ...args });
 }
