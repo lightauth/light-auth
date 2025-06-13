@@ -53,7 +53,7 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     res?: ExpressResponse;
     session: Session;
-  }): Promise<ExpressResponse> {
+  }): Promise<Session> {
     if (!res) throw new Error("Response is required in setSession of expressLightAuthSessionStore");
 
     const value = await encryptJwt(session, buildSecret(env));
@@ -72,7 +72,7 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
       expires: new Date(session.expiresAt),
     });
 
-    return res;
+    return session;
   },
   deleteSession: function <Session extends LightAuthSession = LightAuthSession>({
     res,
@@ -81,11 +81,10 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     session: Session;
     res?: ExpressResponse;
-  }): ExpressResponse {
+  }): void {
     if (!res) throw new Error("Response is required in deleteSession of expressLightAuthSessionStore");
 
     res.clearCookie(DEFAULT_SESSION_NAME);
-    return res;
   },
   generateSessionId: function (): string {
     return Math.random().toString(36).substring(2, 15);

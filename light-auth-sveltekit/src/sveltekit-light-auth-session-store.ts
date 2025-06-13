@@ -60,7 +60,7 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     session: Session;
     event?: RequestEvent;
-  }): Promise<void> {
+  }): Promise<Session> {
     const { env, basePath, session, event } = args;
     if (!env) throw new Error("light-auth: Env is required in setSession of sveltekitLightAuthSessionStore");
     if (!event) throw new Error("light-auth: Request is required in setSession of sveltekitLightAuthSessionStore");
@@ -84,6 +84,7 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
       path: "/",
       maxAge: maxAge,
     });
+    return session;
   },
   generateSessionId(): string {
     return Math.random().toString(36).slice(2);

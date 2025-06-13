@@ -64,7 +64,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     env: LightAuthServerEnv;
     session: Session;
     context?: AstroSharedContext;
-  }): Promise<void> {
+  }): Promise<Session> {
     const { env, session, context } = args;
     if (!context) throw new Error("light-auth: Context is required in setSession of astroLightAuthSessionStore");
 
@@ -87,6 +87,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
       path: "/",
       maxAge: maxAge,
     });
+    return session;
   },
   generateSessionId(): string {
     return Math.random().toString(36).slice(2);

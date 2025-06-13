@@ -60,7 +60,7 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     session: Session;
     event?: H3Event<EventHandlerRequest>;
-  }): Promise<void> {
+  }): Promise<Session> {
     if (!event) throw new Error("Event is required to set the session in nuxtJsLightAuthSessionStore.");
 
     const value = await encryptJwt(session, buildSecret(env));
@@ -78,6 +78,7 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
       path: "/",
       expires: new Date(session.expiresAt),
     });
+    return session;
   },
   generateSessionId(): string {
     return Math.random().toString(36).slice(2);

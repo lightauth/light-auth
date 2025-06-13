@@ -46,7 +46,7 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
     env: LightAuthServerEnv;
     basePath: string;
     session: Session;
-  }): Promise<void> {
+  }): Promise<Session> {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
 
@@ -65,7 +65,7 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
       path: "/",
       expires: new Date(session.expiresAt),
     });
-    console.log("Set session in cookie store:", session);
+    return session;
   },
   generateSessionId(): string {
     return Math.random().toString(36).slice(2);
