@@ -5,11 +5,11 @@
  */
 export type LightAuthSession = {
   id: string;
-  userId: string | number;
   email: string;
   name: string;
   expiresAt: Date;
   providerName: string;
+  providerUserId: string | number;
 };
 
 /**

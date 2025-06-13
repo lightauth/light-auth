@@ -4,22 +4,22 @@ import { checkConfig } from "../services/utils";
 
 export async function getUserHandler<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
   config: LightAuthConfig<Session, User>;
-  userId: string;
+  providerUserId: string;
   [key: string]: unknown;
 }): Promise<Response> {
-  const { config, userId, ...restArgs } = args;
+  const { config, providerUserId, ...restArgs } = args;
   const { router, userAdapter, provider, env, basePath, sessionStore } = checkConfig(config);
   try {
-    let userIdId: string | null | undefined = userId;
+    let providerUserIdId: string | null | undefined = providerUserId;
 
-    if (!userIdId) {
+    if (!providerUserIdId) {
       const session = await sessionStore.getSession<Session>({ env, basePath, ...args });
-      userIdId = session?.userId?.toString();
+      providerUserIdId = session?.providerUserId?.toString();
     }
 
-    if (!userIdId) return await router.returnJson({ env, basePath, data: null, ...args });
+    if (!providerUserIdId) return await router.returnJson({ env, basePath, data: null, ...args });
 
-    let user = await userAdapter.getUser<Session, User>({ env, basePath, userId: userIdId, ...restArgs });
+    let user = await userAdapter.getUser<Session, User>({ env, basePath, providerUserId: providerUserIdId, ...restArgs });
 
     if (!user) return await router.returnJson({ env, basePath, data: null, ...args });
 

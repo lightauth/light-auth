@@ -77,7 +77,7 @@ export async function providerCallbackHandler<
 
     let session = {
       id: id,
-      userId: claims.sub,
+      providerUserId: claims.sub,
       email: claims.email,
       name: claims.name,
       expiresAt: expiresAt, // 30 days

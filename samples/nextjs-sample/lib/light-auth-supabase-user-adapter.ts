@@ -9,11 +9,11 @@ const getSupabaseClient = (env: LightAuthServerEnv) => {
 export const lightAuthSupabaseUserAdapter: LightAuthUserAdapter = {
   getUser: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     env: LightAuthServerEnv;
-    userId: string | number;
+    providerUserId: string | number;
   }): Promise<User | null> {
-    const { userId } = args;
+    const { providerUserId } = args;
     const supabase = getSupabaseClient(args.env);
-    const { error, data } = await supabase.from("users").select("*").eq("userId", userId.toString()).single();
+    const { error, data } = await supabase.from("users").select("*").eq("userId", providerUserId.toString()).single();
 
     if (error) {
       return null;
@@ -25,11 +25,15 @@ export const lightAuthSupabaseUserAdapter: LightAuthUserAdapter = {
   setUser: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     env: LightAuthServerEnv;
     user: User;
-  }): Promise<void> {
+  }): Promise<User> {
     const supabase = getSupabaseClient(args.env);
-    const { error } = await supabase.from("users").upsert(args.user).select();
+    const { error, data } = await supabase.from("users").upsert(args.user).select();
 
     if (error) console.error("Error setting user:", error);
+    if (!data || data.length === 0) {
+      throw new Error("Failed to set user in Supabase.");
+    }
+    return data[0] as User;
   },
   deleteUser: async function <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     env: LightAuthServerEnv;
@@ -38,7 +42,7 @@ export const lightAuthSupabaseUserAdapter: LightAuthUserAdapter = {
     const supabase = getSupabaseClient(args.env);
     // we don't want to delete the user from the database, just remove the access token and refresh token
     const { error } = await supabase.from("users").upsert({
-      userId: args.user.userId,
+      userId: args.user.providerUserId,
       accessToken: null,
       refreshToken: null,
       accessTokenExpiresAt: null,

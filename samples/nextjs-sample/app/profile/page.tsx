@@ -3,7 +3,7 @@ import { getAuthSession, getUser } from "@/lib/auth";
 
 export default async function Home() {
   const session = await getAuthSession();
-  const user = await getUser(session?.userId.toString()); // Fetch user details based on session
+  const user = await getUser(session?.providerUserId.toString()); // Fetch user details based on session
 
   // Check if user is logged in from cookies
 

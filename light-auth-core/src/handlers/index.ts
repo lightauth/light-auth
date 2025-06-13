@@ -76,7 +76,7 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
       const session = await req.json();
       newResponse = await setSessionHandler({ config, ...args, session });
     } else if (pathSegments[0] === "user" && req.method === "POST") {
-      newResponse = await getUserHandler({ config, userId: pathSegments[1], ...args });
+      newResponse = await getUserHandler({ config, providerUserId: pathSegments[1], ...args });
     } else if (pathSegments[0] === "set_user" && req.method === "POST") {
       const user = await req.json();
       newResponse = await setUserHandler({ config, ...args, user });

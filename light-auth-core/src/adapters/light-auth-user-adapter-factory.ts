@@ -17,14 +17,14 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
   base = base || "./";
   return {
     async getUser<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
-      userId,
+      providerUserId,
       env,
     }: {
       env: LightAuthServerEnv;
       basePath: string;
-      userId: string | number;
+      providerUserId: string | number;
     }): Promise<User | null> {
-      const safeId = sanitizeKey(userId.toString());
+      const safeId = sanitizeKey(providerUserId.toString());
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs
@@ -58,8 +58,8 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       basePath: string;
       user: User;
     }): Promise<User> {
-      if (!user?.userId) throw new Error("light-auth: user id is required");
-      const safeId = sanitizeKey(user.userId.toString());
+      if (!user?.providerUserId) throw new Error("light-auth: user id is required");
+      const safeId = sanitizeKey(user.providerUserId.toString());
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs
@@ -70,8 +70,8 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       // some providers may not return the refresh token or access token, if you did not explicitly logout the last time
       // using the revokeToken option.
       if (exists) {
-        const existingUser = await this.getUser({ env, basePath, userId: user.userId });
-        if (existingUser && existingUser.userId === user.userId) {
+        const existingUser = await this.getUser({ env, basePath, providerUserId: user.providerUserId });
+        if (existingUser && existingUser.providerUserId === user.providerUserId) {
           if (existingUser.refreshToken && !user.refreshToken) user.refreshToken = existingUser.refreshToken;
           if (existingUser.accessToken && !user.accessToken) {
             user.accessToken = existingUser.accessToken;
@@ -99,8 +99,8 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       basePath: string;
       user: User;
     }): Promise<void> {
-      if (!user?.userId) return;
-      const safeId = sanitizeKey(user.userId.toString());
+      if (!user?.providerUserId) return;
+      const safeId = sanitizeKey(user.providerUserId.toString());
       const filePath = resolve(base, safeId + ".json");
 
       const exists = await fs

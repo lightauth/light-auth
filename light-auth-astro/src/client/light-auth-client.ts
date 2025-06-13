@@ -29,7 +29,7 @@ const createGetUser = <Session extends LightAuthSession = LightAuthSession, User
   config: LightAuthConfig<Session, User>
 ) => {
   const getUser = createFetchUserClientFunction(config);
-  return async (userId?: string) => await getUser({ userId });
+  return async (providerUserId?: string) => await getUser({ providerUserId });
 };
 
 const createSetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

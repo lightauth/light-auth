@@ -13,7 +13,7 @@ export async function setUserHandler<Session extends LightAuthSession = LightAut
   let { user } = args;
   const { userAdapter, router, basePath, env } = checkConfig<Session, User>(config);
 
-  if (!user || !user.userId) return await router.returnJson({ env, basePath, data: null, ...args });
+  if (!user || !user.providerUserId) return await router.returnJson({ env, basePath, data: null, ...args });
 
   if (config.onUserSaving) {
     const userSaving = await config.onUserSaving(user, undefined, args);

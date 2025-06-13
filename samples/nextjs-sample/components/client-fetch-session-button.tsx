@@ -9,7 +9,7 @@ export function ClientFetchSessionButton() {
       onClick={async () => {
         const session = await getAuthSession();
         console.log("Session:", session);
-        const user = await getUser(session?.userId.toString());
+        const user = await getUser(session?.providerUserId.toString());
         console.log("User:", user);
       }}
       variant="outline"

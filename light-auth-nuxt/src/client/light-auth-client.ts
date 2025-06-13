@@ -169,12 +169,12 @@ export const createSetUser = <Session extends LightAuthSession = LightAuthSessio
 const createGetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const userFunction = async (userId?: string) => {
+  const userFunction = async (providerUserId?: string) => {
     const event = useRequestEvent();
     const headers = new Headers(useRequestHeaders());
     const url = useRequestURL();
 
-    let userUrlEndpoint = userId ? `${config.basePath}/user/${userId}` : `${config.basePath}/user`;
+    let userUrlEndpoint = providerUserId ? `${config.basePath}/user/${providerUserId}` : `${config.basePath}/user`;
 
     if (url) {
       const incomingHeaders = new Headers();
@@ -187,7 +187,7 @@ const createGetUser = <Session extends LightAuthSession = LightAuthSession, User
     return user ?? null;
   };
 
-  return (userId?: string) => createCustomFetch<User>(`light-auth-user-${userId ?? "from-session"}`, () => userFunction(userId));
+  return (providerUserId?: string) => createCustomFetch<User>(`light-auth-user-${providerUserId ?? "from-session"}`, () => userFunction(providerUserId));
 };
 
 type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;

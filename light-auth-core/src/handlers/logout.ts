@@ -37,7 +37,7 @@ export async function logoutAndRevokeTokenHandler<
 
   // get the user from the session store
   if (userAdapter) {
-    const user = await userAdapter.getUser({ env, basePath, userId: session.userId.toString(), ...args });
+    const user = await userAdapter.getUser({ env, basePath, providerUserId: session.providerUserId.toString(), ...args });
 
     if (user) {
       // delete the user

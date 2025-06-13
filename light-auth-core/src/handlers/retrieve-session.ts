@@ -17,7 +17,7 @@ export async function getSessionHandler<
     ...args,
   });
 
-  if (!session || !session.id || !session.userId) return await router.returnJson({ env, basePath, data: null, ...args });
+  if (!session || !session.id || !session.providerUserId) return await router.returnJson({ env, basePath, data: null, ...args });
 
   // check if session is expired
   if (session.expiresAt && new Date(session.expiresAt) < new Date()) {

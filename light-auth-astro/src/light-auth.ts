@@ -32,7 +32,7 @@ export const createGetAuthUser = <Session extends LightAuthSession = LightAuthSe
   config: LightAuthConfig<Session, User>
 ) => {
   const getUser = createFetchUserServerFunction(config);
-  return async (context: AstroSharedContext, userId?: string) => await getUser({ userId, context });
+  return async (context: AstroSharedContext, providerUserId?: string) => await getUser({ providerUserId, context });
 };
 
 const createSetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

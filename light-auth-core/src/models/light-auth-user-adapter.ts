@@ -5,7 +5,7 @@ export interface LightAuthUserAdapter {
   getUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     env: LightAuthServerEnv;
     basePath: string;
-    userId: string | number;
+    providerUserId: string | number;
     [key: string]: unknown;
   }) => User | null | Promise<User | null>;
   setUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {

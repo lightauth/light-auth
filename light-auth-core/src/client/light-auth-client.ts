@@ -82,12 +82,12 @@ export function createFetchUserClientFunction<
   Session extends LightAuthSession = LightAuthSession,
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(config: LightAuthConfig<Session, User>) {
-  return async (args?: { userId?: string; [key: string]: unknown }) => {
+  return async (args?: { providerUserId?: string; [key: string]: unknown }) => {
     try {
       const isServerSide = typeof window === "undefined";
       if (isServerSide) throw new Error("light-auth-client: getUser function should not be called on the server side");
 
-      const endpoint = args?.userId ? `${config.basePath}/user/${args.userId}` : `${config.basePath}/user`;
+      const endpoint = args?.providerUserId ? `${config.basePath}/user/${args.providerUserId}` : `${config.basePath}/user`;
 
       // get the user from the user adapter
       const user = await internalFetch<User>({ config, method: "POST", endpoint, ...args });
