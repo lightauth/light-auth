@@ -79,9 +79,9 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
             // if the user is null, use the original user
             user = userSaving ?? user;
           }
-          await userAdapter.setUser({ env, basePath, user, ...args });
+          const updatedUser = await userAdapter.setUser({ env, basePath, user, ...args });
 
-          if (config.onUserSaved) await config.onUserSaved(user, args);
+          if (config.onUserSaved) await config.onUserSaved(updatedUser, args);
         }
       }
     }

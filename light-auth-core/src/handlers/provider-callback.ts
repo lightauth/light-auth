@@ -110,9 +110,9 @@ export async function providerCallbackHandler<
         // if the user is null, use the original user
         user = userSaving ?? user;
       }
-      await userAdapter.setUser({ user, env, basePath, ...args });
+      const updatedUser = await userAdapter.setUser({ user, env, basePath, ...args });
 
-      if (config.onUserSaved) await config.onUserSaved(user, args);
+      if (config.onUserSaved) await config.onUserSaved(updatedUser, args);
     }
     // delete the cookies
     try {

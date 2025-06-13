@@ -13,7 +13,7 @@ export interface LightAuthUserAdapter {
     basePath: string;
     user: User;
     [key: string]: unknown;
-  }) => Promise<void>;
+  }) => User | Promise<User>;
   deleteUser: <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
     env: LightAuthServerEnv;
     basePath: string;

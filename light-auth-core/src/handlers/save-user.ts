@@ -20,8 +20,8 @@ export async function setUserHandler<Session extends LightAuthSession = LightAut
     user = userSaving ?? user;
   }
 
-  await userAdapter.setUser({ env, basePath, ...args, user });
+  const updatedUser = await userAdapter.setUser({ env, basePath, ...args, user });
 
-  if (config.onUserSaved) await config.onUserSaved(user, args);
-  return await router.returnJson({ env, basePath, data: user, ...args });
+  if (config.onUserSaved) await config.onUserSaved(updatedUser, args);
+  return await router.returnJson({ env, basePath, data: updatedUser, ...args });
 }

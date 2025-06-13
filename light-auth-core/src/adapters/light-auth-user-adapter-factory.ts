@@ -57,7 +57,7 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
       env: LightAuthServerEnv;
       basePath: string;
       user: User;
-    }): Promise<void> {
+    }): Promise<User> {
       if (!user?.userId) throw new Error("light-auth: user id is required");
       const safeId = sanitizeKey(user.userId.toString());
       const filePath = resolve(base, safeId + ".json");
@@ -89,6 +89,7 @@ export const createLightAuthUserAdapter = ({ base, isEncrypted = false }: { base
         // Store the session object as plain JSON
         await fs.writeFile(filePath, JSON.stringify(user), "utf-8");
       }
+      return user;
     },
 
     async deleteUser<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
