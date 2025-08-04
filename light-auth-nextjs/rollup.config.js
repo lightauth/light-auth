@@ -5,8 +5,6 @@ const libraryHeader = `/*! ${pkg.name} v${pkg.version} ${new Date().toISOString(
 
 export default
     [
-
-
         {
             input: {
                 index: 'src/index.ts',
