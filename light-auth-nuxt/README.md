@@ -32,7 +32,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 
 ## Getting Started
 
-> This getting started is based on the  [light-auth-nextjs](https://www.npmjs.com/package/@light-auth/nextjs) package.
+> This getting started is based on the  [light-auth-nuxt](https://www.npmjs.com/package/@light-auth/nuxt) package.
 >
 > You will find examples for all others frameworks in each relevant repository
 >
@@ -41,97 +41,124 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 ### 1) Install Light Auth
 
 ``` sh
-npm -i @light-auth/nextjs
+npm -i @light-auth/nuxt
 ```
 
-### 2) Configure Light Auth
-
+### 2) Add specific Nuxt config
 
 ``` ts
-// file: "./lib/auth.ts"
+export default defineNuxtConfig({
+  runtimeConfig: {
+    GoogleClientId: "", // can be overridden by NUXT_GOOGLE_CLIENT_ID environment variable
+    GoogleClientSecret: "", // can be overridden by NUXT_GOOGLE_CLIENT_SECRET environment variable
+    RedirectUri: "", // can be overridden by NUXT_REDIRECT_URI environment variable
+  },
+  .... ,    
+  .... ,  
+  build: {
+    transpile: ["@light-auth/nuxt"],
+  },
+});
 
-import { Google, Github } from "arctic";
-import { CreateLightAuth } from "@light-auth/nextjs";
+```
 
-const googleProvider = {
+### 3) Configure Light Auth
+
+``` ts
+// file: "./server/utils/auth.ts"
+
+import { Google } from "arctic";
+import { CreateLightAuth } from "@light-auth/nuxt";
+import type { LightAuthProvider } from "@light-auth/core";
+
+const config = useRuntimeConfig();
+
+const googleProvider: LightAuthProvider = {
   providerName: "google",
-  arctic: new Google(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT),
+  arctic: new Google(
+    config.GoogleClientId,
+    config.GoogleClientSecret,
+    config.RedirectUri
+  ),
+  searchParams: new Map([["access_type", "offline"]]),
 };
 
-const githubProvider = {
-  providerName: "github",
-  arctic: new GitHub(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, REDIRECT)
-};
+export const { handlers, signIn, signOut, getAuthSession, getUser } =
+  CreateLightAuth({
+    providers: [googleProvider],
+  });
 
-export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth({
-  providers: [googleProvider, githubProvider]
 ```
 
-### 3) Add Light Auth Handlers
+### 4) Add Light Auth Handlers
 
 ``` ts
-// file: "./app/api/auth/[...lightauth].ts"
+// file: "./server/api/auth/[...lightauth].ts"
 
-import { handlers } from "@/lib/auth";
-export const { GET, POST } = handlers;
+export default defineEventHandler(handlers);
 ```
 
-### 4) Add login page
+### 5) Add login action
 
 ``` ts
-// file: "./app/login.tsx"
+// file: "./server/api/actions/login.ts"
 
-import { signIn } from "@/lib/auth";
+export default defineEventHandler(async (event) => {
+  const querieObjects = getQuery(event);
+  const providerName = querieObjects.providerName?.toString() ?? "google";
+  const callbackUrl = querieObjects.callbackUrl?.toString() ?? "/";
 
-export default function LoginPage() {
-  return (
-    <div>
-      <form
-        action={async () => {
-          "use server";
-          await signIn("google", "/profile");
-        }}
-      >
-        <button type="submit">login</button>
-      </form>
-    </div>
-  );
-}
+  await signIn(event, providerName, callbackUrl);
+});
+
 ```
 
-### 5) Use Light Auth
+### 6) Add login page
 
-``` tsx
-// file: "./app/profile.tsx"
+``` vue
+// file: "./pages/login.vue"
 
-import { getAuthSession, signIn  } from "@/lib/auth";
-
-export default async function Home() {
-  const session = await getAuthSession();
-
-  return (
+<template>
     <div>
-      {session != null ? (
-        <div>
-          <p>✅ You are logged in!</p>
-          <div>Session Email: {session.email}</div>
-          <div>Session Provider: {session.providerName}</div>
-        </div>
-      ) : (
-        <div>
-            <form
-            action={async () => {
-                "use server";
-                await signIn("google", "/profile");
-            }}
-            >
-            <button type="submit">login using a form action</button>
-            </form>
-        </div>
-      )}
+        <form action="api/actions/login" method="POST">
+            <input type="hidden" name="providerName" value="google" />
+            <input type="hidden" name="callbackUrl" value="/" />
+            <UButton type="submit">Login</UButton>
+        </form>
     </div>
-  );
-}
+</template>
+
+```
+
+### 7) Use Light Auth in profile page
+
+``` vue
+// file: "./pages/index.vue"
+
+<script setup lang="ts">
+import { CreateLightAuthClient } from "@light-auth/nuxt/client";
+const { useSession} = CreateLightAuthClient();
+const { data: session, refresh, status, pending, error } = useSession();
+
+
+<template>
+  <div>
+    <h1>Profile</h1>
+
+    <div>
+        <div v-if="session">
+            <p>✅ You are logged in !</p>
+            <h3>Session:</h3>
+            <pre>{{JSON.stringify(session, null, 2)}}</pre>
+        </div>
+
+        <div v-else>
+          <p>⚠️ You are not logged in</p>
+        </div>
+    </div>
+  </div>
+</template>
+
 ```
 
 ## Contributing
