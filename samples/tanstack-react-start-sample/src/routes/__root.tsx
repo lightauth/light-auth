@@ -10,6 +10,20 @@ import {
 
 import globalsCss from "./globals.css?url"
 import { getWebRequest } from '@tanstack/react-start/server'
+import Header from '@/components/header'
+import { getAuthSession as laGetAuthSession, getUser as laGetUser } from "@/lib/auth";
+import { createServerFn } from '@tanstack/react-start'
+
+
+const getAuthSession = createServerFn({
+  method: 'GET',
+}).handler(() => {
+  return laGetAuthSession()
+})
+const getUser = createServerFn({ method: 'GET' })
+  .validator((userId: string | undefined) => userId)
+  .handler(async (ctx) => laGetUser(ctx.data));
+
 
 export const Route = createRootRoute({
   head: () => ({
@@ -32,10 +46,13 @@ export const Route = createRootRoute({
       },
     ],
   }),
-   component: RootComponent,
+  component: RootComponent,
   notFoundComponent: ({ data }) => {
-
     return <p>Not found!</p>
+  },
+  loader: async () => {
+    const user = await getUser();
+    return { user };
   }
 })
 
@@ -48,12 +65,16 @@ function RootComponent() {
 }
 
 function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
+  const state = Route.useLoaderData()
+  const user = state.user;
   return (
     <html>
       <head>
         <HeadContent />
       </head>
       <body>
+        <Header user={user} />
+
         {children}
         <Scripts />
       </body>

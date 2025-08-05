@@ -1,14 +1,17 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { signIn } from "@/lib/auth";
 import { ClientLoginButton } from "@/components/client/client-login-button";
-import googleSvg from "../../public/google.svg";
+import { createServerFn } from '@tanstack/react-start';
+import { signIn } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
 
 
 export const Route = createFileRoute('/login')({
   component: RouteComponent,
 })
+
+export const actionSignIn = createServerFn().handler(() => signIn("google", "/profile"));
+
 
 function RouteComponent() {
   return (
@@ -29,6 +32,14 @@ function RouteComponent() {
                 <ClientLoginButton providerName="google" callbackUrl="/profile">
                   Login with Google with Client action
                 </ClientLoginButton>
+              </div>
+              <div className="mt-4 flex flex-col space-y-2">
+
+                <form action={actionSignIn.url} method="POST">
+                  <Button type="submit" className="w-full">
+                    Login with POST Action and redirect to profile
+                  </Button>
+                </form>
               </div>
             </div>
           </CardContent>

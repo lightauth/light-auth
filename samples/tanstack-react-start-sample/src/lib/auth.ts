@@ -6,7 +6,8 @@ import { MyLightAuthSession, MyLightAuthUser } from "./auth-session-user";
 
 const googleProvider: LightAuthProvider = {
   providerName: "google",
-  arctic: new Google(process.env.GOOGLE_CLIENT_ID || "", process.env.GOOGLE_CLIENT_SECRET || "", "http://localhost:3000/api/auth/callback/google"),
+  arctic: new Google(process.env.GOOGLE_CLIENT_ID || "", process.env.GOOGLE_CLIENT_SECRET || "",
+    "http://localhost:8080/api/auth/callback/google"),
   searchParams: new Map([["access_type", "offline"]]),
 };
 
@@ -16,7 +17,7 @@ const microsoftProvider: LightAuthProvider = {
     process.env.MICROSOFT_ENTRA_ID_TENANT_ID || "",
     process.env.MICROSOFT_ENTRA_ID_CLIENT_ID || "",
     process.env.MICROSOFT_ENTRA_ID_CLIENT_SECRET || "",
-    "http://localhost:3000/api/auth/callback/microsoft"
+    "http://localhost:8080/api/auth/callback/microsoft"
   ),
   scopes: ["offline_access"],
 };

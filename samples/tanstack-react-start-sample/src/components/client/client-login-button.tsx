@@ -2,7 +2,7 @@
 
 import { signIn } from "@/lib/auth-client";
 import { Button } from "../ui/button";
-import googleSvg from "../../../public/google.svg";
+import googleSvg from "@/assets/google.svg";
 
 export function ClientLoginButton({ children, providerName, callbackUrl }: { children: React.ReactNode; providerName: string; callbackUrl: string }) {
   return (
