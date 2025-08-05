@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/astro",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "light auth framework for astro, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -51,7 +51,7 @@
   "dependencies": {
     "arctic": "^3.6.0",
     "jose": "^6.0.10",
-    "@light-auth/core": "^0.3.1"
+    "@light-auth/core": "^0.3.2"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",

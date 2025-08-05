@@ -30,7 +30,7 @@ export const { providers, handlers, signIn, signOut, getAuthSession, getUser } =
     statusCode: 429,
   }),
 
-  userAdapter: lightAuthSupabaseUserAdapter,
+  // userAdapter: lightAuthSupabaseUserAdapter,
 
   onSessionSaving: async (session, tokens) => {
     if (!tokens) return session;

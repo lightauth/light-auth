@@ -4,7 +4,7 @@ import { ClientLoginButton } from "@/components/client/client-login-button";
 import { createServerFn } from '@tanstack/react-start';
 import { signIn } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-
+import googleSvg from "@/assets/google.svg";
 
 export const Route = createFileRoute('/login')({
   component: RouteComponent,
@@ -36,7 +36,9 @@ function RouteComponent() {
               <div className="mt-4 flex flex-col space-y-2">
 
                 <form action={actionSignIn.url} method="POST">
-                  <Button type="submit" className="w-full">
+                  <Button type="submit" variant={'outline'} className="w-full">
+                    <img src={googleSvg} alt="Google" width={18} height={18} />
+
                     Login with POST Action and redirect to profile
                   </Button>
                 </form>
