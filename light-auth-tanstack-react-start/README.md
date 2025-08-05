@@ -46,7 +46,21 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 npm -i @light-auth/tanstack-react-start
 ```
 
-### 2) Configure Light Auth
+### 2) Configure vite 
+
+``` ts
+// file: "./vite.config.ts"
+
+export default defineConfig({
+  ...,
+  ...,
+  ssr: {
+    noExternal: ['@light-auth/tanstack-react-start'],
+  },
+})
+```
+
+### 3) Configure Light Auth
 
 
 ``` ts
@@ -69,7 +83,7 @@ export const { providers, handlers, signIn, signOut, getAuthSession, getUser } =
   providers: [googleProvider, githubProvider]
 ```
 
-### 3) Add Light Auth Handlers
+### 4) Add Light Auth Handlers
 
 ``` ts
 // file: "./routes/api/auth/$.tsx"
@@ -79,7 +93,7 @@ import { handlers } from "@/lib/auth";
 export const ServerRoute = createServerFileRoute('/api/auth/$').methods(handlers)
 ```
 
-### 4) Add login page
+### 5) Add login page
 
 ``` ts
 // file: "./routes/login.tsx"
@@ -106,7 +120,7 @@ function RouteComponent() {
 }
 ```
 
-### 5) Use Light Auth
+### 6) Use Light Auth
 
 ``` tsx
 // file: "./routes/profile.tsx"
