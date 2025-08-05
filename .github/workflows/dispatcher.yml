@@ -30,6 +30,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
 
+      - name: Trigger light-auth-tanstack-react-start
+        run: gh workflow run publish-tanstack.yml
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT_LIGHT_AUTH }}
+
       - name: Trigger light-auth-nuxt
         run: gh workflow run publish-nuxt.yml
         env:

@@ -1,0 +1,38 @@
+name: Publish light-auth-tanstack to npm
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  #   paths:
+  #     - "light-auth-tanstack/**"
+  #     - ".github/workflows/publish-tanstack.yml"
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Set up Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: "Install dependencies"
+        run: npm ci
+        working-directory: light-auth-tanstack-react-start
+
+      - name: "Run build"
+        run: npm run build
+        working-directory: light-auth-tanstack-react-start
+
+      - name: "Publish to npm"
+        run: npm publish --access public
+        working-directory: light-auth-tanstack-react-start
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
