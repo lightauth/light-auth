@@ -34,7 +34,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 
 ## Getting Started
 
-> This getting started is based on the  [@light-auth/nextjs](https://www.npmjs.com/package/@light-auth/nextjs) package.
+> This getting started is based on the  [@light-auth/tanstack-react-start](https://www.npmjs.com/package/@light-auth/tanstack-react-start) package.
 >
 > You will find examples for all others frameworks in each relevant repository
 >
@@ -43,7 +43,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 ### 1) Install Light Auth
 
 ``` sh
-npm -i @light-auth/nextjs
+npm -i @light-auth/tanstack-react-start
 ```
 
 ### 2) Configure Light Auth
@@ -72,29 +72,34 @@ export const { providers, handlers, signIn, signOut, getAuthSession, getUser } =
 ### 3) Add Light Auth Handlers
 
 ``` ts
-// file: "./app/api/auth/[...lightauth].ts"
+// file: "./routes/api/auth/$.tsx"
 
+import { createServerFileRoute } from '@tanstack/react-start/server';
 import { handlers } from "@/lib/auth";
-export const { GET, POST } = handlers;
+export const ServerRoute = createServerFileRoute('/api/auth/$').methods(handlers)
 ```
 
 ### 4) Add login page
 
 ``` ts
-// file: "./app/login.tsx"
+// file: "./routes/login.tsx"
 
-import { signIn } from "@/lib/auth";
+import { createFileRoute } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start';
+import { signIn } from '@/lib/auth';
 
-export default function LoginPage() {
+export const Route = createFileRoute('/login')({
+  component: RouteComponent,
+})
+
+export const actionSignIn = createServerFn().handler(() => signIn("google", "/profile"));
+
+
+function RouteComponent() {
   return (
     <div>
-      <form
-        action={async () => {
-          "use server";
-          await signIn("google", "/profile");
-        }}
-      >
-        <button type="submit">login</button>
+      <form action={actionSignIn.url} method="POST">
+        <button type="submit">login using a form action</button>
       </form>
     </div>
   );
@@ -104,13 +109,30 @@ export default function LoginPage() {
 ### 5) Use Light Auth
 
 ``` tsx
-// file: "./app/profile.tsx"
+// file: "./routes/profile.tsx"
 
-import { getAuthSession, signIn  } from "@/lib/auth";
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start';
+import { getAuthSession as laGetAuthSession } from "@/lib/auth";
 
-export default async function Home() {
-  const session = await getAuthSession();
+const getAuthSession = createServerFn({
+  method: 'GET',
+}).handler(() => {
+  return laGetAuthSession()
+})
 
+export const Route = createFileRoute('/profile')({
+  component: RouteComponent,
+  loader: async () => {
+    const session = await getAuthSession();
+    return { session };
+  },
+})
+
+function RouteComponent() {
+  const state = Route.useLoaderData()
+  const session = state.session;
+  
   return (
     <div>
       {session != null ? (
@@ -121,14 +143,8 @@ export default async function Home() {
         </div>
       ) : (
         <div>
-            <form
-            action={async () => {
-                "use server";
-                await signIn("google", "/profile");
-            }}
-            >
-            <button type="submit">login using a form action</button>
-            </form>
+          <p>⚠️ You are not logged in</p>
+          <a href="/login"> Go to Login Page </a>
         </div>
       )}
     </div>
