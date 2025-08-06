@@ -34,7 +34,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 
 ## Getting Started
 
-> This getting started is based on the  [light-auth-nuxt](https://www.npmjs.com/package/@light-auth/nuxt) package.
+> This getting started is based on the  [@light-auth/sveltekit](https://www.npmjs.com/package/@light-auth/sveltekit) package.
 >
 > You will find examples for all others frameworks in each relevant repository
 >
@@ -43,108 +43,143 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 ### 1) Install Light Auth
 
 ``` sh
-npm -i @light-auth/nuxt
+npm -i @light-auth/sveltekit
 ```
 
-### 2) Add specific Nuxt config
-
-> We are using internally a lot of the functions from #imports, so we need to transpile correctly the package.
-
-Add `@light-auth/nuxt` to the build step to transpile it with Babel:
+### 2) Configure Light Auth
 
 ``` ts
-export default defineNuxtConfig({
-  runtimeConfig: {
-    GoogleClientId: "", // can be overridden by NUXT_GOOGLE_CLIENT_ID environment variable
-    GoogleClientSecret: "", // can be overridden by NUXT_GOOGLE_CLIENT_SECRET environment variable
-    RedirectUri: "", // can be overridden by NUXT_REDIRECT_URI environment variable
-  },
-  .... ,    
-  .... ,  
-  build: {
-    transpile: ["@light-auth/nuxt"],
-  },
-});
+// file: "./src/lib/server/auth.ts"
 
-```
+import { Google } from 'arctic';
 
-### 3) Configure Light Auth
-
-``` ts
-// file: "./server/utils/auth.ts"
-
-import { Google } from "arctic";
-import { CreateLightAuth } from "@light-auth/nuxt";
-import type { LightAuthProvider } from "@light-auth/core";
-
-const config = useRuntimeConfig();
+import type { LightAuthProvider } from '@light-auth/core';
+import { CreateLightAuth } from '@light-auth/sveltekit';
+import { env } from '$env/dynamic/private';
 
 const googleProvider: LightAuthProvider = {
-  providerName: "google",
-  arctic: new Google(
-    config.GoogleClientId,
-    config.GoogleClientSecret,
-    config.RedirectUri
-  ),
-  searchParams: new Map([["access_type", "offline"]]),
+	providerName: 'google',
+	arctic: new Google(
+      env.GOOGLE_CLIENT_ID, 
+      env.GOOGLE_CLIENT_SECRET, 
+      env.REDIRECT_URI),
+	searchParams: new Map([['access_type', 'offline']])
 };
 
-export const { handlers, signIn, signOut, getAuthSession, getUser } =
-  CreateLightAuth({
-    providers: [googleProvider],
-  });
+export const { providers, handlers, signIn, signOut, getAuthSession, getUser } 
+  = CreateLightAuth({providers: [googleProvider], env: env});
+
 
 ```
 
 ### 4) Add Light Auth Handlers
 
-``` ts
-// file: "./server/api/auth/[...lightauth].ts"
+> Due to a bug in SvelteKit, the redirect response is not handled correctly.
 
-export default defineEventHandler(handlers);
+Until this bug is fixed ([#13816](https://github.com/sveltejs/kit/issues/13816)), we need to handle the redirect manually.
+
+``` ts
+// file: "./src/routes/api/auth/[...lightauth]/+server.ts"
+
+import { handlers } from '$lib/server/auth';
+import { redirect, type RequestEvent } from '@sveltejs/kit';
+
+const handlersSvelteKit = {
+	GET: async (event?: RequestEvent) => {
+		try {
+			return await handlers.GET(event);
+		} catch (error) {
+			const redirectError = error as { status: number; location: string };
+			if (redirectError && redirectError?.status === 302) redirect(redirectError.status, redirectError.location);
+		}
+	},
+	POST: async (event?: RequestEvent) => {
+		try {
+			return await handlers.POST(event);
+		} catch (error) {
+			const redirectError = error as { status: number; location: string };
+			if (redirectError && redirectError?.status === 302) redirect(redirectError.status, redirectError.location);
+		}
+	}
+};
+
+export const { GET, POST } = handlersSvelteKit;
 ```
 
 ### 5) Add login action
 
+> Due to a bug in SvelteKit, the redirect response is not handled correctly.
+
+Until this bug is fixed ([#13816](https://github.com/sveltejs/kit/issues/13816)), we need to handle the redirect manually.
+
+
 ``` ts
-// file: "./server/api/actions/login.ts"
+// file: "./src/routes/login/+page.server.ts"
 
-export default defineEventHandler(async (event) => {
-  const querieObjects = getQuery(event);
-  const providerName = querieObjects.providerName?.toString() ?? "google";
-  const callbackUrl = querieObjects.callbackUrl?.toString() ?? "/";
+import { signIn, getAuthSession } from '$lib/server/auth';
+import { redirect } from '@sveltejs/kit';
+import type { Actions } from './$types';
 
-  await signIn(event, providerName, callbackUrl);
-});
+export const actions = {
+	default: async (event) => {
+		try {
+			const data = await event.request.formData();
+
+			const providerName = data.get('providerName');
+			const callbackUrl = data.get('callbackUrl');
+			if (typeof providerName !== 'string') throw new Error('Invalid provider');
+			if (typeof callbackUrl !== 'string') throw new Error('Invalid callback URL');
+
+			await signIn(event, providerName, callbackUrl);
+		} catch (error) {
+			const r = error as { status: number; location: string };
+			if (r?.status === 302) redirect(r.status, r.location);
+		}
+	}
+} satisfies Actions;
 
 ```
 
 ### 6) Add login page
 
-``` vue
-// file: "./pages/login.vue"
+``` svelte
+<!-- file: "./src/routes/login/+page.svelte" -->
 
-<template>
+<main>
     <div>
-        <form action="api/actions/login" method="POST">
-            <input type="hidden" name="providerName" value="google" />
-            <input type="hidden" name="callbackUrl" value="/" />
-            <UButton type="submit">Login</UButton>
-        </form>
+      <form method="POST">
+        <input type="hidden" name="providerName" value="google" />
+        <input type="hidden" name="callbackUrl" value="/" />
+        <button type="submit">Login</button>
+      </form>
     </div>
-</template>
+</main>
 
 ```
 
 ### 7) Use Light Auth in profile page
 
-``` vue
-// file: "./pages/index.vue"
+Server side:
 
-<script setup lang="ts">
-import { CreateLightAuthClient } from "@light-auth/nuxt/client";
-const { useSession} = CreateLightAuthClient();
-const { data: session, refresh, status, pending, error } = useSession();
+``` ts
+// file: "./src/routes/+page.server.ts"
+
+import { getAuthSession } from '$lib/server/auth';
+
+export const load = async (event) => {
+	const session = await getAuthSession(event);
+	return { session };
+};
+
+```
+
+Svelte page:
+
+``` svelte
+<!-- file: "./src/routes/+page.svelte" -->
+
+<script lang="ts">
+	let { data } = $props();
 </script>
 
 <template>
@@ -152,15 +187,15 @@ const { data: session, refresh, status, pending, error } = useSession();
     <h1>Profile</h1>
 
     <div>
-        <div v-if="session">
+  		{#if data.session}
+        <div>
             <p>✅ You are logged in !</p>
             <h3>Session:</h3>
-            <pre>{{JSON.stringify(session, null, 2)}}</pre>
+            <pre>{{JSON.stringify(data.session, null, 2)}}</pre>
         </div>
-
-        <div v-else>
-          <p>⚠️ You are not logged in</p>
-        </div>
+		  {:else}
+        <p>⚠️ You are not logged in</p>
+      {/if}
     </div>
   </div>
 </template>

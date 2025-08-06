@@ -1,6 +1,7 @@
 import { handlers } from '$lib/server/auth';
 import { redirect, type RequestEvent } from '@sveltejs/kit';
 
+
 const handlersSvelteKit = {
 	GET: async (event?: RequestEvent) => {
 		try {

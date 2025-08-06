@@ -34,7 +34,7 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 
 ## Getting Started
 
-> This getting started is based on the  [light-auth-nuxt](https://www.npmjs.com/package/@light-auth/nuxt) package.
+> This getting started is based on the  [@light-auth/astro](https://www.npmjs.com/package/@light-auth/astro) package.
 >
 > You will find examples for all others frameworks in each relevant repository
 >
@@ -43,128 +43,121 @@ Light Auth shines across your favorite frameworks! Whether you’re building wit
 ### 1) Install Light Auth
 
 ``` sh
-npm -i @light-auth/nuxt
+npm -i @light-auth/astro
 ```
 
-### 2) Add specific Nuxt config
-
-> We are using internally a lot of the functions from #imports, so we need to transpile correctly the package.
-
-Add `@light-auth/nuxt` to the build step to transpile it with Babel:
+### 2) Configure Light Auth
 
 ``` ts
-export default defineNuxtConfig({
-  runtimeConfig: {
-    GoogleClientId: "", // can be overridden by NUXT_GOOGLE_CLIENT_ID environment variable
-    GoogleClientSecret: "", // can be overridden by NUXT_GOOGLE_CLIENT_SECRET environment variable
-    RedirectUri: "", // can be overridden by NUXT_REDIRECT_URI environment variable
-  },
-  .... ,    
-  .... ,  
-  build: {
-    transpile: ["@light-auth/nuxt"],
-  },
-});
-
-```
-
-### 3) Configure Light Auth
-
-``` ts
-// file: "./server/utils/auth.ts"
+// file: "./src/lib/auth.ts"
 
 import { Google } from "arctic";
-import { CreateLightAuth } from "@light-auth/nuxt";
-import type { LightAuthProvider } from "@light-auth/core";
-
-const config = useRuntimeConfig();
+import { type LightAuthProvider } from "@light-auth/core";
+import { CreateLightAuth } from "@light-auth/astro";
 
 const googleProvider: LightAuthProvider = {
   providerName: "google",
-  arctic: new Google(
-    config.GoogleClientId,
-    config.GoogleClientSecret,
-    config.RedirectUri
-  ),
+  arctic: new Google(import.meta.env.GOOGLE_CLIENT_ID, 
+        import.meta.env.GOOGLE_CLIENT_SECRET, 
+        import.meta.env.REDIRECT_URI),
   searchParams: new Map([["access_type", "offline"]]),
 };
 
-export const { handlers, signIn, signOut, getAuthSession, getUser } =
-  CreateLightAuth({
-    providers: [googleProvider],
-  });
+
+export const { providers, handlers, getAuthSession, getUser, signIn, signOut } 
+    = CreateLightAuth({ providers: [googleProvider], env: import.meta.env });
+
 
 ```
 
-### 4) Add Light Auth Handlers
+### 3) Add Light Auth Handlers
+
 
 ``` ts
-// file: "./server/api/auth/[...lightauth].ts"
+// file: "./pages/api/auth/[...lightauth].ts"
 
-export default defineEventHandler(handlers);
+import type { APIRoute } from "astro";
+import { handlers } from "@/lib/auth";
+export const { GET, POST }: { GET: APIRoute; POST: APIRoute } = handlers;
+
 ```
 
-### 5) Add login action
+### 4) Add login action
+
+Due to a limitation from Astro, we can't redirect from the action code itself
+
+More info on this issue ([#11613](https://github.com/withastro/astro/issues/11613)).  
+The redirect is handled in the index.astro file, in the frontmatter section.
 
 ``` ts
-// file: "./server/api/actions/login.ts"
+// file: "./src/actions/index.ts"
 
-export default defineEventHandler(async (event) => {
-  const querieObjects = getQuery(event);
-  const providerName = querieObjects.providerName?.toString() ?? "google";
-  const callbackUrl = querieObjects.callbackUrl?.toString() ?? "/";
+import { defineAction } from "astro:actions";
+import { z } from "astro:schema";
 
-  await signIn(event, providerName, callbackUrl);
-});
-
+export const server = {
+  login: defineAction({
+    accept: "form",
+    input: z.object({ providerName: z.string(), callbackUrl: z.string() }),
+    handler(input, context) {
+      return { providerName: input.providerName, callbackUrl: input.callbackUrl };
+    },
+  }),
+};
 ```
 
-### 6) Add login page
 
-``` vue
-// file: "./pages/login.vue"
+### 5) Add login page
 
-<template>
+``` astro
+<!-- file: "./pages/login.astro" -->
+
+---
+import { signIn } from "@/lib/auth";
+import { actions } from "astro:actions";
+
+const result = Astro.getActionResult(actions.login);
+if (result && !result.error && result.data) {
+  return await signIn(Astro, result.data.providerName, result.data.);
+}
+---
+
+<Layout title="Astro Authentication using light-auth">
     <div>
-        <form action="api/actions/login" method="POST">
+        <form method="POST" action={actions.login}>
             <input type="hidden" name="providerName" value="google" />
             <input type="hidden" name="callbackUrl" value="/" />
-            <UButton type="submit">Login</UButton>
-        </form>
-    </div>
-</template>
-
+            <button type="submit">Login</button>
+        </form>            
+  </div>
+</Layout>
 ```
 
-### 7) Use Light Auth in profile page
+### 6) Use Light Auth in profile page
 
-``` vue
-// file: "./pages/index.vue"
+``` astro
+---
+// Component Imports
+import Layout from "@/layouts/main.astro";
+import { getAuthSession } from "@/lib/auth";
 
-<script setup lang="ts">
-import { CreateLightAuthClient } from "@light-auth/nuxt/client";
-const { useSession} = CreateLightAuthClient();
-const { data: session, refresh, status, pending, error } = useSession();
-</script>
+const session = await getAuthSession(Astro);
+---
 
-<template>
-  <div>
-    <h1>Profile</h1>
-
+<Layout title="Astro Authentication using light-auth">
     <div>
-        <div v-if="session">
-            <p>✅ You are logged in !</p>
-            <h3>Session:</h3>
-            <pre>{{JSON.stringify(session, null, 2)}}</pre>
-        </div>
-
-        <div v-else>
-          <p>⚠️ You are not logged in</p>
-        </div>
-    </div>
+      {session != null ? (
+          <p>✅ You are logged in!</p>
+          <div>{session.email}</div>
+        ) : (
+          <div>
+            <button id="btnLogin">You are not logged</button>
+          </div>
+        )
+      }
   </div>
-</template>
 
+</Layout>
 ```
 
 ## Contributing
