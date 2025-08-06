@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/tanstack-react-start",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "light auth framework for tanstack start, using arctic",
   "author": {
     "name": "Sébastien Pertus",
@@ -52,7 +52,7 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "@light-auth/core": "^0.3.3",
+    "@light-auth/core": "^0.3.4",
     "arctic": "^3.6.0",
     "jose": "^6.0.10"
   },
