@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { signIn } from "@/lib/auth";
@@ -6,6 +7,8 @@ import { ClientLoginButton } from "@/components/client/client-login-button";
 import googleSvg from "@/public/google.svg";
 import Image from "next/image";
 import { ClientLoginActionButton } from "@/components/client/client-login-action-button";
+import { CredentialsLoginForm } from "@/components/credentials-login-form";
+import { CredentialsRegisterForm } from "@/components/credentials-register-form";
 
 export default function LoginPage() {
   return (
@@ -18,11 +21,21 @@ export default function LoginPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardDescription>Choose your preferred login method</CardDescription>
           </CardHeader>
           <CardContent>
-            <div>
-              <div className="mt-4 flex flex-col space-y-2">
+            <Tabs defaultValue="credentials" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="credentials">Credentials</TabsTrigger>
+                <TabsTrigger value="oauth">OAuth</TabsTrigger>
+                <TabsTrigger value="register">Register</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="credentials" className="space-y-4">
+                <CredentialsLoginForm />
+              </TabsContent>
+
+              <TabsContent value="oauth" className="space-y-2">
                 <form
                   action={async () => {
                     "use server";
@@ -31,17 +44,9 @@ export default function LoginPage() {
                 >
                   <Button type="submit" variant="outline" className="w-full">
                     <Image src={googleSvg} alt="Google" width={18} height={18} />
-                    Login with Google with POST action
+                    Login with Google
                   </Button>
                 </form>
-
-                <ClientLoginActionButton providerName="google" callbackUrl="/profile">
-                  Login with Google with POST endpoint
-                </ClientLoginActionButton>
-
-                <ClientLoginButton providerName="google" callbackUrl="/profile">
-                  Login with Google with Client action
-                </ClientLoginButton>
 
                 <form
                   action={async () => {
@@ -60,15 +65,26 @@ export default function LoginPage() {
                     Microsoft
                   </Button>
                 </form>
-              </div>
-            </div>
+
+                <div className="pt-4 border-t">
+                  <p className="text-xs text-gray-500 mb-2">Alternative OAuth login methods:</p>
+                  <ClientLoginActionButton providerName="google" callbackUrl="/profile">
+                    Google (POST endpoint)
+                  </ClientLoginActionButton>
+                  <ClientLoginButton providerName="google" callbackUrl="/profile">
+                    Google (Client action)
+                  </ClientLoginButton>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="register" className="space-y-4">
+                <CredentialsRegisterForm />
+              </TabsContent>
+            </Tabs>
           </CardContent>
           <CardFooter>
             <p className="text-center text-sm text-gray-600 w-full">
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/register" className="text-blue-600 hover:text-blue-800 font-medium">
-                Sign up
-              </Link>
+              Protected by Light Auth with credentials and OAuth
             </p>
           </CardFooter>
         </Card>

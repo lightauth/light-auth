@@ -13,6 +13,11 @@ export async function providerCallbackHandler<
   try {
     currentRouter = router;
 
+    // Credentials providers don't use OAuth callback
+    if (provider.type === "credentials") {
+      throw new Error("light-auth: Credentials provider should not use callback handler");
+    }
+
     const url = await currentRouter.getUrl({ env, basePath, ...args });
     const reqUrl = new URL(url);
     const code = reqUrl.searchParams.get("code");

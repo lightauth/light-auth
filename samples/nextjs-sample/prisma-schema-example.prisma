@@ -1,0 +1,98 @@
+// Prisma Schema Example for Light Auth with Credentials
+// This is an example schema for using Prisma with credentials authentication
+// To use this:
+// 1. Install Prisma: npm install -D prisma @prisma/client
+// 2. Initialize Prisma: npx prisma init
+// 3. Copy this schema to prisma/schema.prisma
+// 4. Update DATABASE_URL in .env
+// 5. Run migrations: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or "mysql", "sqlite", "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// User model for credentials authentication
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  picture      String?
+  emailVerified Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Optional: Track failed login attempts for security
+  failedAttempts Int      @default(0)
+  lockedUntil    DateTime?
+
+  // Relationships
+  sessions      Session[]
+  passwordResets PasswordReset[]
+
+  @@index([email])
+}
+
+// Session model (optional - if using database sessions instead of JWT)
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// Password reset tokens
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// Alternative: Combined model for OAuth + Credentials
+// Use this if you want to support both OAuth and credentials for the same users
+model UserAccount {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  picture      String?
+  emailVerified Boolean  @default(false)
+  
+  // Credentials fields (nullable for OAuth-only users)
+  passwordHash String?
+  
+  // OAuth fields (nullable for credentials-only users)
+  provider     String?  // "google", "microsoft", etc.
+  providerUserId String?
+  accessToken  String?
+  refreshToken String?
+  accessTokenExpiresAt DateTime?
+  
+  // Security fields
+  failedAttempts Int      @default(0)
+  lockedUntil    DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions      Session[]
+  passwordResets PasswordReset[]
+
+  @@unique([provider, providerUserId])
+  @@index([email])
+}

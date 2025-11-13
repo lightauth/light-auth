@@ -1,6 +1,7 @@
 import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "../models";
-import { checkCsrfOrigin, createCsrfToken } from "../services/csrf";
+import { checkCsrfOrigin, createCsrfToken, validateCsrfToken } from "../services/csrf";
 import { createLightAuthRateLimiter } from "../services/light-auth-rate-limiter-factory";
+import { buildSecret } from "../services/utils";
 import { logoutAndRevokeTokenHandler } from "./logout";
 import { providerCallbackHandler } from "./provider-callback";
 import { redirectToProviderLoginHandler } from "./redirect-to-provider";
@@ -9,6 +10,9 @@ import { getSessionHandler } from "./retrieve-session";
 import { getUserHandler } from "./retrieve-user";
 import { setSessionHandler } from "./save-session";
 import { setUserHandler } from "./save-user";
+import { credentialsLoginHandler } from "./credentials-login";
+import { credentialsRegisterHandler } from "./credentials-register";
+import { credentialsResetPasswordRequestHandler, credentialsResetPasswordConfirmHandler } from "./credentials-reset-password";
 
 /**
  * Creates the HTTP handlers (get, set) function for LightAuth.
@@ -86,9 +90,66 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
       newResponse = await logoutAndRevokeTokenHandler({ config, revokeToken, checkCsrf: true, callbackUrl, ...args });
     } else if (pathSegments[0] === "callback" && providerName && req.method === "GET") {
       newResponse = await providerCallbackHandler({ config, providerName, ...args });
+    } else if (pathSegments[0] === "credentials" && pathSegments[1] === "login" && req.method === "POST") {
+      // Credentials login endpoint - validate CSRF
+      const secret = buildSecret(env);
+      const cookies = await config.router.getCookies({ env, basePath, ...args });
+      const csrfIsValid = validateCsrfToken(cookies, secret);
+      if (!csrfIsValid) throw new Error("Invalid CSRF token");
+      
+      const body = await req.json();
+      newResponse = await credentialsLoginHandler({ config, email: body.email, password: body.password, callbackUrl: body.callbackUrl, ...args });
+    } else if (pathSegments[0] === "credentials" && pathSegments[1] === "register" && req.method === "POST") {
+      // Credentials register endpoint - validate CSRF
+      const secret = buildSecret(env);
+      const cookies = await config.router.getCookies({ env, basePath, ...args });
+      const csrfIsValid = validateCsrfToken(cookies, secret);
+      if (!csrfIsValid) throw new Error("Invalid CSRF token");
+      
+      const body = await req.json();
+      newResponse = await credentialsRegisterHandler({
+        config,
+        email: body.email,
+        password: body.password,
+        name: body.name,
+        autoLogin: body.autoLogin,
+        additionalData: body.additionalData,
+        ...args,
+      });
+    } else if (pathSegments[0] === "credentials" && pathSegments[1] === "reset-password" && pathSegments[2] === "request" && req.method === "POST") {
+      // Password reset request - validate CSRF
+      const secret = buildSecret(env);
+      const cookies = await config.router.getCookies({ env, basePath, ...args });
+      const csrfIsValid = validateCsrfToken(cookies, secret);
+      if (!csrfIsValid) throw new Error("Invalid CSRF token");
+      
+      const body = await req.json();
+      newResponse = await credentialsResetPasswordRequestHandler({ config, email: body.email, ...args });
+    } else if (pathSegments[0] === "credentials" && pathSegments[1] === "reset-password" && pathSegments[2] === "confirm" && req.method === "POST") {
+      // Password reset confirm - validate CSRF
+      const secret = buildSecret(env);
+      const cookies = await config.router.getCookies({ env, basePath, ...args });
+      const csrfIsValid = validateCsrfToken(cookies, secret);
+      if (!csrfIsValid) throw new Error("Invalid CSRF token");
+      
+      const body = await req.json();
+      newResponse = await credentialsResetPasswordConfirmHandler({ config, token: body.token, newPassword: body.newPassword, ...args });
     }
 
     return newResponse;
   };
   return httpHandler;
 }
+
+// Export individual handlers for advanced usage
+export * from "./logout";
+export * from "./provider-callback";
+export * from "./redirect-to-provider";
+export { getCsrfToken as retrieveCsrfTokenHandler } from "./retrieve-csrf"; // Renamed to avoid conflict with services/csrf
+export * from "./retrieve-session";
+export * from "./retrieve-user";
+export * from "./save-session";
+export * from "./save-user";
+export * from "./credentials-login";
+export * from "./credentials-register";
+export * from "./credentials-reset-password";

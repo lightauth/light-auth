@@ -1,5 +1,6 @@
 import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, INTERNAL_SECRET_VALUE } from "../constants";
 import { type LightAuthProvider, type LightAuthConfig, type LightAuthSession, type LightAuthUser, type LightAuthServerEnv } from "../models";
+import { ensureProviderType } from "./provider-helpers";
 
 /**
  * Checks the configuration and throws an error if any required fields are missing.
@@ -20,6 +21,9 @@ export function checkConfig<Session extends LightAuthSession = LightAuthSession,
   if (!Array.isArray(config.providers) || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
   if (config.router == null) throw new Error("light-auth: router is required");
   if (config.sessionStore == null) throw new Error("light-auth: sessionStore is required");
+
+  // Ensure all providers have the correct type field for backward compatibility
+  config.providers = config.providers.map((p) => ensureProviderType(p as any));
 
   // if providerName is provider, check if the provider is in the config
   if (providerName && !config.providers.some((p) => p.providerName.toLocaleLowerCase() == providerName.toLocaleLowerCase()))
@@ -93,4 +97,22 @@ export function buildFullUrl({ url, incomingHeaders }: { url: string; incomingHe
 
   const sanitizedHost = host.endsWith("/") ? host.slice(0, -1) : host;
   return new URL(sanitizedEndpoint, `${protocol}://${sanitizedHost}`).toString();
+}
+
+/**
+ * Type guard to check if a provider is an OAuth provider.
+ * @param provider The provider to check
+ * @returns True if the provider is an OAuth provider
+ */
+export function isOAuthProvider(provider: LightAuthProvider): provider is import("../models").LightAuthOAuthProvider {
+  return provider.type === "oauth";
+}
+
+/**
+ * Type guard to check if a provider is a credentials provider.
+ * @param provider The provider to check
+ * @returns True if the provider is a credentials provider
+ */
+export function isCredentialsProvider(provider: LightAuthProvider): provider is import("../models").LightAuthCredentialsProvider {
+  return provider.type === "credentials";
 }

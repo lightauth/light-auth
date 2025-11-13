@@ -29,8 +29,8 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
     const lowerLimitSessionRevalidationDate = new Date(accessTokenExpiresAt.getTime() - 10 * 60 * 1000);
     const now = new Date();
 
-    // check if we are over the limit, and if we have a refresh token
-    if (now > lowerLimitSessionRevalidationDate && user?.refreshToken) {
+    // check if we are over the limit, and if we have a refresh token (OAuth providers only)
+    if (now > lowerLimitSessionRevalidationDate && user?.refreshToken && provider.type === "oauth") {
       // Using Set to ensure unique scopes
       // and adding default scopes
       const scopeSet = new Set(provider.scopes ?? []);

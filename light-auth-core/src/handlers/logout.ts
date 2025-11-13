@@ -45,8 +45,8 @@ export async function logoutAndRevokeTokenHandler<
 
       var token = user?.accessToken;
 
-      // revoke the token if the provider supports it
-      if (token && provider && revokeToken) {
+      // revoke the token if the provider supports it (OAuth providers only)
+      if (token && provider && revokeToken && provider.type === "oauth") {
         // Revoke the token if the provider supports it
         if (typeof provider.arctic.revokeToken === "function") {
           try {

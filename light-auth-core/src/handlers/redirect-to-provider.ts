@@ -32,6 +32,12 @@ export async function redirectToProviderLoginHandler<
     if (!csrfIsValid) throw new Error("Invalid CSRF token");
   }
 
+  // Handle credentials provider differently - it doesn't use OAuth redirect flow
+  if (provider.type === "credentials") {
+    throw new Error("light-auth: Credentials provider login should be handled through POST to /credentials/login endpoint, not redirect-to-provider");
+  }
+
+  // OAuth provider flow
   // Using Set to ensure unique scopes
   // and adding default scopes
   const scopeSet = new Set(provider.scopes ?? []);
