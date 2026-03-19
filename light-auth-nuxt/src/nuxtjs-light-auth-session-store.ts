@@ -21,14 +21,16 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
   async getSession<Session extends LightAuthSession = LightAuthSession>({
     env,
     event,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     event?: H3Event<EventHandlerRequest>;
+    sessionName?: string;
   }): Promise<Session | null> {
     if (!event) throw new Error("Event is required to get the session in nuxtJsLightAuthSessionStore.");
 
-    const requestCookie = getCookie(event, DEFAULT_SESSION_NAME);
+    const requestCookie = getCookie(event, sessionName ?? DEFAULT_SESSION_NAME);
     if (!requestCookie) return null;
 
     try {
@@ -42,24 +44,28 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
 
   async deleteSession<Session extends LightAuthSession = LightAuthSession>({
     event,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     event?: H3Event<EventHandlerRequest>;
+    sessionName?: string;
   }): Promise<void> {
     if (!event) throw new Error("Event is required to get the session in nuxtJsLightAuthSessionStore.");
-    deleteCookie(event, DEFAULT_SESSION_NAME);
+    deleteCookie(event, sessionName ?? DEFAULT_SESSION_NAME);
   },
 
   async setSession<Session extends LightAuthSession = LightAuthSession>({
     env,
     session,
     event,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     session: Session;
     event?: H3Event<EventHandlerRequest>;
+    sessionName?: string;
   }): Promise<Session> {
     if (!event) throw new Error("Event is required to set the session in nuxtJsLightAuthSessionStore.");
 
@@ -71,7 +77,7 @@ export const nuxtJsLightAuthSessionStore: LightAuthSessionStore = {
     if (valueBytes.length > 4096) throw new Error("light-auth: Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
 
     // maxAge:  Specifies the number (in seconds) to be the value for the `Max-Age`
-    setCookie(event, DEFAULT_SESSION_NAME, value, {
+    setCookie(event, sessionName ?? DEFAULT_SESSION_NAME, value, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",

@@ -22,8 +22,9 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     context?: AstroSharedContext;
     req?: Request;
+    sessionName?: string;
   }): Promise<Session | null> {
-    const { env, basePath, context, req } = args;
+    const { env, basePath, context, req, sessionName } = args;
     if (!env) throw new Error("light-auth: Env is required in getSession of astroLightAuthSessionStore");
 
     const request = context?.request || req;
@@ -33,7 +34,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     if (!cookieHeader) return null;
 
     const requestCookies = cookieParser.parse(cookieHeader);
-    const sessionCookie = requestCookies[DEFAULT_SESSION_NAME];
+    const sessionCookie = requestCookies[sessionName ?? DEFAULT_SESSION_NAME];
     if (!sessionCookie) return null;
 
     try {
@@ -49,12 +50,13 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     env: LightAuthServerEnv;
     session: Session;
     context?: AstroSharedContext;
+    sessionName?: string;
   }): Promise<void> {
-    const { env, context } = args;
+    const { env, context, sessionName } = args;
     if (!env) throw new Error("light-auth: Env is required in deleteSession of astroLightAuthSessionStore");
     if (!context) throw new Error("light-auth: Context is required in deleteSession of astroLightAuthSessionStore");
 
-    context.cookies.set(DEFAULT_SESSION_NAME, "", {
+    context.cookies.set(sessionName ?? DEFAULT_SESSION_NAME, "", {
       maxAge: 0,
       path: "/",
     });
@@ -64,8 +66,9 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     env: LightAuthServerEnv;
     session: Session;
     context?: AstroSharedContext;
+    sessionName?: string;
   }): Promise<Session> {
-    const { env, session, context } = args;
+    const { env, session, context, sessionName } = args;
     if (!context) throw new Error("light-auth: Context is required in setSession of astroLightAuthSessionStore");
 
     const value = await encryptJwt(session, buildSecret(env));
@@ -80,7 +83,7 @@ export const astroLightAuthSessionStore: LightAuthSessionStore = {
     const maxAge = getSessionExpirationMaxAge(); // 30 days if no env var is set
 
     // maxAge:  Specifies the number (in seconds) to be the value for the `Max-Age`
-    context.cookies.set(DEFAULT_SESSION_NAME, value, {
+    context.cookies.set(sessionName ?? DEFAULT_SESSION_NAME, value, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",

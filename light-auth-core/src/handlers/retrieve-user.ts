@@ -8,12 +8,12 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
   [key: string]: unknown;
 }): Promise<Response> {
   const { config, providerUserId, ...restArgs } = args;
-  const { router, userAdapter, provider, env, basePath, sessionStore } = checkConfig(config);
+  const { router, userAdapter, provider, env, basePath, sessionStore, sessionName } = checkConfig(config);
   try {
     let providerUserIdId: string | null | undefined = providerUserId;
 
     if (!providerUserIdId) {
-      const session = await sessionStore.getSession<Session>({ env, basePath, ...args });
+      const session = await sessionStore.getSession<Session>({ env, basePath, sessionName, ...args });
       providerUserIdId = session?.providerUserId?.toString();
     }
 

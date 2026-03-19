@@ -9,7 +9,7 @@ export async function providerCallbackHandler<
   const { config, providerName } = args;
   let currentRouter: LightAuthRouter | null = null;
   let callbackUrl = "/";
-  const { router, userAdapter, provider, sessionStore, env, basePath } = checkConfig(config, providerName);
+    const { router, userAdapter, provider, sessionStore, env, basePath, sessionName } = checkConfig(config, providerName);
   try {
     currentRouter = router;
 
@@ -94,7 +94,7 @@ export async function providerCallbackHandler<
       session = sessionSaving ?? session;
     }
 
-    session = await sessionStore.setSession({ env, basePath, session, ...args });
+    session = await sessionStore.setSession({ env, basePath, sessionName, session, ...args });
     if (config.onSessionSaved) await config.onSessionSaved(session, args);
 
     if (userAdapter) {

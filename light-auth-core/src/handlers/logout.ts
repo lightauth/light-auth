@@ -14,10 +14,10 @@ export async function logoutAndRevokeTokenHandler<
 }): Promise<Response> {
   const { config, revokeToken = true, callbackUrl = "/", checkCsrf = true } = args;
 
-  const { userAdapter, router, sessionStore, env, basePath } = checkConfig(config);
+  const { userAdapter, router, sessionStore, env, basePath, sessionName } = checkConfig(config);
 
   // get the session
-  const session = await sessionStore.getSession({ env, basePath, ...args });
+  const session = await sessionStore.getSession({ env, basePath, sessionName, ...args });
 
   if (!session || !session.id) return await router.redirectTo({ env, basePath, url: callbackUrl, ...args });
 
@@ -61,7 +61,7 @@ export async function logoutAndRevokeTokenHandler<
 
   try {
     // delete the session cookie
-    await sessionStore.deleteSession({ env, basePath, session, ...args });
+    await sessionStore.deleteSession({ env, basePath, sessionName, session, ...args });
   } catch {}
 
   try {

@@ -19,10 +19,12 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     env,
     basePath,
     req,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     req?: ExpressRequest;
+    sessionName?: string;
   }): Promise<Session | null> {
     if (!req) throw new Error("Request is required in getSession function of expressLightAuthSessionStore");
 
@@ -32,7 +34,8 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     // parse the cookies
     const parsedCookies = cookieParser.parse(incomingCookies);
 
-    const sessionString = parsedCookies[DEFAULT_SESSION_NAME];
+    const cookieName = sessionName ?? DEFAULT_SESSION_NAME;
+    const sessionString = parsedCookies[cookieName];
     if (!sessionString) return null;
     try {
       const decryptedSession = await decryptJwt(sessionString, buildSecret(env));
@@ -48,11 +51,13 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     basePath,
     res,
     session,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     res?: ExpressResponse;
     session: Session;
+    sessionName?: string;
   }): Promise<Session> {
     if (!res) throw new Error("Response is required in setSession of expressLightAuthSessionStore");
 
@@ -64,7 +69,7 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
     if (valueBytes.length > 4096) throw new Error("light-auth: Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
 
     // get the cookie expiration time
-    res.cookie(DEFAULT_SESSION_NAME, value, {
+    res.cookie(sessionName ?? DEFAULT_SESSION_NAME, value, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
@@ -76,15 +81,17 @@ export const expressLightAuthSessionStore: LightAuthSessionStore = {
   },
   deleteSession: function <Session extends LightAuthSession = LightAuthSession>({
     res,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     session: Session;
     res?: ExpressResponse;
+    sessionName?: string;
   }): void {
     if (!res) throw new Error("Response is required in deleteSession of expressLightAuthSessionStore");
 
-    res.clearCookie(DEFAULT_SESSION_NAME);
+    res.clearCookie(sessionName ?? DEFAULT_SESSION_NAME);
   },
   generateSessionId: function (): string {
     return Math.random().toString(36).substring(2, 15);

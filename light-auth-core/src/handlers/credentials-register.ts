@@ -19,7 +19,7 @@ export async function credentialsRegisterHandler<
 }): Promise<BaseResponse> {
   const { config, email, password, name, autoLogin = true, additionalData = {} } = args;
 
-  const { router, userAdapter, provider, sessionStore, env, basePath } = checkConfig(config, "credentials");
+  const { router, userAdapter, provider, sessionStore, env, basePath, sessionName } = checkConfig(config, "credentials");
 
   try {
     // Verify this is a credentials provider
@@ -105,7 +105,7 @@ export async function credentialsRegisterHandler<
     }
 
     // Save session to store
-    session = await sessionStore.setSession({ env, basePath, session, ...args });
+    session = await sessionStore.setSession({ env, basePath, sessionName, session, ...args });
 
     // Trigger post-save hook
     if (config.onSessionSaved) {

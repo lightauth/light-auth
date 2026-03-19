@@ -17,7 +17,7 @@ export async function credentialsLoginHandler<
 }): Promise<BaseResponse> {
   const { config, email, password, callbackUrl = "/" } = args;
 
-  const { router, userAdapter, provider, sessionStore, env, basePath } = checkConfig(config, "credentials");
+  const { router, userAdapter, provider, sessionStore, env, basePath, sessionName } = checkConfig(config, "credentials");
 
   try {
     // Verify this is a credentials provider
@@ -74,7 +74,7 @@ export async function credentialsLoginHandler<
     }
 
     // Save session to store
-    session = await sessionStore.setSession({ env, basePath, session, ...args });
+    session = await sessionStore.setSession({ env, basePath, sessionName, session, ...args });
 
     // Trigger post-save hook
     if (config.onSessionSaved) {

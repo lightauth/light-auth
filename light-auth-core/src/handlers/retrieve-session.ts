@@ -9,11 +9,12 @@ export async function getSessionHandler<
   User extends LightAuthUser<Session> = LightAuthUser<Session>
 >(args: { config: LightAuthConfig<Session, User>; [key: string]: unknown }): Promise<Response> {
   const { config } = args;
-  const { sessionStore, router, basePath, env } = checkConfig<Session, User>(config);
+  const { sessionStore, router, basePath, env, sessionName } = checkConfig<Session, User>(config);
 
   let session = await sessionStore.getSession<Session>({
     env,
     basePath,
+    sessionName,
     ...args,
   });
 
@@ -24,7 +25,7 @@ export async function getSessionHandler<
     console.warn("Session expired:", session.expiresAt);
     // delete the session
     try {
-      await sessionStore.deleteSession({ env, basePath, session, ...args });
+      await sessionStore.deleteSession({ env, basePath, sessionName, session, ...args });
     } catch {}
     return await router.returnJson({ env, basePath, data: null, ...args });
   }
@@ -38,7 +39,7 @@ export async function getSessionHandler<
     // we can update the session expiration time
     session.expiresAt = new Date(Date.now() + maxAge * 1000);
     // update the session store
-    session = await sessionStore.setSession({ env, basePath, ...args, session });
+    session = await sessionStore.setSession({ env, basePath, sessionName, ...args, session });
     if (config.onSessionSaved) await config.onSessionSaved(session, args);
   }
 

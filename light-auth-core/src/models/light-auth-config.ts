@@ -19,4 +19,5 @@ export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession,
   rateLimiter?: LightAuthRateLimiter;
   router?: LightAuthRouter;
   env?: LightAuthServerEnv;
+  sessionName?: string;
 };

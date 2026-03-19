@@ -15,11 +15,11 @@ import {
  * with appropriate Set-Cookie headers.
  */
 export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
-  async getSession<Session extends LightAuthSession = LightAuthSession>({ env }: { env: LightAuthServerEnv; basePath: string }): Promise<Session | null> {
+  async getSession<Session extends LightAuthSession = LightAuthSession>({ env, sessionName }: { env: LightAuthServerEnv; basePath: string; sessionName?: string }): Promise<Session | null> {
     const { cookies } = await import("next/headers");
 
     const cookieStore = await cookies();
-    const requestCookie = cookieStore.get(DEFAULT_SESSION_NAME);
+    const requestCookie = cookieStore.get(sessionName ?? DEFAULT_SESSION_NAME);
 
     if (!requestCookie) return null;
 
@@ -32,20 +32,29 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
     }
   },
 
-  async deleteSession(): Promise<void> {
+  async deleteSession<Session extends LightAuthSession = LightAuthSession>({
+    sessionName,
+  }: {
+    env: LightAuthServerEnv;
+    basePath: string;
+    session: Session;
+    sessionName?: string;
+  }): Promise<void> {
     const { cookies } = await import("next/headers");
 
     const cookieStore = await cookies();
-    cookieStore.delete(DEFAULT_SESSION_NAME);
+    cookieStore.delete(sessionName ?? DEFAULT_SESSION_NAME);
   },
 
   async setSession<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>({
     env,
     session,
+    sessionName,
   }: {
     env: LightAuthServerEnv;
     basePath: string;
     session: Session;
+    sessionName?: string;
   }): Promise<Session> {
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
@@ -58,7 +67,7 @@ export const nextJsLightAuthSessionStore: LightAuthSessionStore = {
     if (valueBytes.length > 4096) throw new Error("light-auth: Cookie value exceeds 4096 bytes, which may not be supported by your browser.");
 
     // maxAge:  Specifies the number (in seconds) to be the value for the `Max-Age`
-    cookieStore.set(DEFAULT_SESSION_NAME, value, {
+    cookieStore.set(sessionName ?? DEFAULT_SESSION_NAME, value, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",

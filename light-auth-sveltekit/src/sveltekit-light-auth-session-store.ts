@@ -22,13 +22,14 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     env: LightAuthServerEnv;
     basePath: string;
     event?: RequestEvent;
+    sessionName?: string;
   }): Promise<Session | null> {
-    const { env, basePath, event } = args;
+    const { env, basePath, event, sessionName } = args;
 
     if (!env) throw new Error("light-auth: Env is required in getSession of sveltekitLightAuthSessionStore");
     if (!event) throw new Error("light-auth: Request is required in getSession of sveltekitLightAuthSessionStore");
 
-    const sessionCookie = event.cookies.get(DEFAULT_SESSION_NAME);
+    const sessionCookie = event.cookies.get(sessionName ?? DEFAULT_SESSION_NAME);
     if (!sessionCookie) return null;
 
     try {
@@ -45,11 +46,12 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     session: Session;
     event?: RequestEvent;
+    sessionName?: string;
   }): Promise<void> {
-    const { event } = args;
+    const { event, sessionName } = args;
     if (!event) throw new Error("light-auth: Request is required in deleteSession of sveltekitLightAuthSessionStore");
 
-    event.cookies.set(DEFAULT_SESSION_NAME, "", {
+    event.cookies.set(sessionName ?? DEFAULT_SESSION_NAME, "", {
       maxAge: 0,
       path: "/",
     });
@@ -60,8 +62,9 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     basePath: string;
     session: Session;
     event?: RequestEvent;
+    sessionName?: string;
   }): Promise<Session> {
-    const { env, basePath, session, event } = args;
+    const { env, basePath, session, event, sessionName } = args;
     if (!env) throw new Error("light-auth: Env is required in setSession of sveltekitLightAuthSessionStore");
     if (!event) throw new Error("light-auth: Request is required in setSession of sveltekitLightAuthSessionStore");
 
@@ -77,7 +80,7 @@ export const sveltekitLightAuthSessionStore: LightAuthSessionStore = {
     const maxAge = getSessionExpirationMaxAge(); // 30 days if no env var is set
 
     // maxAge:  Specifies the number (in seconds) to be the value for the `Max-Age`
-    event.cookies.set(DEFAULT_SESSION_NAME, value, {
+    event.cookies.set(sessionName ?? DEFAULT_SESSION_NAME, value, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",

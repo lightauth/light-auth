@@ -10,7 +10,7 @@ export async function setSessionHandler<
 >(args: { config: LightAuthConfig<Session, User>; session: Session; [key: string]: unknown }): Promise<Response> {
   const { config } = args;
   let { session } = args;
-  const { sessionStore, router, basePath, env } = checkConfig<Session, User>(config);
+  const { sessionStore, router, basePath, env, sessionName } = checkConfig<Session, User>(config);
 
   if (!session || !session.id || !session.providerUserId) return await router.returnJson({ env, basePath, data: null, ...args });
 
@@ -25,7 +25,7 @@ export async function setSessionHandler<
     session = sessionSaving ?? session;
   }
 
-  session = await sessionStore.setSession({ env, basePath, ...args, session });
+  session = await sessionStore.setSession({ env, basePath, sessionName, ...args, session });
   if (config.onSessionSaved) await config.onSessionSaved(session, args);
 
   return await router.returnJson({ env, basePath, data: session, ...args });

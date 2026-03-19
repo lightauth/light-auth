@@ -10,9 +10,11 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
     getSession: async <Session extends LightAuthSession = LightAuthSession>({
       env,
       req,
+      sessionName,
     }: {
       env: LightAuthServerEnv;
       req?: Request;
+      sessionName?: string;
     }): Promise<Session | null> => {
       if (!req) throw new Error("light-auth: Request is required in getSession function of light-auth session store");
 
@@ -22,7 +24,8 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
       const requestCookies = parse(cookieHeader);
       if (!requestCookies) return null;
 
-      const session = requestCookies[DEFAULT_SESSION_NAME];
+      const cookieName = sessionName ?? DEFAULT_SESSION_NAME;
+      const session = requestCookies[cookieName];
       if (!session) return null;
 
       try {
@@ -37,10 +40,12 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
       env,
       session,
       res,
+      sessionName,
     }: {
       env: LightAuthServerEnv;
       session: Session;
       res?: Response;
+      sessionName?: string;
     }) => {
       if (!res) throw new Error("light-auth: Response is required in setSession of light-auth session store");
 
@@ -55,7 +60,7 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
       // get the cookie expiration time
       const maxAge = getSessionExpirationMaxAge();
 
-      const cookieString = serialize(DEFAULT_SESSION_NAME, value, {
+      const cookieString = serialize(sessionName ?? DEFAULT_SESSION_NAME, value, {
         httpOnly: true,
         secure: true,
         sameSite: "lax",
@@ -69,15 +74,17 @@ export const createLightAuthSessionStore = (): LightAuthSessionStore => {
     },
     deleteSession: async <Session extends LightAuthSession = LightAuthSession>({
       res,
+      sessionName,
     }: {
       env: LightAuthServerEnv;
       session: Session;
       basePath: string;
       res?: Response;
+      sessionName?: string;
     }) => {
       if (!res) throw new Error("light-auth: Response is required in deleteSessions of light-auth session store");
 
-      const serialized = serialize(DEFAULT_SESSION_NAME, "", {
+      const serialized = serialize(sessionName ?? DEFAULT_SESSION_NAME, "", {
         httpOnly: true,
         path: "/",
         maxAge: 0,
