@@ -56,6 +56,7 @@
     "@light-auth/core": "^0.3.5"
   },
   "devDependencies": {
+    "rollup": "4.59.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",

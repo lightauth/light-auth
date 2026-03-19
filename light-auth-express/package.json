@@ -56,6 +56,7 @@
     "cookie": "^1.0.2"
   },
   "devDependencies": {
+    "rollup":"4.59.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "shx": "^0.4.0",

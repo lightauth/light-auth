@@ -57,6 +57,7 @@
     "jose": "^6.0.10"
   },
   "devDependencies": {
+    "rollup":"4.59.0",
     "@rollup/plugin-typescript": "^12.1.2",
     "@tanstack/react-router": "^1.127.8",
     "@tanstack/react-start": "^1.127.8",
