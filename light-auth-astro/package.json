@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/astro",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "light auth framework for astro, using arctic",
   "author": {
     "name": "Sébastien Pertus",
