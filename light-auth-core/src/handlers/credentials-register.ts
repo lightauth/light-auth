@@ -133,6 +133,9 @@ export async function credentialsRegisterHandler<
       }
     }
 
+    // Trigger onRegister event
+    if (config.onRegister) await config.onRegister(session, provider.providerName);
+
     // Return success with session
     return await router.returnJson({
       env,
@@ -151,6 +154,7 @@ export async function credentialsRegisterHandler<
     });
   } catch (error) {
     console.error("Error in credentialsRegisterHandler:", error);
+    if (config.onError) await config.onError(error, "register");
     return await router.returnJson({
       env,
       basePath,

@@ -118,6 +118,10 @@ export async function providerCallbackHandler<
 
       if (config.onUserSaved) await config.onUserSaved(user, args);
     }
+
+    // Trigger onLogin event
+    if (config.onLogin) await config.onLogin(session, provider.providerName);
+
     // delete the cookies
     try {
       const stateCookieDelete: LightAuthCookie = { name: `${provider.providerName}_light_auth_state`, value: "", path: "/", maxAge: 0 };
@@ -129,6 +133,7 @@ export async function providerCallbackHandler<
     } catch (error) {}
   } catch (error) {
     console.error("Error in providerCallbackHandler:", error);
+    if (config.onError) await config.onError(error, "login");
   }
 
   // redirect to the callback URL

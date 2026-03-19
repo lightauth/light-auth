@@ -106,6 +106,9 @@ export async function credentialsLoginHandler<
       }
     }
 
+    // Trigger onLogin event
+    if (config.onLogin) await config.onLogin(session, provider.providerName);
+
     // Return success response with session data
     return await router.returnJson({
       env,
@@ -124,6 +127,7 @@ export async function credentialsLoginHandler<
     });
   } catch (error) {
     console.error("Error in credentialsLoginHandler:", error);
+    if (config.onError) await config.onError(error, "login");
     return await router.returnJson({
       env,
       basePath,

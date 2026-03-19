@@ -59,6 +59,15 @@ export async function logoutAndRevokeTokenHandler<
     }
   }
 
+  // Trigger onLogout event
+  if (config.onLogout) {
+    try {
+      await config.onLogout(session as Session, session.providerName ?? "");
+    } catch (e) {
+      console.warn("Error in onLogout hook:", e);
+    }
+  }
+
   try {
     // delete the session cookie
     await sessionStore.deleteSession({ env, basePath, sessionName, session, ...args });

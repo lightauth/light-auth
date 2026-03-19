@@ -13,6 +13,10 @@ export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession,
   onSessionSaved?: (session: Session, metadata?: { [key: string]: unknown }) => void | Promise<void>;
   onUserSaving?: (user: User, claims?: OAuth2Tokens, metadata?: { [key: string]: unknown }) => User | null | Promise<User | null>;
   onUserSaved?: (user: User, metadata?: { [key: string]: unknown }) => void | Promise<void>;
+  onLogin?: (session: Session, providerName: string) => void | Promise<void>;
+  onLogout?: (session: Session, providerName: string) => void | Promise<void>;
+  onRegister?: (session: Session, providerName: string) => void | Promise<void>;
+  onError?: (error: unknown, eventName: string) => void | Promise<void>;
   basePath?: string;
   userAdapter?: LightAuthUserAdapter;
   sessionStore?: LightAuthSessionStore;
