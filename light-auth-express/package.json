@@ -52,16 +52,17 @@
   "dependencies": {
     "@light-auth/core": "^0.3.5",
     "arctic": "^3.6.0",
-    "jose": "^6.0.10",
-    "cookie": "^1.0.2"
+    "cookie": "^1.0.2",
+    "jose": "^6.0.10"
   },
   "devDependencies": {
-    "rollup":"4.59.0",
     "@rollup/plugin-typescript": "^12.1.2",
-    "@types/node": "^22.15.3",
-    "shx": "^0.4.0",
     "@types/express": "^5.0.1",
-    "express": "^5.1.0"
+    "@types/node": "^22.15.3",
+    "express": "^5.1.0",
+    "rollup": "4.59.0",
+    "shx": "^0.4.0",
+    "tslib": "^2.8.1"
   },
   "workspaces": [
     "../light-auth-core"
