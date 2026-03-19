@@ -23,6 +23,9 @@ export async function getSessionHandler<
   // check if session is expired
   if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
     console.warn("Session expired:", session.expiresAt);
+    if (config.onSessionExpired) {
+      try { await config.onSessionExpired(session); } catch {}
+    }
     // delete the session
     try {
       await sessionStore.deleteSession({ env, basePath, sessionName, session, ...args });

@@ -48,6 +48,11 @@ export async function credentialsResetPasswordRequestHandler<
     // Request password reset
     const success = await provider.requestPasswordReset(email);
 
+    // Trigger onPasswordReset event
+    if (config.onPasswordReset) {
+      try { await config.onPasswordReset(email); } catch {}
+    }
+
     // Always return success for security reasons (don't reveal if email exists)
     // The provider should handle sending the email internally
     return await router.returnJson({

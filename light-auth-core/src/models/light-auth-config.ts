@@ -16,6 +16,9 @@ export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession,
   onLogin?: (session: Session, providerName: string) => void | Promise<void>;
   onLogout?: (session: Session, providerName: string) => void | Promise<void>;
   onRegister?: (session: Session, providerName: string) => void | Promise<void>;
+  onSessionExpired?: (session: Session) => void | Promise<void>;
+  onTokenRefresh?: (user: User, providerName: string) => void | Promise<void>;
+  onPasswordReset?: (email: string) => void | Promise<void>;
   onError?: (error: unknown, eventName: string) => void | Promise<void>;
   basePath?: string;
   userAdapter?: LightAuthUserAdapter;

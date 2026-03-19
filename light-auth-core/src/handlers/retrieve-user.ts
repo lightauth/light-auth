@@ -82,6 +82,7 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
           user = await userAdapter.setUser({ env, basePath, user, ...args });
 
           if (config.onUserSaved) await config.onUserSaved(user, args);
+          if (config.onTokenRefresh) await config.onTokenRefresh(user, provider.providerName);
         }
       }
     }
