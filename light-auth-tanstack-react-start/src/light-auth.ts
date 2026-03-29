@@ -2,6 +2,7 @@ import {
   createHttpHandlerFunction,
   createFetchSessionServerFunction,
   createFetchUserServerFunction,
+  getUserDirect,
   createSigninServerFunction,
   createSignoutServerFunction,
   type LightAuthConfig,
@@ -62,11 +63,24 @@ const createSetSession = <Session extends LightAuthSession = LightAuthSession, U
  * It takes the LightAuth createLightAuthUserFunction base function and returns a user friendly function by
  * removing the req and res parameters, that are not needed in the Tanstack React Start context.
  */
+interface GetAuthUserFunction<User> {
+  (): Promise<User | null>;
+  (request: Request): Promise<User | null>;
+  (providerUserId: string): Promise<User | null>;
+  (request: Request, providerUserId: string): Promise<User | null>;
+}
+
 const createGetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
-) => {
-  const getUser = createFetchUserServerFunction(config);
-  return async (providerUserId?: string) => await getUser({ providerUserId, config });
+): GetAuthUserFunction<User> => {
+  const fetchUser = createFetchUserServerFunction(config);
+  const getUser = async (requestOrProviderUserId?: Request | string, providerUserId?: string) => {
+    if (requestOrProviderUserId instanceof Request) {
+      return await getUserDirect<Session, User>({ config, providerUserId, req: requestOrProviderUserId });
+    }
+    return await fetchUser({ providerUserId: requestOrProviderUserId, config });
+  };
+  return getUser as GetAuthUserFunction<User>;
 };
 
 const createSetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

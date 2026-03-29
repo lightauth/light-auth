@@ -1,6 +1,7 @@
 import {
   createFetchSessionServerFunction,
   createFetchUserServerFunction,
+  getUserDirect,
   createHttpHandlerFunction,
   createSetUserServerFunction,
   createSigninServerFunction,
@@ -39,8 +40,8 @@ const createSetAuthSession = <Session extends LightAuthSession = LightAuthSessio
 const createGetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const lightAuthUser = createFetchUserServerFunction(config);
-  return async (event: H3Event<EventHandlerRequest>, providerUserId?: string) => await lightAuthUser({ event, providerUserId });
+  return async (event: H3Event<EventHandlerRequest>, providerUserId?: string) =>
+    await getUserDirect<Session, User>({ config, providerUserId, event });
 };
 
 const createSetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(

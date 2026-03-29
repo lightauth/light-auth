@@ -2,13 +2,17 @@ import type { OAuth2Tokens } from "arctic";
 import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
 
-export async function getUserHandler<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+/**
+ * Core logic to retrieve and refresh a user, without HTTP serialization.
+ * Can be called directly from server-side code to avoid an internal HTTP round-trip.
+ */
+export async function getUserDirect<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
   config: LightAuthConfig<Session, User>;
-  providerUserId: string;
+  providerUserId?: string;
   [key: string]: unknown;
-}): Promise<Response> {
+}): Promise<User | null> {
   const { config, providerUserId, ...restArgs } = args;
-  const { router, userAdapter, provider, env, basePath, sessionStore, sessionName } = checkConfig(config);
+  const { userAdapter, provider, env, basePath, sessionStore, sessionName } = checkConfig(config);
   try {
     let providerUserIdId: string | null | undefined = providerUserId;
 
@@ -17,11 +21,11 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
       providerUserIdId = session?.providerUserId?.toString();
     }
 
-    if (!providerUserIdId) return await router.returnJson({ env, basePath, data: null, ...args });
+    if (!providerUserIdId) return null;
 
     let user = await userAdapter.getUser<Session, User>({ env, basePath, providerUserId: providerUserIdId, ...restArgs });
 
-    if (!user) return await router.returnJson({ env, basePath, data: null, ...args });
+    if (!user) return null;
 
     const accessTokenExpiresAt = user?.accessTokenExpiresAt ? new Date(user.accessTokenExpiresAt) : new Date();
 
@@ -87,10 +91,20 @@ export async function getUserHandler<Session extends LightAuthSession = LightAut
       }
     }
 
-    if (user == null) return await router.returnJson({ env, basePath, data: null, ...args });
-    return await router.returnJson({ env, basePath, data: user, ...args });
+    return user ?? null;
   } catch (error) {
     console.error("Failed to get user:", error);
-    return await router.returnJson({ env, basePath, data: null, ...args });
+    return null;
   }
+}
+
+export async function getUserHandler<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+  config: LightAuthConfig<Session, User>;
+  providerUserId: string;
+  [key: string]: unknown;
+}): Promise<Response> {
+  const { config } = args;
+  const { router, env, basePath } = checkConfig(config);
+  const user = await getUserDirect(args);
+  return await router.returnJson({ env, basePath, data: user, ...args });
 }

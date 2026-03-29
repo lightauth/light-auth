@@ -5,6 +5,7 @@ import {
   createHttpHandlerFunction,
   createFetchSessionServerFunction,
   createFetchUserServerFunction,
+  getUserDirect,
   createSigninServerFunction,
   createSignoutServerFunction,
   resolveBasePath,
@@ -31,8 +32,8 @@ const createSetAuthSession = <Session extends LightAuthSession = LightAuthSessio
 export const createGetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const getUser = createFetchUserServerFunction(config);
-  return async (context: AstroSharedContext, providerUserId?: string) => await getUser({ providerUserId, context });
+  return async (context: AstroSharedContext, providerUserId?: string) =>
+    await getUserDirect<Session, User>({ config, providerUserId, context });
 };
 
 const createSetAuthUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
