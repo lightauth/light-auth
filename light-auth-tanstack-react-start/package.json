@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/tanstack-react-start",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "light auth framework for tanstack start, using arctic",
   "author": {
     "name": "Sébastien Pertus",
