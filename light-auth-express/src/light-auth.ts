@@ -90,22 +90,33 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   if (!config.providers || config.providers.length === 0) throw new Error("At least one provider is required");
 
   // dynamic imports to avoid error if we are on the client side
+  // Using Promise.all to ensure all imports are resolved before any handler is called
+  const pendingImports: Promise<void>[] = [];
+
   if (!config.userAdapter && typeof window === "undefined") {
-    import("@light-auth/core/adapters").then((module) => {
-      config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
-    });
+    pendingImports.push(
+      import("@light-auth/core/adapters").then((module) => {
+        config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
+      })
+    );
   }
 
   if (!config.sessionStore && typeof window === "undefined") {
-    import("./express-light-auth-session-store").then((module) => {
-      config.sessionStore = module.expressLightAuthSessionStore;
-    });
+    pendingImports.push(
+      import("./express-light-auth-session-store").then((module) => {
+        config.sessionStore = module.expressLightAuthSessionStore;
+      })
+    );
   }
   if (!config.router && typeof window === "undefined") {
-    import("./express-light-auth-router").then((module) => {
-      config.router = module.expressLightAuthRouter;
-    });
+    pendingImports.push(
+      import("./express-light-auth-router").then((module) => {
+        config.router = module.expressLightAuthRouter;
+      })
+    );
   }
+
+  const importsReady = Promise.all(pendingImports);
 
   // @ts-ignore
   config.env = config.env || process.env;
@@ -113,16 +124,23 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
 
   if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
 
+  const handlers = createAuthHandler(config);
+  const middleware = createMiddleware(config);
+
+  // Wrap all async functions to ensure dynamic imports are resolved before executing
+  const ensureReady = <T extends (...args: any[]) => Promise<any>>(fn: T): T =>
+    (async (...args: any[]) => { await importsReady; return fn(...args); }) as unknown as T;
+
   return {
     providers: config.providers,
-    handlers: createAuthHandler(config),
-    middleware: createMiddleware(config),
+    handlers: ensureReady(handlers),
+    middleware: ensureReady(middleware),
     basePath: config.basePath,
-    getAuthSession: createGetAuthSession(config),
-    setAuthSession: createSetAuthSession(config),
-    getUser: createGetUser(config),
-    setUser: createSetUser(config),
-    signIn: createSignin(config),
-    signOut: createSignout(config),
+    getAuthSession: ensureReady(createGetAuthSession(config)),
+    setAuthSession: ensureReady(createSetAuthSession(config)),
+    getUser: ensureReady(createGetUser(config)),
+    setUser: ensureReady(createSetUser(config)),
+    signIn: ensureReady(createSignin(config)),
+    signOut: ensureReady(createSignout(config)),
   };
 }

@@ -60,6 +60,16 @@ export const { providers, handlers, signIn, signOut, getAuthSession, getUser } =
     if ("email_verified" in idToken && typeof idToken.email_verified === "boolean") user.email_verified = idToken.email_verified;
     if ("sub" in idToken && typeof idToken.sub === "string") user.sub = idToken.sub;
 
+    console.log(`[DEBUG TOKEN REFRESH] onUserSaving: provider=${user.providerName}, accessTokenExpiresAt set to ${user.accessTokenExpiresAt.toISOString()}`);
+
     return user;
+  },
+
+  onTokenRefresh: async (user, providerName) => {
+    console.log(`[DEBUG TOKEN REFRESH] ✅ Token refreshed! provider=${providerName}, email=${user.email}, new accessTokenExpiresAt=${user.accessTokenExpiresAt}`);
+  },
+
+  onUserSaved: async (user) => {
+    console.log(`[DEBUG TOKEN REFRESH] onUserSaved: provider=${user.providerName}, email=${user.email}`);
   },
 });

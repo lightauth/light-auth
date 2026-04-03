@@ -126,39 +126,58 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
   // dynamic imports to avoid error if we are on the client side
+  // Using Promise.all to ensure all imports are resolved before any handler is called
+  const pendingImports: Promise<void>[] = [];
+
   if (!config.userAdapter && typeof window === "undefined") {
-    import("@light-auth/core/adapters").then((module) => {
-      config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
-    });
+    pendingImports.push(
+      import("@light-auth/core/adapters").then((module) => {
+        config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
+      })
+    );
   }
 
   if (!config.sessionStore && typeof window === "undefined") {
-    import("./tanstack-react-start-light-auth-session-store").then((module) => {
-      config.sessionStore = module.tanstackReactStartLightAuthSessionStore;
-
-    });
+    pendingImports.push(
+      import("./tanstack-react-start-light-auth-session-store").then((module) => {
+        config.sessionStore = module.tanstackReactStartLightAuthSessionStore;
+      })
+    );
   }
   if (!config.router && typeof window === "undefined") {
-    import("./tanstack-react-start-light-auth-router").then((module) => {
-      config.router = module.tanstackReactStartLightAuthRouter;
-    });
+    pendingImports.push(
+      import("./tanstack-react-start-light-auth-router").then((module) => {
+        config.router = module.tanstackReactStartLightAuthRouter;
+      })
+    );
   }
+
+  const importsReady = Promise.all(pendingImports);
 
   config.basePath = resolveBasePath(config.basePath, config.env);
   config.env = config.env || process.env;
 
   if (!config || !config.env || !config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
 
+  const handler = createHandler(config);
+
+  // Wrap all async functions to ensure dynamic imports are resolved before executing
+  const ensureReady = <T extends (...args: any[]) => Promise<any>>(fn: T): T =>
+    (async (...args: any[]) => { await importsReady; return fn(...args); }) as unknown as T;
+
   return {
     providers: config.providers,
-    handlers: createHandler(config),
+    handlers: {
+      GET: ensureReady(handler.GET),
+      POST: ensureReady(handler.POST),
+    },
     basePath: config.basePath,
-    signIn: createSignIn(config),
-    signOut: createSignOut(config),
-    getAuthSession: createGetSession(config),
-    setAuthSession: createSetSession(config),
-    getUser: createGetAuthUser(config),
-    setUser: createSetUser(config),
+    signIn: ensureReady(createSignIn(config)),
+    signOut: ensureReady(createSignOut(config)),
+    getAuthSession: ensureReady(createGetSession(config)),
+    setAuthSession: ensureReady(createSetSession(config)),
+    getUser: ensureReady(createGetAuthUser(config)),
+    setUser: ensureReady(createSetUser(config)),
   };
 }
 

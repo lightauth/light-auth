@@ -113,37 +113,57 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   if (!config.providers || config.providers.length === 0) throw new Error("light-auth: At least one provider is required");
 
   // lazy import the user adapter to avoid circular dependencies
+  // Using Promise.all to ensure all imports are resolved before any handler is called
+  const pendingImports: Promise<void>[] = [];
+
   if (!config.userAdapter && typeof window === "undefined") {
-    import("@light-auth/core/adapters").then((module) => {
-      config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
-    });
+    pendingImports.push(
+      import("@light-auth/core/adapters").then((module) => {
+        config.userAdapter = module.createLightAuthUserAdapter({ base: "./users_db", isEncrypted: false });
+      })
+    );
   }
 
   if (!config.sessionStore && typeof window === "undefined") {
-    import("./nuxtjs-light-auth-session-store").then((module) => {
-      config.sessionStore = module.nuxtJsLightAuthSessionStore;
-    });
+    pendingImports.push(
+      import("./nuxtjs-light-auth-session-store").then((module) => {
+        config.sessionStore = module.nuxtJsLightAuthSessionStore;
+      })
+    );
   }
   if (!config.router && typeof window === "undefined") {
-    import("./nuxtjs-light-auth-router").then((module) => {
-      config.router = module.nuxtJsLightAuthRouter;
-    });
+    pendingImports.push(
+      import("./nuxtjs-light-auth-router").then((module) => {
+        config.router = module.nuxtJsLightAuthRouter;
+      })
+    );
   }
+
+  const importsReady = Promise.all(pendingImports);
 
   config.env = config.env || process.env;
   config.basePath = resolveBasePath(config.basePath, config.env);
 
   if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
 
+  const handler = createHandler(config);
+
+  // Wrap all async functions to ensure dynamic imports are resolved before executing
+  const ensureReady = <T extends (...args: any[]) => Promise<any>>(fn: T): T =>
+    (async (...args: any[]) => { await importsReady; return fn(...args); }) as unknown as T;
+
   return {
     providers: config.providers,
-    handlers: createHandler(config),
+    handlers: {
+      GET: ensureReady(handler.GET),
+      POST: ensureReady(handler.POST),
+    },
     basePath: config.basePath,
-    signIn: createSignIn(config),
-    signOut: createSignOut(config),
-    getAuthSession: createGetAuthSession(config),
-    setAuthSession: createSetAuthSession(config),
-    getUser: createGetAuthUser(config),
-    setUser: createSetAuthUser(config),
+    signIn: ensureReady(createSignIn(config)),
+    signOut: ensureReady(createSignOut(config)),
+    getAuthSession: ensureReady(createGetAuthSession(config)),
+    setAuthSession: ensureReady(createSetAuthSession(config)),
+    getUser: ensureReady(createGetAuthUser(config)),
+    setUser: ensureReady(createSetAuthUser(config)),
   };
 }

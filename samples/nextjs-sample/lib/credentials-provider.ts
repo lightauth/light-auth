@@ -17,7 +17,7 @@ const users: Map<string, User> = new Map();
 const demoUser: User = {
   id: "demo-user-1",
   email: "email@example.com",
-  passwordHash: "$2b$10$Xh8Q0YN5VLV5VN5VN5VN5uelNX5qH.5YN5VN5VN5VN5VN5VN5VN5K", // password123
+  passwordHash: "$2b$10$BsLyohnSgdzpmbGd2DWItOA./vzLF33Q0jc4hByA6PoNFad9FRSHm", // password123
   name: "Demo User",
   createdAt: new Date(),
 };

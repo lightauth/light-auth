@@ -1,6 +1,6 @@
 {
   "name": "@light-auth/express",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "light auth framework for express, using arctic",
   "author": {
     "name": "Sébastien Pertus",
