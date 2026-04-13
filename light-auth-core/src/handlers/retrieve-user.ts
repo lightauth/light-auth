@@ -57,6 +57,15 @@ export async function getUserDirect<Session extends LightAuthSession = LightAuth
               let code = "code" in error && typeof error.code === "string" ? error.code : "unknown_error";
               let description = "description" in error && typeof error.description === "string" ? error.description : "unknown_error";
               console.warn("Error refreshing access token:", code, description);
+
+              // If the refresh token is permanently invalid, clear it to prevent
+              // retrying on every subsequent request
+              if (code === "invalid_grant") {
+                user.refreshToken = undefined;
+                user.accessToken = undefined;
+                user.accessTokenExpiresAt = undefined;
+                await userAdapter.setUser({ env, basePath, user, ...args });
+              }
             }
           }
 
