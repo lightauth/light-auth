@@ -1,5 +1,5 @@
 import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
-import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
+import { checkConfig, getSessionExpirationMaxAge, shouldRenewSession } from "../services/utils";
 
 /**
  * get session handler available on endpoint /${basePath}/session
@@ -34,11 +34,9 @@ export async function getSessionHandler<
   }
 
   // get the max age from the environment variable or use the default value
-  let maxAge = getSessionExpirationMaxAge();
-  const lowerLimitSessionRevalidationDate = new Date(Date.now() + (maxAge * 1000) / 2);
-  const now = new Date();
+  const maxAge = getSessionExpirationMaxAge();
 
-  if (now > lowerLimitSessionRevalidationDate) {
+  if (shouldRenewSession(session, maxAge)) {
     // we can update the session expiration time
     session.expiresAt = new Date(Date.now() + maxAge * 1000);
     // update the session store

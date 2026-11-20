@@ -47,6 +47,16 @@ export function getSessionExpirationMaxAge() {
   return maxAge;
 }
 
+/**
+ * Sliding expiration: a session should be renewed once less than half of its lifetime remains.
+ * A missing or invalid expiresAt (it may come as a string from a JWT or a request body) also triggers a renewal.
+ */
+export function shouldRenewSession(session: Pick<LightAuthSession, "expiresAt">, maxAge: number = getSessionExpirationMaxAge()): boolean {
+  const expiresAtTime = session.expiresAt ? new Date(session.expiresAt).getTime() : NaN;
+  if (Number.isNaN(expiresAtTime)) return true;
+  return Date.now() > expiresAtTime - (maxAge * 1000) / 2;
+}
+
 /** Resolves the basePath, defaults to "/api/default" if not provided or falsy */
 export function resolveBasePath(basePath: string | undefined | null, env: LightAuthServerEnv | null | undefined): string {
   let resolvedBasePath = basePath || env?.["LIGHT_AUTH_BASE_PATH"] || DEFAULT_BASE_PATH;
