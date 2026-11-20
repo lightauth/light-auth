@@ -56,6 +56,12 @@ export async function getSessionHandler<
   if (shouldRenewSession(session, maxAge)) {
     // we can update the session expiration time
     session.expiresAt = new Date(Date.now() + maxAge * 1000);
+
+    if (config.onSessionSaving) {
+      const sessionSaving = await config.onSessionSaving(session, undefined, args);
+      session = sessionSaving ?? session;
+    }
+
     // update the session store
     session = await sessionStore.setSession({ env, basePath, sessionName, ...args, session });
     if (config.onSessionSaved) await config.onSessionSaved(session, args);

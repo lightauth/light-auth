@@ -9,6 +9,10 @@ import type { LightAuthRateLimiter } from "./light-auth-rate-limit";
 
 export type LightAuthConfig<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>> = {
   providers?: LightAuthProvider[];
+  /**
+   * Called before a session is saved: sign in, renewal (sliding expiration) and setAuthSession.
+   * tokens is only given for OAuth sign ins, keep the existing session claims when it is undefined.
+   */
   onSessionSaving?: (session: Session, tokens?: LightAuthTokens, metadata?: { [key: string]: unknown }) => Session | null | Promise<Session | null>;
   onSessionSaved?: (session: Session, metadata?: { [key: string]: unknown }) => void | Promise<void>;
   onUserSaving?: (user: User, tokens?: LightAuthTokens, metadata?: { [key: string]: unknown }) => User | null | Promise<User | null>;

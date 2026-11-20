@@ -112,9 +112,14 @@ describe("credentials login", () => {
 });
 
 describe("origin check", () => {
-  it("rejects cross-origin POST requests", async () => {
+  it("rejects cross-origin POST requests, naming the origin and the host that do not match", async () => {
     const { error } = await app.call("POST", "/api/auth/session", { headers: { host: "app.example", origin: "https://evil.example" } });
-    expect(error).toMatch(/origin/i);
+    expect(error).toMatch("Origin (evil.example) does not match host header (app.example)");
+  });
+
+  it("rejects an origin header that is not a URL", async () => {
+    const { error } = await app.call("POST", "/api/auth/session", { headers: { host: "app.example", origin: "null" } });
+    expect(error).toMatch("Invalid origin header");
   });
 
   it("accepts same-origin POST requests", async () => {

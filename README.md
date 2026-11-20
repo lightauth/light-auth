@@ -139,6 +139,8 @@ onSessionSaving: async (session, tokens) => {
 },
 ```
 
+`onSessionSaving` also runs when the session is renewed after half of its lifetime, for credentials sign ins and from `setAuthSession`: `tokens` is then `undefined`, keep the existing session claims as above.
+
 ### Migrating from arctic (0.4.0)
 
 [arctic](https://www.npmjs.com/package/arctic) is deprecated and no longer used by light auth, you can remove it from your dependencies:

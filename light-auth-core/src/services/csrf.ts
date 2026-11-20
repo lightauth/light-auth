@@ -84,19 +84,20 @@ export async function checkCsrfOrigin(headers: Headers) {
 
   // Allow for proxies or load balancers by checking x-forwarded-host and x-forwarded-proto
   // Parse host and origin to compare their hostnames
+  let originHost: string;
   try {
-    const originUrl = new URL(origin);
-
-    // Allow for multiple hosts in x-forwarded-host (comma separated)
-    const hostList = host.split(",").map((h) => h.trim().toLowerCase());
-    const originHost = originUrl.host.toLowerCase();
-
-    // Allow if the origin host matches any of the hosts in the header
-    if (!hostList.includes(originHost)) {
-      throw new Error(`light-auth: CSRF verification failed. Origin (${originHost}) does not match host header (${hostList.join(", ")})`);
-    }
-  } catch (err) {
+    originHost = new URL(origin).host.toLowerCase();
+  } catch {
+    // e.g. "null", sent for the opaque origins of sandboxed iframes
     throw new Error("light-auth: Invalid origin header for CSRF verification");
+  }
+
+  // Allow for multiple hosts in x-forwarded-host (comma separated)
+  const hostList = host.split(",").map((h) => h.trim().toLowerCase());
+
+  // Allow if the origin host matches any of the hosts in the header
+  if (!hostList.includes(originHost)) {
+    throw new Error(`light-auth: CSRF verification failed. Origin (${originHost}) does not match host header (${hostList.join(", ")})`);
   }
 
   return true;

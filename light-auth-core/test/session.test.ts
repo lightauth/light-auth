@@ -1,6 +1,6 @@
 import { EncryptJWT } from "jose";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createFetchSessionServerFunction, createSetSessionServerFunction, createSetUserServerFunction } from "../src";
+import { createFetchSessionServerFunction, createSetSessionServerFunction, createSetUserServerFunction, type LightAuthSession } from "../src";
 import { createTestApp, DAY_MS, forbidNetwork, readSessionCookie, secretKey, SESSION_MAX_AGE_MS, sessionCookie, sessionFixture } from "./helpers/app";
 
 const expectClampedToMaxAge = (expiresAt: unknown) => {
@@ -18,17 +18,26 @@ describe("POST /session", () => {
   });
 
   it("returns the session without renewing it before half of its lifetime", async () => {
-    const { response, res } = await createTestApp().call("POST", "/api/auth/session", { cookie: await sessionCookie(sessionFixture("ada", 5)) });
+    const onSessionSaving = vi.fn();
+    const { response, res } = await createTestApp({ onSessionSaving }).call("POST", "/api/auth/session", { cookie: await sessionCookie(sessionFixture("ada", 5)) });
     expect((await response?.json()).providerUserId).toBe("ada");
     expect(res.headers.get("set-cookie")).toBeNull();
+    expect(onSessionSaving).not.toHaveBeenCalled();
   });
 
-  it("renews the session after half of its lifetime (sliding expiration)", async () => {
+  it("renews the session after half of its lifetime (sliding expiration), through the saving hooks", async () => {
+    const onSessionSaving = vi.fn((session: LightAuthSession) => ({ ...session, renewed: true }));
     const onSessionSaved = vi.fn();
-    const { res } = await createTestApp({ onSessionSaved }).call("POST", "/api/auth/session", { cookie: await sessionCookie(sessionFixture("ada", 16)) });
+    const app = createTestApp({ onSessionSaving, onSessionSaved });
+    const { response, res } = await app.call("POST", "/api/auth/session", { cookie: await sessionCookie(sessionFixture("ada", 16)) });
+
     const renewed = await readSessionCookie(res);
     expectClampedToMaxAge(renewed?.expiresAt);
-    expect(onSessionSaved).toHaveBeenCalledWith(expect.objectContaining({ providerUserId: "ada" }), expect.anything());
+    expect(renewed).toMatchObject({ providerUserId: "ada", renewed: true });
+    expect(await response?.json()).toMatchObject({ providerUserId: "ada", renewed: true });
+    // a renewal is not a sign in: there are no tokens
+    expect(onSessionSaving).toHaveBeenCalledWith(expect.objectContaining({ providerUserId: "ada" }), undefined, expect.anything());
+    expect(onSessionSaved).toHaveBeenCalledWith(expect.objectContaining({ renewed: true }), expect.anything());
   });
 
   it("rejects an expired session issued before the exp claim, deletes its cookie and raises onSessionExpired", async () => {
