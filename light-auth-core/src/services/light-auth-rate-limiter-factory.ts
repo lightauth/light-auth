@@ -50,13 +50,10 @@ export const createLightAuthRateLimiter = (opt: LightAuthRateLimitOptions | unde
         lastRequestDateTime: now,
       };
 
-      // check if we have already over the time window limit
+      // a new time window starts once the previous one is over, the current request is counted in it below
       if (rateLimit.lastRequestDateTime + timeWindowMs < now) {
-        // Reset the count if the last request was made outside the time window
         rateLimit.count = 0;
         rateLimit.lastRequestDateTime = now;
-        memory.set(rateLimitKey, rateLimit);
-        return undefined; // No rate limit exceeded, continue processing the request
       }
 
       // get the time window and max requests per time window from options or use defaults

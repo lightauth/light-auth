@@ -1,6 +1,13 @@
-import { internalFetch } from "../services/internal-fetch";
+import { internalFetch, LightAuthHttpError } from "../services/internal-fetch";
 import { CSRF_HEADER_NAME, getCsrfToken } from "../services/csrf";
 import type { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
+
+/** Message sent by the server (e.g. "Invalid email or password"), or the error message */
+function getErrorMessage(error: unknown, fallback: string): string {
+  const serverError = error instanceof LightAuthHttpError ? (error.body as { error?: unknown } | undefined)?.error : undefined;
+  if (typeof serverError === "string") return serverError;
+  return error instanceof Error ? error.message : fallback;
+}
 
 /**
  * Client-side function to login with email and password.
@@ -63,7 +70,7 @@ export async function credentialsLogin<
     console.error("Error in credentialsLogin:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Login failed",
+      error: getErrorMessage(error, "Login failed"),
     };
   }
 }
@@ -134,7 +141,7 @@ export async function credentialsRegister<
     console.error("Error in credentialsRegister:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Registration failed",
+      error: getErrorMessage(error, "Registration failed"),
     };
   }
 }
@@ -187,7 +194,7 @@ export async function credentialsResetPasswordRequest<
     console.error("Error in credentialsResetPasswordRequest:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Password reset request failed",
+      error: getErrorMessage(error, "Password reset request failed"),
     };
   }
 }
@@ -247,7 +254,7 @@ export async function credentialsResetPasswordConfirm<
     console.error("Error in credentialsResetPasswordConfirm:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Password reset confirmation failed",
+      error: getErrorMessage(error, "Password reset confirmation failed"),
     };
   }
 }

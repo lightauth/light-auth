@@ -159,6 +159,16 @@ The hooks receive a plain `tokens` object (`accessToken`, `refreshToken`, `acces
 
 Contributions are welcome! Please open issues or submit pull requests to help improve Light Auth.
 
+The core package is covered by unit and integration tests ([vitest](https://vitest.dev)), the OAuth flows running against an in-memory OAuth 2.0 / OpenID Connect provider:
+
+``` sh
+cd light-auth-core
+npm test               # run the test suite once
+npm run test:watch     # watch mode
+npm run test:coverage  # run the tests with the coverage report and thresholds checked by the CI (HTML report in coverage/)
+npm run typecheck      # type check the sources and the tests
+```
+
 ## License
 
 This project is licensed under the MIT License.

@@ -1,5 +1,21 @@
 import { type LightAuthConfig, type LightAuthServerEnv } from "../models";
-import { checkConfig, resolveBasePath } from "./utils";
+import { resolveBasePath } from "./utils";
+
+/**
+ * Error raised when a light auth endpoint answers with an error status.
+ * body holds the parsed JSON response, e.g. { error: "Invalid email or password" }.
+ */
+export class LightAuthHttpError extends Error {
+  readonly status: number;
+  readonly body: unknown;
+
+  constructor(status: number, body: unknown) {
+    super(`light-auth: Request failed with status ${status}`);
+    this.name = "LightAuthHttpError";
+    this.status = status;
+    this.body = body;
+  }
+}
 
 /**
  * this function is used to make a request to the light auth server
@@ -36,6 +52,8 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
   let url = args.endpoint;
 
   if (router && isServerSide) url = await router.getUrl({ env, basePath, ...args });
+  // in the browser, relative endpoints are resolved against the page URL, as fetch does
+  else if (!isServerSide && typeof document !== "undefined") url = new URL(url, document.baseURI).toString();
 
   const request = bodyBytes
     ? new Request(url.toString(), { method: method, headers: requestHeaders ?? new Headers(), body: bodyBytes })
@@ -50,7 +68,11 @@ export async function internalFetch<T extends Record<string, any> | string | Blo
     throw new Error(`light-auth: Request failed with error ${error}`);
   }
   if (!response || !response.ok) {
-    throw new Error(`light-auth: Request failed with status ${response?.status}`);
+    let body: unknown;
+    try {
+      body = await response?.json();
+    } catch {}
+    throw new LightAuthHttpError(response?.status ?? 0, body);
   }
   const contentType = response.headers.get("Content-Type");
 

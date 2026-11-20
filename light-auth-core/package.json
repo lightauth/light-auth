@@ -66,7 +66,11 @@
     "build": "npm run clean && rollup -c --bundleConfigAsCjs",
     "dev": "rollup -cw --bundleConfigAsCjs",
     "clean": "shx rm -rf dist lib",
-    "start": "rollup -c -w"
+    "start": "rollup -c -w",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p test/tsconfig.json",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "jose": "^6.0.10",
@@ -76,8 +80,10 @@
     "@rollup/plugin-typescript": "^12.1.2",
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.2",
+    "@vitest/coverage-v8": "^5.1.1",
     "rollup": "4.59.0",
     "shx": "^0.4.0",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "vitest": "^5.1.1"
   }
 }
