@@ -11,6 +11,8 @@ import {
   type LightAuthUser,
   resolveBasePath,
   createSetUserServerFunction,
+  buildSecret,
+  createSetSessionServerFunction,
 } from "@light-auth/core";
 import { type RequestEvent } from "@sveltejs/kit";
 
@@ -24,7 +26,7 @@ const createGetAuthSession = <Session extends LightAuthSession = LightAuthSessio
 const createSetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const setSession = createFetchSessionServerFunction(config);
+  const setSession = createSetSessionServerFunction(config);
   return async (event: RequestEvent, session: Session) => await setSession({ event, session });
 };
 
@@ -115,7 +117,8 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   config.env = config.env || process.env;
   config.basePath = resolveBasePath(config.basePath, config.env);
 
-  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+  // fail fast at startup when LIGHT_AUTH_SECRET_VALUE is missing or too short
+  buildSecret(config.env);
 
   const handler = createHandler(config);
 

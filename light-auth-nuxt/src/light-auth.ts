@@ -4,6 +4,8 @@ import {
   getUserDirect,
   createHttpHandlerFunction,
   createSetUserServerFunction,
+  buildSecret,
+  createSetSessionServerFunction,
   createSigninServerFunction,
   createSignoutServerFunction,
   type LightAuthConfig,
@@ -28,7 +30,7 @@ const createGetAuthSession = <Session extends LightAuthSession = LightAuthSessio
 const createSetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const setAuthSession = createFetchSessionServerFunction(config);
+  const setAuthSession = createSetSessionServerFunction(config);
   return async (event: H3Event<EventHandlerRequest>, session: Session) => await setAuthSession({ event, session });
 };
 
@@ -144,7 +146,8 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   config.env = config.env || process.env;
   config.basePath = resolveBasePath(config.basePath, config.env);
 
-  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+  // fail fast at startup when LIGHT_AUTH_SECRET_VALUE is missing or too short
+  buildSecret(config.env);
 
   const handler = createHandler(config);
 

@@ -1,10 +1,12 @@
 import type { OAuth2Tokens } from "arctic";
 import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
 import { checkConfig } from "../services/utils";
+import { getSessionDirect } from "./retrieve-session";
 
 /**
  * Core logic to retrieve and refresh a user, without HTTP serialization.
  * Can be called directly from server-side code to avoid an internal HTTP round-trip.
+ * Server-side code is trusted: any providerUserId can be requested, otherwise the user of the current (non-expired) session is returned.
  */
 export async function getUserDirect<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
   config: LightAuthConfig<Session, User>;
@@ -12,12 +14,12 @@ export async function getUserDirect<Session extends LightAuthSession = LightAuth
   [key: string]: unknown;
 }): Promise<User | null> {
   const { config, providerUserId, ...restArgs } = args;
-  const { userAdapter, provider, env, basePath, sessionStore, sessionName } = checkConfig(config);
+  const { userAdapter, provider, env, basePath } = checkConfig(config);
   try {
     let providerUserIdId: string | null | undefined = providerUserId;
 
     if (!providerUserIdId) {
-      const session = await sessionStore.getSession<Session>({ env, basePath, sessionName, ...args });
+      const session = await getSessionDirect<Session, User>({ ...args, config });
       providerUserIdId = session?.providerUserId?.toString();
     }
 
@@ -112,13 +114,28 @@ export async function getUserDirect<Session extends LightAuthSession = LightAuth
   }
 }
 
+/**
+ * User handler available on endpoint /${basePath}/user[/:providerUserId], reachable from the browser.
+ * Only the owner of a valid session can read its own user, and OAuth tokens never leave the server.
+ */
 export async function getUserHandler<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
   config: LightAuthConfig<Session, User>;
-  providerUserId: string;
+  providerUserId?: string;
   [key: string]: unknown;
 }): Promise<Response> {
-  const { config } = args;
+  const { config, providerUserId } = args;
   const { router, env, basePath } = checkConfig(config);
-  const user = await getUserDirect(args);
-  return await router.returnJson({ env, basePath, data: user, ...args });
+
+  const session = await getSessionDirect<Session, User>({ ...args, config });
+  if (!session) return await router.returnJson({ env, basePath, data: null, ...args });
+
+  const sessionProviderUserId = session.providerUserId.toString();
+  if (providerUserId && providerUserId !== sessionProviderUserId)
+    return await router.returnJson({ env, basePath, data: { error: "Forbidden" }, init: { status: 403 }, ...args });
+
+  const user = await getUserDirect<Session, User>({ ...args, config, providerUserId: sessionProviderUserId });
+  if (!user) return await router.returnJson({ env, basePath, data: null, ...args });
+
+  const { accessToken, refreshToken, accessTokenExpiresAt, ...publicUser } = user;
+  return await router.returnJson({ env, basePath, data: publicUser, ...args });
 }

@@ -1,7 +1,7 @@
 import { generateState, generateCodeVerifier } from "arctic";
 import { type LightAuthConfig, type BaseResponse, type LightAuthCookie, type LightAuthSession, type LightAuthUser } from "../models";
-import { buildSecret, checkConfig } from "../services/utils";
-import { validateCsrfToken } from "../services";
+import { buildSecret, checkConfig, sanitizeCallbackUrl } from "../services/utils";
+import { CSRF_COOKIE_NAME, validateCsrfToken } from "../services";
 
 /**
  * Redirects the user to the provider login page.
@@ -14,6 +14,7 @@ export async function redirectToProviderLoginHandler<
   providerName?: string;
   callbackUrl?: string;
   checkCsrf?: boolean;
+  csrfToken?: string | null;
   [key: string]: unknown;
 }): Promise<BaseResponse> {
   const { config, providerName, checkCsrf = true } = args;
@@ -28,7 +29,7 @@ export async function redirectToProviderLoginHandler<
   if (checkCsrf) {
     const secret = buildSecret(env);
     const cookies = await router.getCookies({ env, basePath, ...args });
-    const csrfIsValid = validateCsrfToken(cookies, secret);
+    const csrfIsValid = validateCsrfToken(cookies, secret, args.csrfToken);
     if (!csrfIsValid) throw new Error("Invalid CSRF token");
   }
 
@@ -81,7 +82,7 @@ export async function redirectToProviderLoginHandler<
 
   const callbackUrlCookie: LightAuthCookie = {
     name: `${provider.providerName}_light_auth_callback_url`,
-    value: args.callbackUrl ? decodeURIComponent(args.callbackUrl) : "/",
+    value: sanitizeCallbackUrl(args.callbackUrl),
     path: "/",
     httpOnly: true,
     secure: env["NODE_ENV"] === "production",
@@ -89,8 +90,8 @@ export async function redirectToProviderLoginHandler<
     maxAge: 60 * 10, // 10 minutes
   };
 
-  // delete the csrf token cookie
-  const csrfCookieDelete: LightAuthCookie = { name: "light_auth_csrf_token", value: "", maxAge: 0 };
+  // delete the csrf token cookie (same path as when it was set, otherwise the browser keeps it)
+  const csrfCookieDelete: LightAuthCookie = { name: CSRF_COOKIE_NAME, value: "", path: "/", maxAge: 0 };
 
   // set the cookies in the response
   const res = await router.setCookies({ env, basePath, cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie, csrfCookieDelete], ...args });

@@ -40,6 +40,7 @@ export default
                 "node:fs",
                 "node:path",
                 "@oslojs/crypto/sha2",
+                "@oslojs/crypto/hmac",
                 "@oslojs/encoding",
             ],
 
@@ -79,6 +80,7 @@ export default
                 "node:fs",
                 "node:path",
                 "@oslojs/crypto/sha2",
+                "@oslojs/crypto/hmac",
                 "@oslojs/encoding",
             ],
 
@@ -118,6 +120,7 @@ export default
                 "node:fs",
                 "node:path",
                 "@oslojs/crypto/sha2",
+                "@oslojs/crypto/hmac",
                 "@oslojs/encoding",
             ],
 

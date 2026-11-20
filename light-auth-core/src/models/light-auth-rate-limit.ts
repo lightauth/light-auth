@@ -76,4 +76,12 @@ export type LightAuthRateLimitOptions = {
    * @return A boolean indicating whether the rate limit should be applied.
    * */
   shouldApplyRateLimit?: (args: { env: LightAuthServerEnv; url: string; headers: Headers; basePath: string; [key: string]: unknown }) => boolean;
+  /**
+   * Returns the key identifying the client (typically its IP address).
+   * By default the IP is read from the proxy headers (right-most x-forwarded-for entry, then x-real-ip),
+   * which can only be trusted behind a reverse proxy that sets them.
+   * Provide this function to use the IP given by your framework (e.g. Express req.ip with "trust proxy").
+   * The key is always combined with the request path.
+   */
+  keyGenerator?: (args: { env: LightAuthServerEnv; url: string; headers: Headers; basePath: string; [key: string]: unknown }) => string | Promise<string>;
 };

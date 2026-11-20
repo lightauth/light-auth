@@ -47,6 +47,12 @@ npm -i @light-auth/nextjs
 
 ### 2) Configure Light Auth
 
+Set a random `LIGHT_AUTH_SECRET_VALUE` environment variable of at least 32 characters, used to encrypt the session cookie (light auth refuses to start otherwise):
+
+``` sh
+LIGHT_AUTH_SECRET_VALUE=$(openssl rand -base64 32)
+```
+
 ``` ts
 import { Google, Github } from "arctic";
 import { CreateLightAuth } from "@light-auth/nextjs";
@@ -71,6 +77,9 @@ export const { providers, handlers, signIn, signOut, getAuthSession, getUser } =
 import { handlers } from "@/lib/auth";
 export const { GET, POST } = handlers;
 ```
+
+> Sessions and users can only be modified from server code (`setAuthSession`, `setUser` returned by `CreateLightAuth`).
+> From the browser, the client functions are read-only (`getAuthSession`, `getUser`), and `getUser` never returns the OAuth access / refresh tokens.
 
 ### 4) Use Light Auth
 

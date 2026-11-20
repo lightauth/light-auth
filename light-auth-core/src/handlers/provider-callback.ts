@@ -1,6 +1,6 @@
 import { decodeIdToken } from "arctic";
 import { type LightAuthConfig, type LightAuthCookie, type LightAuthRouter, type LightAuthSession, type LightAuthUser } from "../models";
-import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
+import { checkConfig, getSessionExpirationMaxAge, sanitizeCallbackUrl } from "../services/utils";
 
 export async function providerCallbackHandler<
   Session extends LightAuthSession = LightAuthSession,
@@ -38,7 +38,7 @@ export async function providerCallbackHandler<
     const codeVerifierCookie = cookies.find((c) => c.name == `${provider.providerName}_light_auth_code_verifier`)?.value;
     const callbackUrlCookie = cookies.find((c) => c.name == `${provider.providerName}_light_auth_callback_url`)?.value;
 
-    callbackUrl = callbackUrlCookie ?? "/";
+    callbackUrl = sanitizeCallbackUrl(callbackUrlCookie);
 
     if (storedStateCookie == null || codeVerifierCookie == null) throw new Error("light-auth: Invalid state or code verifier or callback URL");
 

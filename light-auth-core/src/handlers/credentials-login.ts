@@ -1,5 +1,5 @@
 import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "../models";
-import { checkConfig, getSessionExpirationMaxAge } from "../services/utils";
+import { checkConfig, getSessionExpirationMaxAge, sanitizeCallbackUrl } from "../services/utils";
 
 /**
  * Handles credential-based login (email/password).
@@ -15,7 +15,8 @@ export async function credentialsLoginHandler<
   callbackUrl?: string;
   [key: string]: unknown;
 }): Promise<BaseResponse> {
-  const { config, email, password, callbackUrl = "/" } = args;
+  const { config, email, password } = args;
+  const callbackUrl = sanitizeCallbackUrl(args.callbackUrl);
 
   const { router, userAdapter, provider, sessionStore, env, basePath, sessionName } = checkConfig(config, "credentials");
 

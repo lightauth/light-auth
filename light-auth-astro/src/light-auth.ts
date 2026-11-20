@@ -11,6 +11,7 @@ import {
   resolveBasePath,
   createSetSessionServerFunction,
   createSetUserServerFunction,
+  buildSecret,
 } from "@light-auth/core";
 
 import type { APIRoute, AstroSharedContext } from "astro";
@@ -121,7 +122,8 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   config.env = config.env || import.meta.env;
   config.basePath = resolveBasePath(config.basePath, config.env);
 
-  if (!config.env || !config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+  // fail fast at startup when LIGHT_AUTH_SECRET_VALUE is missing or too short
+  buildSecret(config.env);
 
   const handler = createHandler(config);
 

@@ -1,5 +1,22 @@
 import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
-import { checkConfig, getSessionExpirationMaxAge, shouldRenewSession } from "../services/utils";
+import { checkConfig, getSessionExpirationMaxAge, isSessionExpired, shouldRenewSession } from "../services/utils";
+
+/**
+ * Reads the current session in-process, without any HTTP round-trip.
+ * Returns null when there is no valid, non-expired session. Read-only: renewal only happens through the /session endpoint.
+ */
+export async function getSessionDirect<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(args: {
+  config: LightAuthConfig<Session, User>;
+  [key: string]: unknown;
+}): Promise<Session | null> {
+  const { config } = args;
+  const { sessionStore, basePath, env, sessionName } = checkConfig<Session, User>(config);
+
+  const session = await sessionStore.getSession<Session>({ env, basePath, sessionName, ...args });
+  if (!session || !session.id || !session.providerUserId || isSessionExpired(session)) return null;
+
+  return session;
+}
 
 /**
  * get session handler available on endpoint /${basePath}/session
@@ -20,8 +37,8 @@ export async function getSessionHandler<
 
   if (!session || !session.id || !session.providerUserId) return await router.returnJson({ env, basePath, data: null, ...args });
 
-  // check if session is expired
-  if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
+  // check if session is expired (a missing or invalid expiresAt counts as expired)
+  if (isSessionExpired(session)) {
     console.warn("Session expired:", session.expiresAt);
     if (config.onSessionExpired) {
       try { await config.onSessionExpired(session); } catch {}

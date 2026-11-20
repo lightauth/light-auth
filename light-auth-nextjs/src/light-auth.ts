@@ -11,6 +11,7 @@ import {
   resolveBasePath,
   createSetSessionServerFunction,
   createSetUserServerFunction,
+  buildSecret,
 } from "@light-auth/core";
 
 import { NextRequest, NextResponse } from "next/server";
@@ -159,7 +160,8 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   config.basePath = resolveBasePath(config.basePath, config.env);
   config.env = config.env || process.env;
 
-  if (!config.env["LIGHT_AUTH_SECRET_VALUE"]) throw new Error("LIGHT_AUTH_SECRET_VALUE is required in environment variables");
+  // fail fast at startup when LIGHT_AUTH_SECRET_VALUE is missing or too short
+  buildSecret(config.env);
 
   const signIn = createSignIn(config);
   const signOut = createSignOut(config);

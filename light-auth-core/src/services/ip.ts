@@ -1,22 +1,31 @@
 /**
- * this function is used to get the client IP address from the request headers.
+ * this function is used to get the client IP address from the proxy headers.
+ * The left-most x-forwarded-for entries are sent by the client and can be spoofed: the right-most one, appended by the closest proxy, is used instead.
+ * Without a trusted reverse proxy these headers are entirely client-controlled: use the rate limiter keyGenerator option in that case.
  * @param headers - The headers from the request.
  * @returns The client IP address or null if not found.
  */
 export function getClientIp(headers: Headers): string | null {
-  const forwardedFor = headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    // x-forwarded-for can contain multiple IPs, we take the first one
-    return forwardedFor.split(",")[0].trim();
-  }
+  const forwardedFor = headers
+    .get("x-forwarded-for")
+    ?.split(",")
+    .map((ip) => ip.trim())
+    .filter((ip) => ip !== "");
+  if (forwardedFor && forwardedFor.length > 0) return stripPort(forwardedFor[forwardedFor.length - 1]);
 
-  const remoteAddress = headers.get("x-real-ip") || headers.get("remote-addr");
-  if (remoteAddress) {
-    return remoteAddress.trim();
-  }
+  const realIp = headers.get("x-real-ip")?.trim();
+  if (realIp) return stripPort(realIp);
 
-  // Fallback to the connection's remote address
-  return headers.get("host") || null;
+  return null;
+}
+
+// some proxies (Azure App Service for instance) append the client port, which changes on every connection
+function stripPort(ip: string): string {
+  const bracketedIpv6 = ip.match(/^\[([^\]]+)\](?::\d+)?$/);
+  if (bracketedIpv6) return bracketedIpv6[1];
+  const ipv4WithPort = ip.match(/^(\d{1,3}(?:\.\d{1,3}){3}):\d+$/);
+  if (ipv4WithPort) return ipv4WithPort[1];
+  return ip;
 }
 
 export function isLocalIp(ip: string): boolean {

@@ -22,7 +22,7 @@ const microsoftProvider = createOAuthProvider({
   scopes: ["offline_access"],
 });
 
-export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({
+export const { providers, handlers, signIn, signOut, getAuthSession, setAuthSession, getUser } = CreateLightAuth<MyLightAuthSession, MyLightAuthUser>({
   providers: [credentialsProvider, googleProvider, microsoftProvider],
 
   rateLimiter: createLightAuthRateLimiter({

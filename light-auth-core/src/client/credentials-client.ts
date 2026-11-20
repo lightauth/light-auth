@@ -1,5 +1,5 @@
 import { internalFetch } from "../services/internal-fetch";
-import { getCsrfToken } from "../services/csrf";
+import { CSRF_HEADER_NAME, getCsrfToken } from "../services/csrf";
 import type { LightAuthConfig, LightAuthSession, LightAuthUser } from "../models";
 
 /**
@@ -26,13 +26,14 @@ export async function credentialsLogin<
       throw new Error("light-auth: credentialsLogin should not be called on the server side");
     }
 
-    // Get CSRF token first
-    await getCsrfToken({ config });
+    // Get CSRF token first, it is sent back in a header (double-submit)
+    const csrfToken = await getCsrfToken({ config });
 
     // Make login request
     const endpoint = `${config.basePath}/credentials/login`;
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
+    headers.set(CSRF_HEADER_NAME, csrfToken ?? "");
     
     const response = await internalFetch<{
       success: boolean;
@@ -93,13 +94,14 @@ export async function credentialsRegister<
       throw new Error("light-auth: credentialsRegister should not be called on the server side");
     }
 
-    // Get CSRF token first
-    await getCsrfToken({ config });
+    // Get CSRF token first, it is sent back in a header (double-submit)
+    const csrfToken = await getCsrfToken({ config });
 
     // Make registration request
     const endpoint = `${config.basePath}/credentials/register`;
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
+    headers.set(CSRF_HEADER_NAME, csrfToken ?? "");
     
     const response = await internalFetch<{
       success: boolean;
@@ -156,13 +158,14 @@ export async function credentialsResetPasswordRequest<
       throw new Error("light-auth: credentialsResetPasswordRequest should not be called on the server side");
     }
 
-    // Get CSRF token first
-    await getCsrfToken({ config });
+    // Get CSRF token first, it is sent back in a header (double-submit)
+    const csrfToken = await getCsrfToken({ config });
 
     // Make password reset request
     const endpoint = `${config.basePath}/credentials/reset-password/request`;
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
+    headers.set(CSRF_HEADER_NAME, csrfToken ?? "");
     
     const response = await internalFetch<{
       success: boolean;
@@ -208,13 +211,14 @@ export async function credentialsResetPasswordConfirm<
       throw new Error("light-auth: credentialsResetPasswordConfirm should not be called on the server side");
     }
 
-    // Get CSRF token first
-    await getCsrfToken({ config });
+    // Get CSRF token first, it is sent back in a header (double-submit)
+    const csrfToken = await getCsrfToken({ config });
 
     // Make password reset confirmation request
     const endpoint = `${config.basePath}/credentials/reset-password/confirm`;
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
+    headers.set(CSRF_HEADER_NAME, csrfToken ?? "");
     
     const response = await internalFetch<{
       success: boolean;

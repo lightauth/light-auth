@@ -1,4 +1,4 @@
-import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, DEFAULT_SESSION_NAME, INTERNAL_SECRET_VALUE } from "../constants";
+import { DEFAULT_BASE_PATH, DEFAULT_SESSION_EXPIRATION, DEFAULT_SESSION_NAME } from "../constants";
 import { type LightAuthProvider, type LightAuthConfig, type LightAuthSession, type LightAuthUser, type LightAuthServerEnv } from "../models";
 import { ensureProviderType } from "./provider-helpers";
 
@@ -47,14 +47,58 @@ export function getSessionExpirationMaxAge() {
   return maxAge;
 }
 
+function getExpiresAtTime(session: Pick<LightAuthSession, "expiresAt"> | null | undefined): number {
+  // expiresAt is a string once the session has been deserialized from a JWT
+  return session?.expiresAt ? new Date(session.expiresAt).getTime() : NaN;
+}
+
+/**
+ * Fail-closed expiration check: a missing or invalid expiresAt is treated as expired.
+ */
+export function isSessionExpired(session: Pick<LightAuthSession, "expiresAt"> | null | undefined): boolean {
+  const expiresAtTime = getExpiresAtTime(session);
+  return !Number.isFinite(expiresAtTime) || expiresAtTime <= Date.now();
+}
+
 /**
  * Sliding expiration: a session should be renewed once less than half of its lifetime remains.
- * A missing or invalid expiresAt (it may come as a string from a JWT or a request body) also triggers a renewal.
+ * A missing or invalid expiresAt, or one beyond now + maxAge, also triggers a renewal so the saved value is always clamped.
  */
 export function shouldRenewSession(session: Pick<LightAuthSession, "expiresAt">, maxAge: number = getSessionExpirationMaxAge()): boolean {
-  const expiresAtTime = session.expiresAt ? new Date(session.expiresAt).getTime() : NaN;
-  if (Number.isNaN(expiresAtTime)) return true;
-  return Date.now() > expiresAtTime - (maxAge * 1000) / 2;
+  const expiresAtTime = getExpiresAtTime(session);
+  if (!Number.isFinite(expiresAtTime)) return true;
+  const now = Date.now();
+  return now > expiresAtTime - (maxAge * 1000) / 2 || expiresAtTime > now + maxAge * 1000;
+}
+
+const CALLBACK_URL_PLACEHOLDER_ORIGIN = "http://light-auth.invalid";
+
+/**
+ * Restricts a callback URL to a same-origin path to prevent open redirects.
+ * Relative paths are kept, absolute URLs are only accepted when they match allowedOrigin, anything else falls back to "/".
+ */
+export function sanitizeCallbackUrl(callbackUrl: string | null | undefined, allowedOrigin?: string | null): string {
+  if (!callbackUrl) return "/";
+
+  let url: URL;
+  try {
+    url = new URL(callbackUrl, CALLBACK_URL_PLACEHOLDER_ORIGIN);
+  } catch {
+    return "/";
+  }
+
+  let isAllowed = url.origin === CALLBACK_URL_PLACEHOLDER_ORIGIN;
+  if (!isAllowed && allowedOrigin) {
+    try {
+      isAllowed = url.origin === new URL(allowedOrigin).origin;
+    } catch {
+      isAllowed = false;
+    }
+  }
+  if (!isAllowed) return "/";
+
+  // collapse leading slashes so the result can never be read as a protocol-relative URL ("//evil.com")
+  return `${url.pathname.replace(/^\/+/, "/")}${url.search}${url.hash}`;
 }
 
 /** Resolves the basePath, defaults to "/api/default" if not provided or falsy */
@@ -74,12 +118,13 @@ export function resolveBasePath(basePath: string | undefined | null, env: LightA
 
 export function buildSecret(env?: { [key: string]: string | undefined }): string {
   if (!env) throw new Error("light-auth: config.env is required");
-  if (!env.LIGHT_AUTH_SECRET_VALUE) throw new Error("light-auth: environment variable LIGHT_AUTH_SECRET_VALUE is required");
+  const secret = env.LIGHT_AUTH_SECRET_VALUE;
+  if (!secret) throw new Error("light-auth: environment variable LIGHT_AUTH_SECRET_VALUE is required");
+  if (secret.length < 32)
+    throw new Error("light-auth: LIGHT_AUTH_SECRET_VALUE must be at least 32 characters long, generate a random one with `openssl rand -base64 32`");
 
-  const secret = (env.LIGHT_AUTH_SECRET_VALUE + INTERNAL_SECRET_VALUE).slice(0, 32);
-
-  if (secret.length < 32) throw new Error("light-auth: secret must be at least 32 characters long");
-  return secret;
+  // A128CBC-HS256 needs a 256-bit key: the first 32 characters are used, as before, so existing sessions stay valid
+  return secret.slice(0, 32);
 }
 
 export function buildFullUrl({ url, incomingHeaders }: { url: string; incomingHeaders: Headers }): string {

@@ -552,10 +552,14 @@ resetPassword: async (token, newPassword) => {
 ## Troubleshooting
 
 ### "Invalid CSRF token" Error
-**Solution**: Ensure CSRF token is fetched before making requests:
+**Solution**: The CSRF token is checked with the double-submit pattern: the signed token stored in the `light_auth_csrf_token` cookie must match the token sent back with the request. The client functions (`credentialsLogin`, `credentialsRegister`, ...) handle this automatically. If you call the endpoints with your own `fetch`, send the token returned by `getCsrfToken` in the `x-light-auth-csrf-token` header:
 ```typescript
-await getCsrfToken({ config });
-await credentialsLogin({ config, email, password });
+const csrfToken = await getCsrfToken({ config });
+await fetch(`${config.basePath}/credentials/login`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json", "x-light-auth-csrf-token": csrfToken ?? "" },
+  body: JSON.stringify({ email, password }),
+});
 ```
 
 ### Session Not Persisting

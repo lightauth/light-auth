@@ -1,7 +1,12 @@
 import { logoutAndRevokeTokenHandler } from "./handlers/logout";
 import { redirectToProviderLoginHandler } from "./handlers/redirect-to-provider";
+import { getSessionDirect } from "./handlers/retrieve-session";
+import { getUserDirect } from "./handlers/retrieve-user";
+import { setSessionDirect } from "./handlers/save-session";
+import { setUserDirect } from "./handlers/save-user";
 import { type LightAuthConfig, type BaseResponse, type LightAuthSession, type LightAuthUser } from "./models";
-import { internalFetch } from "./services";
+
+// Server functions run in-process: they never call the light auth HTTP endpoints, whose URL would be derived from the (spoofable) Host header.
 
 export function createSigninServerFunction<Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
@@ -13,7 +18,7 @@ export function createSigninServerFunction<Session extends LightAuthSession = Li
 
     const { providerName, callbackUrl = "/" } = args;
 
-    return await redirectToProviderLoginHandler({ config, providerName, callbackUrl: encodeURIComponent(callbackUrl), checkCsrf: false, ...args });
+    return await redirectToProviderLoginHandler({ ...args, config, providerName, callbackUrl, checkCsrf: false });
   };
 }
 
@@ -22,11 +27,11 @@ export function createSignoutServerFunction<Session extends LightAuthSession = L
 ): (args?: { revokeToken?: boolean; callbackUrl?: string; [key: string]: unknown }) => Promise<BaseResponse> {
   return async (args = {}) => {
     const isServerSide = typeof window === "undefined";
-    if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+    if (!isServerSide) throw new Error("light-auth: signout function should not be called on the client side. prefer to use the client version");
 
     const { revokeToken = true, callbackUrl = "/" } = args;
 
-    return await logoutAndRevokeTokenHandler({ config, revokeToken, callbackUrl: encodeURIComponent(callbackUrl), checkCsrf: false, ...args });
+    return await logoutAndRevokeTokenHandler({ ...args, config, revokeToken, callbackUrl, checkCsrf: false });
   };
 }
 
@@ -37,11 +42,9 @@ export function createFetchSessionServerFunction<
   return async (args) => {
     try {
       const isServerSide = typeof window === "undefined";
-      if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+      if (!isServerSide) throw new Error("light-auth: getAuthSession function should not be called on the client side. prefer to use the client version");
 
-      // get the session from the server using the api endpoint
-      const session = await internalFetch<Session>({ config, method: "POST", endpoint: `${config.basePath}/session`, ...args });
-      return session ?? null;
+      return await getSessionDirect<Session, User>({ ...args, config });
     } catch (error) {
       console.error("Error:", error);
       return null;
@@ -56,17 +59,10 @@ export function createSetSessionServerFunction<
   return async (args?: { session: Session; [key: string]: unknown }) => {
     try {
       const isServerSide = typeof window === "undefined";
-      if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+      if (!isServerSide) throw new Error("light-auth: setAuthSession function can only be called on the server side");
+      if (!args?.session) return null;
 
-      // get the session from the server using the api endpoint
-      const newSession = await internalFetch<Session>({
-        config,
-        method: "POST",
-        body: JSON.stringify(args?.session),
-        endpoint: `${config.basePath}/set_session`,
-        ...args,
-      });
-      return newSession ?? null;
+      return await setSessionDirect<Session, User>({ ...args, config, session: args.session });
     } catch (error) {
       console.error("Error:", error);
       return null;
@@ -80,16 +76,10 @@ export function createSetUserServerFunction<Session extends LightAuthSession = L
   return async (args?: { user: User; [key: string]: unknown }) => {
     try {
       const isServerSide = typeof window === "undefined";
-      if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+      if (!isServerSide) throw new Error("light-auth: setUser function can only be called on the server side");
+      if (!args?.user) return null;
 
-      const newUser = await internalFetch<User>({
-        config,
-        method: "POST",
-        body: JSON.stringify(args?.user),
-        endpoint: `${config.basePath}/set_user`,
-        ...args,
-      });
-      return newUser ?? null;
+      return await setUserDirect<Session, User>({ ...args, config, user: args.user });
     } catch (error) {
       console.error("Error:", error);
       return null;
@@ -103,13 +93,9 @@ export function createFetchUserServerFunction<
   return async (args?: { providerUserId?: string; [key: string]: unknown }) => {
     try {
       const isServerSide = typeof window === "undefined";
-      if (!isServerSide) throw new Error("light-auth: signin function should not be called on the client side. prefer to use the client version");
+      if (!isServerSide) throw new Error("light-auth: getUser function should not be called on the client side. prefer to use the client version");
 
-      const endpoint = args?.providerUserId ? `${config.basePath}/user/${args.providerUserId}` : `${config.basePath}/user`;
-
-      // get the user from the user adapter
-      const user = await internalFetch<User>({ config, method: "POST", endpoint, ...args });
-      return user ?? null;
+      return await getUserDirect<Session, User>({ ...args, config, providerUserId: args?.providerUserId });
     } catch (error) {
       console.error("light-auth: Error in createLightAuthUserFunction:", error);
       return null;

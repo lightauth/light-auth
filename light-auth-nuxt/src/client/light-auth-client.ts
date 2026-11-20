@@ -1,5 +1,5 @@
-import { buildFullUrl, internalFetch } from "@light-auth/core";
 import {
+  type LightAuthClientUser,
   type LightAuthConfig,
   type LightAuthSession,
   type LightAuthUser,
@@ -10,7 +10,7 @@ import {
 
 import { type Ref } from "vue";
 
-import { useRequestHeaders, useRequestURL, useAsyncData, useRequestEvent } from "#imports";
+import { useAsyncData, useRequestFetch } from "#imports";
 
 /** Represents the result of a Nuxt useFetch operation*/
 export interface FetchResult<T> {
@@ -69,125 +69,41 @@ export function createCustomFetch<T>(key: string, fetcher: () => Promise<T | nul
 export const createGetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const sessionFunction = async () => {
-    try {
-      const event = useRequestEvent();
-      const headers = new Headers(useRequestHeaders());
-      const url = useRequestURL();
+  return () => {
+    // useRequestFetch forwards the incoming cookies and, during SSR, calls the light auth route in-process:
+    // no URL is ever built from the (spoofable) Host header
+    const requestFetch = useRequestFetch();
 
-      let urlEndpoint = `${config.basePath}/session`;
-
-      if (url) {
-        const incomingHeaders = new Headers();
-        incomingHeaders.set("host", url.host);
-        urlEndpoint = buildFullUrl({ url: urlEndpoint, incomingHeaders });
+    const sessionFunction = async () => {
+      try {
+        const session = await requestFetch<Session | null>(`${config.basePath}/session`, { method: "POST" });
+        return session ?? null;
+      } catch (error) {
+        console.error("Error fetching session:", error);
+        throw error;
       }
+    };
 
-      const session = await internalFetch<Session>({
-        config,
-        method: "POST",
-        endpoint: urlEndpoint,
-        event,
-        headers,
-      });
-      return session ?? null;
-    } catch (error) {
-      console.error("Error fetching session:", error);
-      throw error;
-    }
-  };
-
-  return () => createCustomFetch<Session>("light-auth-session", sessionFunction);
-};
-
-export const createSetAuthSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) => {
-  return async (session: Session) => {
-    try {
-      const event = useRequestEvent();
-      const headers = new Headers(useRequestHeaders());
-      const url = useRequestURL();
-
-      let urlEndpoint = `${config.basePath}/set_session`;
-
-      if (url) {
-        const incomingHeaders = new Headers();
-        incomingHeaders.set("host", url.host);
-        urlEndpoint = buildFullUrl({ url: urlEndpoint, incomingHeaders });
-      }
-
-      const updatedSession = await internalFetch<Session>({
-        config,
-        method: "POST",
-        endpoint: urlEndpoint,
-        body: JSON.stringify(session),
-        event,
-        headers,
-      });
-      return updatedSession ?? null;
-    } catch (error) {
-      console.error("Error fetching session:", error);
-      throw error;
-    }
-  };
-};
-
-export const createSetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) => {
-  return async (user: User) => {
-    try {
-      const event = useRequestEvent();
-      const headers = new Headers(useRequestHeaders());
-      const url = useRequestURL();
-
-      let urlEndpoint = `${config.basePath}/set_user`;
-
-      if (url) {
-        const incomingHeaders = new Headers();
-        incomingHeaders.set("host", url.host);
-        urlEndpoint = buildFullUrl({ url: urlEndpoint, incomingHeaders });
-      }
-
-      const updatedUser = await internalFetch<User>({
-        config,
-        method: "POST",
-        endpoint: urlEndpoint,
-        body: JSON.stringify(user),
-        event,
-        headers,
-      });
-      return updatedUser ?? null;
-    } catch (error) {
-      console.error("Error fetching session:", error);
-      throw error;
-    }
+    return createCustomFetch<Session>("light-auth-session", sessionFunction);
   };
 };
 
 const createGetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
-  const userFunction = async (providerUserId?: string) => {
-    const event = useRequestEvent();
-    const headers = new Headers(useRequestHeaders());
-    const url = useRequestURL();
+  return (providerUserId?: string) => {
+    const requestFetch = useRequestFetch();
 
-    let userUrlEndpoint = providerUserId ? `${config.basePath}/user/${providerUserId}` : `${config.basePath}/user`;
+    const userFunction = async () => {
+      const userUrlEndpoint = providerUserId ? `${config.basePath}/user/${providerUserId}` : `${config.basePath}/user`;
 
-    if (url) {
-      const incomingHeaders = new Headers();
-      incomingHeaders.set("host", url.host);
-      userUrlEndpoint = buildFullUrl({ url: userUrlEndpoint, incomingHeaders });
-    }
+      // get the user from the user adapter (OAuth tokens are never sent to the browser)
+      const user = await requestFetch<LightAuthClientUser<User> | null>(userUrlEndpoint, { method: "POST" });
+      return user ?? null;
+    };
 
-    // get the user from the user adapter
-    const user = await internalFetch<User>({ config, method: "POST", endpoint: userUrlEndpoint, headers, event });
-    return user ?? null;
+    return createCustomFetch<LightAuthClientUser<User>>(`light-auth-user-${providerUserId ?? "from-session"}`, userFunction);
   };
-
-  return (providerUserId?: string) => createCustomFetch<User>(`light-auth-user-${providerUserId ?? "from-session"}`, () => userFunction(providerUserId));
 };
 
 type LightAuthConfigClient = Pick<LightAuthConfig<LightAuthSession, LightAuthUser<LightAuthSession>>, "basePath" | "env">;
@@ -201,8 +117,6 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
   return {
     basePath: config.basePath,
     useSession: createGetAuthSession<Session, User>(config),
-    setSession: createSetAuthSession<Session, User>(config),
-    setUser: createSetUser<Session, User>(config),
     useUser: createGetUser<Session, User>(config),
     signIn: createSignIn<Session, User>(config),
     signOut: createSignOut<Session, User>(config),

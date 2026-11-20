@@ -4,8 +4,6 @@ import {
   type LightAuthUser,
   createFetchSessionClientFunction,
   createFetchUserClientFunction,
-  createSetSessionClientFunction,
-  createSetUserClientFunction,
   createSigninClientFunction,
   createSignoutClientFunction,
   resolveBasePath,
@@ -18,25 +16,11 @@ const createGetSession = <Session extends LightAuthSession = LightAuthSession, U
   return async () => await sessionFunction();
 };
 
-const createSetSession = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) => {
-  const setSessionFunction = createSetSessionClientFunction(config);
-  return async (session: Session) => await setSessionFunction(session, config);
-};
-
 const createGetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
   config: LightAuthConfig<Session, User>
 ) => {
   const userFunction = createFetchUserClientFunction(config);
   return async (providerUserId?: string) => await userFunction({ providerUserId });
-};
-
-const createSetUser = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
-  config: LightAuthConfig<Session, User>
-) => {
-  const setUserFunction = createSetUserClientFunction(config);
-  return async (user: User) => await setUserFunction(user, config);
 };
 
 const createSignin = <Session extends LightAuthSession = LightAuthSession, User extends LightAuthUser<Session> = LightAuthUser<Session>>(
@@ -64,9 +48,7 @@ export function CreateLightAuthClient<Session extends LightAuthSession = LightAu
   return {
     basePath: config.basePath,
     getAuthSession: createGetSession<Session>(config),
-    setAuthSession: createSetSession<Session>(config),
     getUser: createGetUser<Session, User>(config),
-    setUser: createSetUser<Session, User>(config),
     signIn: createSignin(config),
     signOut: createSignOut(config),
   };
