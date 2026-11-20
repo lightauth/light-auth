@@ -157,6 +157,8 @@ const googleProvider = createGoogleProvider({ clientId: GOOGLE_CLIENT_ID, client
 
 The hooks receive a plain `tokens` object (`accessToken`, `refreshToken`, `accessTokenExpiresAt`, `idToken`, `idTokenClaims`, `scopes`, `raw`) instead of the arctic `OAuth2Tokens` class.
 
+0.4.0 has other breaking changes (minimum secret length, no session or user writes from the browser...): see [Upgrading from 0.3.x](CHANGELOG.md#upgrading-from-03x) in the changelog.
+
 ## Contributing
 
 Contributions are welcome! Please open issues or submit pull requests to help improve Light Auth.

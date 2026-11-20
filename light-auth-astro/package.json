@@ -1,7 +1,7 @@
 {
   "name": "@light-auth/astro",
-  "version": "0.3.8",
-  "description": "light auth framework for astro, using arctic",
+  "version": "0.4.0",
+  "description": "light auth framework for astro",
   "author": {
     "name": "Sébastien Pertus",
     "email": "spertus@microsoft.com",
@@ -49,7 +49,7 @@
     "start": "rollup -c -w"
   },
   "dependencies": {
-    "@light-auth/core": "^0.3.5",
+    "@light-auth/core": "^0.4.0",
     "jose": "^6.0.10"
   },
   "devDependencies": {

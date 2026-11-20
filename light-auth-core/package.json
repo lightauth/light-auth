@@ -1,7 +1,7 @@
 {
   "name": "@light-auth/core",
-  "version": "0.3.8",
-  "description": "light auth core framework agnostic, using arctic",
+  "version": "0.4.0",
+  "description": "light auth core framework agnostic",
   "author": {
     "name": "Sébastien Pertus",
     "email": "spertus@microsoft.com",

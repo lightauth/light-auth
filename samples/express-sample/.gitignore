@@ -19,6 +19,10 @@ dist/**/*
 # Ignore built css files
 /public/css/output.css
 
+# Ignore the client bundle, built by "npm run dev"
+/public/js/index.js
+/public/js/index.js.map
+
 # Ignore users db
 /users_db
 

@@ -255,8 +255,8 @@
 │ Credentials      │    │ OAuth Provider       │
 │ Provider         │    │ (Google/Microsoft)   │
 │                  │    │                      │
-│ - verifyCredentials  │ - arctic.authorize()  │
-│ - registerUser   │    │ - arctic.tokens()    │
+│ - verifyCredentials  │ - authorize (PKCE)    │
+│ - registerUser   │    │ - token exchange     │
 │ - resetPassword  │    │ - fetch user info    │
 └───────┬──────────┘    └──────────┬───────────┘
         │                           │

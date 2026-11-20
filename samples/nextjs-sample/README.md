@@ -132,7 +132,6 @@ The sample demonstrates:
 ### Light Auth Documentation
 
 - [Credentials Usage Guide](../../CREDENTIALS_USAGE_GUIDE.md) - Complete guide
-- [Implementation Details](../../PHASE_2_COMPLETE.md) - Technical specs
 - [Quick Reference](../../QUICK_REFERENCE.md) - API reference
 
 ### Next.js Resources

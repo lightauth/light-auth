@@ -98,7 +98,7 @@ if (isCredentialsProvider(provider)) {
 ## Migration from arctic
 
 ```typescript
-// ❌ arctic is deprecated and no longer supported: light auth throws an explicit error at startup
+// ❌ arctic is deprecated and no longer supported: light auth throws an explicit error on the first request
 const legacyProvider = {
   providerName: "google",
   arctic: new Google(...),
@@ -233,6 +233,6 @@ await fetch("/api/auth/credentials/register", {
 ---
 
 **Quick Links**:
-- Full docs: `PHASE_1_IMPLEMENTATION.md`
+- Full docs: `README.md`, `CREDENTIALS_USAGE_GUIDE.md`
 - Example: `examples/credentials-provider-example.ts`
 - Types: `src/models/light-auth-provider.ts`

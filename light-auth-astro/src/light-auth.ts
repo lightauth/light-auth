@@ -128,7 +128,7 @@ export function CreateLightAuth<Session extends LightAuthSession = LightAuthSess
   const handler = createHandler(config);
 
   // Wrap all async functions to ensure dynamic imports are resolved before executing
-  const ensureReady = <T extends (...args: any[]) => Promise<any>>(fn: T): T =>
+  const ensureReady = <T extends (...args: any[]) => any>(fn: T): T =>
     (async (...args: any[]) => { await importsReady; return fn(...args); }) as unknown as T;
 
   return {

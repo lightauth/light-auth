@@ -60,18 +60,15 @@ export const credentialsProvider = createCredentialsProvider({
 ```typescript
 // lib/auth.ts
 import { CreateLightAuth } from "@light-auth/nextjs";
+import { createGoogleProvider } from "@light-auth/core";
 import { credentialsProvider } from "./auth-provider";
-import { Google } from "arctic";
 
 export const { handlers, signIn, signOut, getAuthSession } = CreateLightAuth({
   providers: [
     // Mix credentials with OAuth providers
     credentialsProvider,
-    {
-      type: "oauth",
-      providerName: "google",
-      arctic: new Google(CLIENT_ID, CLIENT_SECRET, REDIRECT),
-    },
+    // the callback URL defaults to ${LIGHT_AUTH_URL}/api/auth/callback/google
+    createGoogleProvider({ clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET }),
   ],
 });
 ```

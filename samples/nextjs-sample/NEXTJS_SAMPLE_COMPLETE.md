@@ -349,7 +349,6 @@ See Prisma example for account lockout implementation.
 1. **QUICKSTART.md** - Get started in 5 minutes
 2. **README.md** - Complete sample documentation
 3. **[../../CREDENTIALS_USAGE_GUIDE.md](../../CREDENTIALS_USAGE_GUIDE.md)** - Full credentials guide
-4. **[../../PHASE_2_COMPLETE.md](../../PHASE_2_COMPLETE.md)** - Implementation details
 
 ### Code Examples
 

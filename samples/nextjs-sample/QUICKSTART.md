@@ -199,7 +199,6 @@ providers: [credentialsProviderWithPrisma, googleProvider, microsoftProvider]
 ## 📚 More Resources
 
 - [Credentials Usage Guide](../../CREDENTIALS_USAGE_GUIDE.md)
-- [Phase 2 Implementation](../../PHASE_2_COMPLETE.md)
 - [Light Auth Core Docs](../../light-auth-core/)
 
 ## ✨ That's It!
