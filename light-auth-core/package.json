@@ -70,7 +70,7 @@
   },
   "dependencies": {
     "jose": "^6.0.10",
-    "arctic": "^3.6.0"
+    "oauth4webapi": "^3.8.9"
   },
   "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",

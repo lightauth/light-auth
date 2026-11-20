@@ -1,5 +1,5 @@
 import { buildFullUrl, type LightAuthCookie, type LightAuthRouter, type LightAuthServerEnv } from "@light-auth/core";
-import { H3Event, type EventHandlerRequest, parseCookies, setCookie, getHeaders, sendRedirect } from "h3";
+import { H3Event, type EventHandlerRequest, parseCookies, setCookie, getHeaders, sendRedirect, readRawBody } from "h3";
 
 /**
  * A concrete CookieStore implementation for Node.js server-side,
@@ -97,7 +97,10 @@ export const nuxtJsLightAuthRouter: LightAuthRouter = {
     try {
       const url = await this.getUrl({ env, basePath, event });
       const headers = await this.getHeaders({ env, basePath, event });
-      return new Request(url, { method: event.node.req.method, headers: headers });
+      const method = event.node.req.method ?? "GET";
+      // keep the body: credentials endpoints and form_post callbacks read it
+      const body = method === "GET" || method === "HEAD" ? undefined : await readRawBody(event, false);
+      return new Request(url, { method, headers, body });
     } catch (error) {
       throw new Error(`light-auth: Error creating request object in getRequest of nuxtJsLightAuthRouter: ${error}`);
     }

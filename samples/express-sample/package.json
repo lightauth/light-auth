@@ -10,7 +10,6 @@
         "build:css": "npx @tailwindcss/cli -i ./public/css/style.css -o ./public/css/output.css --watch"
     },
     "dependencies": {
-        "arctic": "^3.6.0",
         "autoprefixer": "^10.4.21",
         "body-parser": "^2.2.0",
         "cookie": "^1.0.2",

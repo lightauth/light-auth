@@ -1,7 +1,10 @@
-import type { OAuth2Tokens } from "arctic";
-import { type LightAuthConfig, type LightAuthSession, type LightAuthUser } from "../models";
+import { type LightAuthConfig, type LightAuthSession, type LightAuthTokens, type LightAuthUser } from "../models";
+import { isInvalidGrantError, refreshTokens } from "../services/oauth-client";
 import { checkConfig } from "../services/utils";
 import { getSessionDirect } from "./retrieve-session";
+
+// default access token lifetime when the provider does not return expires_in (https://www.rfc-editor.org/rfc/rfc6749.html#section-4.2.2)
+const DEFAULT_ACCESS_TOKEN_EXPIRATION_MS = 3600 * 1000;
 
 /**
  * Core logic to retrieve and refresh a user, without HTTP serialization.
@@ -42,55 +45,30 @@ export async function getUserDirect<Session extends LightAuthSession = LightAuth
 
       if (now > lowerLimitSessionRevalidationDate) {
         // Token is expired or about to expire — attempt to refresh if possible
-        if (user?.refreshToken && userProvider.arctic && typeof userProvider.arctic.refreshAccessToken === "function") {
-          // Using Set to ensure unique scopes
-          // and adding default scopes
-          const scopeSet = new Set(userProvider.scopes ?? []);
-          scopeSet.add("openid");
-          scopeSet.add("profile");
-          scopeSet.add("email");
-          const scopes = Array.from(scopeSet);
-
-          let tokens: OAuth2Tokens | null = null;
+        if (user?.refreshToken) {
+          let tokens: LightAuthTokens | null = null;
           try {
-            tokens = await userProvider.arctic.refreshAccessToken(user.refreshToken, scopes);
+            tokens = await refreshTokens(userProvider, user.refreshToken);
           } catch (error) {
-            if (typeof error === "object" && error !== null) {
-              let code = "code" in error && typeof error.code === "string" ? error.code : "unknown_error";
-              let description = "description" in error && typeof error.description === "string" ? error.description : "unknown_error";
-              console.warn("Error refreshing access token:", code, description);
+            console.warn("Error refreshing access token:", error instanceof Error ? error.message : error);
 
-              // If the refresh token is permanently invalid, clear it to prevent
-              // retrying on every subsequent request
-              if (code === "invalid_grant") {
-                user.refreshToken = undefined;
-                user.accessToken = undefined;
-                user.accessTokenExpiresAt = undefined;
-                await userAdapter.setUser({ env, basePath, user, ...args });
-              }
+            // If the refresh token is permanently invalid, clear it to prevent
+            // retrying on every subsequent request
+            if (isInvalidGrantError(error)) {
+              user.refreshToken = undefined;
+              user.accessToken = undefined;
+              user.accessTokenExpiresAt = undefined;
+              await userAdapter.setUser({ env, basePath, user, ...args });
             }
           }
 
           if (tokens) {
             if (userProvider.onGetOAuth2Tokens) tokens = await userProvider.onGetOAuth2Tokens(tokens, args);
 
-            // Calculate the access token expiration time
-            // The access token expiration time is the number of seconds until the token expires
-            // The default expiration time is 3600 seconds (1 hour)
-            // https://www.ietf.org/rfc/rfc6749.html#section-4.2.2
-            let accessTokenExpiresIn: number = 3600; // default to 1 hour
-            if ("expires_in" in tokens.data && typeof tokens.data.expires_in === "number") {
-              accessTokenExpiresIn = Number(tokens.data.expires_in);
-            }
-            const accessTokenExpiresAt = new Date(Date.now() + accessTokenExpiresIn * 1000);
-            // get the access token
-            const accessToken = tokens.accessToken();
-            let refresh_token: string | undefined;
-            if (tokens.hasRefreshToken()) refresh_token = tokens.refreshToken();
-            // update the user
-            user.accessToken = accessToken;
-            user.accessTokenExpiresAt = accessTokenExpiresAt;
-            if (refresh_token) user.refreshToken = refresh_token;
+            // update the user, keeping the current refresh token when the provider does not rotate it
+            user.accessToken = tokens.accessToken;
+            user.accessTokenExpiresAt = tokens.accessTokenExpiresAt ?? new Date(Date.now() + DEFAULT_ACCESS_TOKEN_EXPIRATION_MS);
+            if (tokens.refreshToken) user.refreshToken = tokens.refreshToken;
             // update the user in the store
             if (config.onUserSaving) {
               const userSaving = await config.onUserSaving(user, tokens, args);

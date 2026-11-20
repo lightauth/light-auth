@@ -14,7 +14,6 @@
     "@light-auth/nuxt": "0.0.3",
     "@nuxt/image": "^1.10.0",
     "@tailwindcss/vite": "^4.1.6",
-    "arctic": "^3.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jose": "^6.0.10",

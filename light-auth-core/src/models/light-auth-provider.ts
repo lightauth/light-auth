@@ -1,5 +1,4 @@
-import { OAuth2Tokens } from "arctic";
-import { type ArcticProvider } from "./artic-provider";
+import { type LightAuthTokens } from "./light-auth-tokens";
 
 /**
  * User claims returned from credential verification.
@@ -40,8 +39,22 @@ export interface LightAuthUserClaims {
 export type LightAuthProvider = LightAuthOAuthProvider | LightAuthCredentialsProvider;
 
 /**
- * OAuth-based authentication provider using Arctic.
- * Supports standard OAuth 2.0 / OpenID Connect flows.
+ * Context given to an OAuth provider getProfile function.
+ */
+export type LightAuthProfileContext = {
+  /** Tokens returned by the provider, idTokenClaims is set for OpenID Connect providers */
+  tokens: LightAuthTokens;
+  /** Calls the provider userinfo endpoint with the access token */
+  fetchUserInfo: () => Promise<Record<string, unknown>>;
+  /** Calls any provider API with the access token (GET, JSON response) */
+  fetchResource: (url: string) => Promise<unknown>;
+  /** Parameters received on the callback (Apple sends the user name there on the first sign in) */
+  callbackParameters: URLSearchParams;
+};
+
+/**
+ * OAuth 2.0 / OpenID Connect provider.
+ * Use createOidcProvider, createOAuth2Provider or one of the presets (createGoogleProvider, createMicrosoftEntraIdProvider, ...)
  */
 export interface LightAuthOAuthProvider {
   /**
@@ -52,42 +65,94 @@ export interface LightAuthOAuthProvider {
   /**
    * Event raised when getting OAuth2 tokens, either the access token / id token during login or the refresh token during automatic refresh.
    */
-  onGetOAuth2Tokens?: (tokens: OAuth2Tokens, metadata: { [key: string]: unknown }) => Promise<OAuth2Tokens> | OAuth2Tokens;
+  onGetOAuth2Tokens?: (tokens: LightAuthTokens, metadata: { [key: string]: unknown }) => Promise<LightAuthTokens> | LightAuthTokens;
 
   /**
    * The name of the provider.
-   * This is used to identify the provider in the light auth configuration.
+   * This is used to identify the provider in the light auth configuration and in the callback URL.
    * It should be unique for each provider.
    */
   providerName: string;
 
-  /**
-   * The arctic provider.
-   * This is responsible for creating authorization URLs, validating authorization codes,
-   * and exchanging authorization codes for access tokens.
-   */
-  arctic: ArcticProvider;
+  /** OAuth client identifier */
+  clientId: string;
+
+  /** OAuth client secret, or a function returning it (e.g. the client secret JWT required by Apple) */
+  clientSecret?: string | (() => string | Promise<string>);
 
   /**
-   * Optional scopes for the provider.
-   * These are used to request specific permissions from the user.
-   * The scopes are passed to the authorization URL and can be used to customize the authorization request.
-   * You don't need to specify the default scopes for the provider.
-   * The default scopes are automatically added to the authorization URL.
-   * Default scopes are "openid", "profile", and "email".
+   * How the client authenticates on the token and revocation endpoints.
+   * Default is "client_secret_basic", or "none" when there is no client secret.
+   */
+  clientAuthentication?: "client_secret_basic" | "client_secret_post" | "none";
+
+  /**
+   * Callback URL registered at the provider.
+   * Default is `${LIGHT_AUTH_URL}${basePath}/callback/${providerName}`, LIGHT_AUTH_URL being read from the environment.
+   */
+  redirectUri?: string;
+
+  /**
+   * OpenID Connect issuer.
+   * Endpoints are discovered from `${issuer}/.well-known/openid-configuration` (unless authorizationEndpoint and tokenEndpoint are set)
+   * and id_tokens are validated (signature, issuer, audience, expiration, nonce).
+   */
+  issuer?: string;
+
+  /** Explicit endpoints, they take precedence over the discovered ones */
+  authorizationEndpoint?: string;
+  tokenEndpoint?: string;
+  userInfoEndpoint?: string;
+  /** RFC 7009 revocation endpoint, used on logout */
+  revocationEndpoint?: string;
+  /** JSON Web Key Set used to validate the id_token signature */
+  jwksUri?: string;
+
+  /**
+   * Scopes requested to the provider.
+   * The factories add the provider default scopes ("openid", "profile" and "email" for OpenID Connect providers).
    */
   scopes?: string[];
+
+  /**
+   * Use PKCE (S256), enabled by default.
+   */
+  pkce?: boolean;
+
+  /**
+   * How the provider sends the authorization response.
+   * "form_post" (required by Apple when asking for the name or the email) posts it to the callback URL from the provider domain.
+   */
+  responseMode?: "query" | "form_post";
 
   /**
    * Optional search parameters for the provider.
    * These can be used to pass additional parameters to the authorization URL.
    */
   searchParams?: Map<string, string>;
+
   /**
-   * Optional headers for the provider.
-   * These can be used to pass additional headers to the authorization request.
+   * Optional headers sent to the provider endpoints (token, userinfo, revocation and any API called by getProfile).
    */
   headers?: Map<string, string>;
+
+  /**
+   * Expected id_token issuer, for providers whose issuer depends on the signed-in tenant (Microsoft Entra ID multi-tenant).
+   * The id_token signature is always verified against the provider JSON Web Key Set.
+   */
+  getIdTokenIssuer?: (claims: Record<string, unknown>) => string;
+
+  /**
+   * Maps the provider identity to the light auth claims (sub, email, name, picture).
+   * Default: the validated id_token claims, or the userinfo endpoint response for OAuth 2.0 providers.
+   */
+  getProfile?: (context: LightAuthProfileContext) => Promise<LightAuthUserClaims> | LightAuthUserClaims;
+
+  /**
+   * Revokes a token for providers that do not implement RFC 7009 (e.g. GitHub).
+   * When not set, the revocationEndpoint is used if any.
+   */
+  revokeToken?: (context: { token: string; tokenTypeHint: "access_token" | "refresh_token" }) => Promise<void>;
 }
 
 /**

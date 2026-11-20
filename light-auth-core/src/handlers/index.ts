@@ -31,9 +31,6 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
     const req = await router.getRequest({ env, basePath, ...args });
     const headers = await router.getHeaders({ env, basePath, ...args });
 
-    // check the origin of the request if cross-origin
-    await checkCsrfOrigin(headers);
-
     const url = await router.getUrl({ env, basePath, ...args });
     const reqUrl = new URL(url);
 
@@ -61,6 +58,10 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
 
     if (pathSegments.length < 1) throw new Error("light-auth: Not enough path segments found");
 
+    // check the origin of cross-origin requests, except on the OAuth callback: form_post responses are posted from the provider domain,
+    // and the callback is protected by the state, PKCE and nonce checks
+    if (pathSegments[0] !== "callback") await checkCsrfOrigin(headers);
+
     const providerName = pathSegments.length > 1 ? pathSegments[1] : null;
     // get the callback URL if any, restricted to a same-origin path to prevent open redirects
     const callbackUrl = sanitizeCallbackUrl(reqUrl.searchParams.get("callbackUrl"), reqUrl.origin);
@@ -75,7 +76,7 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
     // POST endpoints send the CSRF token back in a header (double-submit)
     const assertCsrfHeader = async () => {
       const cookies = await router.getCookies({ env, basePath, ...args });
-      const csrfIsValid = validateCsrfToken(cookies, buildSecret(env), headers.get(CSRF_HEADER_NAME));
+      const csrfIsValid = await validateCsrfToken(cookies, buildSecret(env), headers.get(CSRF_HEADER_NAME));
       if (!csrfIsValid) throw new Error("Invalid CSRF token");
     };
 
@@ -91,8 +92,10 @@ export function createHttpHandlerFunction<Session extends LightAuthSession = Lig
       newResponse = await redirectToProviderLoginHandler({ ...args, config, providerName, callbackUrl, checkCsrf: true, csrfToken });
     } else if (pathSegments[0] === "logout" && req.method === "GET") {
       newResponse = await logoutAndRevokeTokenHandler({ ...args, config, revokeToken, checkCsrf: true, callbackUrl, csrfToken });
-    } else if (pathSegments[0] === "callback" && providerName && req.method === "GET") {
-      newResponse = await providerCallbackHandler({ config, providerName, ...args });
+    } else if (pathSegments[0] === "callback" && providerName && (req.method === "GET" || req.method === "POST")) {
+      // form_post authorization responses (Apple) are posted as application/x-www-form-urlencoded
+      const callbackParameters = req.method === "POST" ? new URLSearchParams(await req.text()) : reqUrl.searchParams;
+      newResponse = await providerCallbackHandler({ ...args, config, providerName, callbackParameters });
     } else if (pathSegments[0] === "credentials" && pathSegments[1] === "login" && req.method === "POST") {
       await assertCsrfHeader();
       const body = await req.json();

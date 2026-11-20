@@ -2,6 +2,24 @@ import { buildFullUrl, type LightAuthCookie, type LightAuthRouter, type LightAut
 import { type Request as ExpressRequest, type Response as ExpressResponse } from "express";
 import * as cookieParser from "cookie";
 
+/**
+ * Reads the request body, which may already have been consumed by a body parser middleware (express.json(), express.urlencoded()...)
+ */
+async function readExpressBody(req: ExpressRequest, headers: Headers): Promise<string | Buffer> {
+  if (req.body !== undefined && req.readableEnded) {
+    if (typeof req.body === "string" || Buffer.isBuffer(req.body)) return req.body;
+    // the parsed body is serialized again, its length may differ from the original one
+    headers.delete("content-length");
+    const contentType = headers.get("content-type") ?? "";
+    if (contentType.includes("application/x-www-form-urlencoded")) return new URLSearchParams(req.body as Record<string, string>).toString();
+    return JSON.stringify(req.body);
+  }
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  return Buffer.concat(chunks);
+}
+
 export const expressLightAuthRouter: LightAuthRouter = {
   returnJson: function ({ res, data, init }: { res?: ExpressResponse; data: {} | null; init?: ResponseInit }): ExpressResponse {
     if (!res) throw new Error("Response is required in writeJson function of expressLightAuthRouter");
@@ -19,7 +37,11 @@ export const expressLightAuthRouter: LightAuthRouter = {
     if (!req) throw new Error("Request is required in getRequest function of expressLightAuthRouter");
     const url = await this.getUrl({ ...args });
     const headers = await this.getHeaders({ ...args });
-    return new Request(url, { method: req.method, headers: headers });
+    const method = req.method ?? "GET";
+    if (method === "GET" || method === "HEAD") return new Request(url, { method, headers });
+
+    // keep the body: credentials endpoints and form_post callbacks read it
+    return new Request(url, { method, headers, body: await readExpressBody(req, headers) });
   },
 
   getUrl: function ({ endpoint, req }: { endpoint?: string; req?: ExpressRequest }): string {

@@ -66,21 +66,23 @@ export default defineConfig({
 ``` ts
 // file: "./lib/auth.ts"
 
-import { Google, Github } from "arctic";
-import { CreateLightAuth } from "@light-auth/nextjs";
+import { CreateLightAuth } from "@light-auth/tanstack-react-start";
+import { createGitHubProvider, createGoogleProvider } from "@light-auth/core";
 
-const googleProvider = {
-  providerName: "google",
-  arctic: new Google(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT),
-};
+// redirectUri defaults to ${LIGHT_AUTH_URL}/api/auth/callback/<providerName>
+const googleProvider = createGoogleProvider({
+  clientId: GOOGLE_CLIENT_ID,
+  clientSecret: GOOGLE_CLIENT_SECRET,
+});
 
-const githubProvider = {
-  providerName: "github",
-  arctic: new GitHub(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, REDIRECT)
-};
+const githubProvider = createGitHubProvider({
+  clientId: GITHUB_CLIENT_ID,
+  clientSecret: GITHUB_CLIENT_SECRET,
+});
 
 export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth({
   providers: [googleProvider, githubProvider]
+});
 ```
 
 ### 4) Add Light Auth Handlers

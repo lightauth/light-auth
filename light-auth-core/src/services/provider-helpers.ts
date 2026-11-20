@@ -1,10 +1,8 @@
-import type { LightAuthOAuthProvider, LightAuthCredentialsProvider, LightAuthUserClaims } from "../models";
-import type { ArcticProvider } from "../models";
-import { OAuth2Tokens } from "arctic";
+import type { LightAuthOAuthProvider, LightAuthCredentialsProvider } from "../models";
 
 /**
  * Helper function to create an OAuth provider with explicit type.
- * This ensures backward compatibility and makes the type explicit.
+ * Low-level escape hatch: prefer createOidcProvider, createOAuth2Provider or a provider preset.
  *
  * @param provider The OAuth provider configuration
  * @returns A typed OAuth provider
@@ -30,32 +28,27 @@ export function createCredentialsProvider(provider: Omit<LightAuthCredentialsPro
 }
 
 /**
- * Backward compatibility: Converts a legacy provider (without type field) to OAuth provider.
- * This allows existing code to continue working without changes.
+ * Adds the type discriminator to providers declared without it, and rejects the former arctic based configuration.
  *
  * @param provider A provider that may or may not have the type field
  * @returns A properly typed provider
  */
 export function ensureProviderType(
-  provider: LightAuthOAuthProvider | LightAuthCredentialsProvider | (Omit<LightAuthOAuthProvider, "type"> & { arctic: ArcticProvider })
+  provider: LightAuthOAuthProvider | LightAuthCredentialsProvider | { [key: string]: unknown }
 ): LightAuthOAuthProvider | LightAuthCredentialsProvider {
+  if ("arctic" in provider)
+    throw new Error(
+      `light-auth: provider "${String(provider.providerName)}" is configured with arctic, which is no longer supported. ` +
+        "Use createGoogleProvider, createMicrosoftEntraIdProvider, createGitHubProvider, createOidcProvider... instead (see the migration guide in the README)."
+    );
+
   // If it already has a type, return as-is
   if ("type" in provider && (provider.type === "oauth" || provider.type === "credentials")) {
-    return provider;
+    return provider as LightAuthOAuthProvider | LightAuthCredentialsProvider;
   }
 
-  // If it has an arctic property, it's an OAuth provider (legacy format)
-  if ("arctic" in provider) {
-    return {
-      type: "oauth",
-      ...provider,
-    } as LightAuthOAuthProvider;
-  }
-
-  // If it has verifyCredentials, it's a credentials provider (shouldn't happen but for safety)
-  if ("verifyCredentials" in provider) {
-    return provider as LightAuthCredentialsProvider;
-  }
+  if ("verifyCredentials" in provider) return { ...provider, type: "credentials" } as LightAuthCredentialsProvider;
+  if ("clientId" in provider) return { ...provider, type: "oauth" } as LightAuthOAuthProvider;
 
   throw new Error("light-auth: Invalid provider configuration. Provider must be either OAuth or Credentials type.");
 }

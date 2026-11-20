@@ -1,5 +1,6 @@
 import { type LightAuthConfig, type LightAuthCookie, type LightAuthSession, type LightAuthUser } from "../models";
 import { CSRF_COOKIE_NAME, validateCsrfToken } from "../services";
+import { revokeProviderToken } from "../services/oauth-client";
 import { buildSecret, checkConfig, sanitizeCallbackUrl } from "../services/utils";
 
 export async function logoutAndRevokeTokenHandler<
@@ -28,7 +29,7 @@ export async function logoutAndRevokeTokenHandler<
   if (checkCsrf) {
     const secret = buildSecret(env);
     const cookies = await router.getCookies({ env, basePath, ...args });
-    const csrfIsValid = validateCsrfToken(cookies, secret, args.csrfToken);
+    const csrfIsValid = await validateCsrfToken(cookies, secret, args.csrfToken);
     if (!csrfIsValid) throw new Error("Invalid CSRF token");
   }
 
@@ -43,18 +44,21 @@ export async function logoutAndRevokeTokenHandler<
 
     if (user) {
       // delete the user
-      if (user) await userAdapter.deleteUser({ env, basePath, user, ...args });
+      await userAdapter.deleteUser({ env, basePath, user, ...args });
 
-      var token = user?.accessToken;
-
-      // revoke the token if the provider supports it (OAuth providers only)
-      if (token && provider && revokeToken && provider.type === "oauth") {
-        // Revoke the token if the provider supports it
-        if (typeof provider.arctic.revokeToken === "function") {
+      // revoke the tokens if the provider supports it (OAuth providers only):
+      // the refresh token first, revoking it usually invalidates the access tokens issued with it
+      if (provider && revokeToken && provider.type === "oauth") {
+        const tokensToRevoke = [
+          { token: user.refreshToken, tokenTypeHint: "refresh_token" as const },
+          { token: user.accessToken, tokenTypeHint: "access_token" as const },
+        ];
+        for (const { token, tokenTypeHint } of tokensToRevoke) {
+          if (!token) continue;
           try {
-            await provider.arctic.revokeToken(token);
+            await revokeProviderToken(provider, token, tokenTypeHint);
           } catch (e) {
-            console.warn("Failed to revoke token:", e);
+            console.warn(`Failed to revoke ${tokenTypeHint}:`, e instanceof Error ? e.message : e);
           }
         }
       }
@@ -76,13 +80,16 @@ export async function logoutAndRevokeTokenHandler<
   } catch {}
 
   try {
-    const stateCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_state`, value: "", path: "/", maxAge: 0 };
-    const codeVerifierCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_code_verifier`, value: "", path: "/", maxAge: 0 };
-    const callbackUrlCookieDelete: LightAuthCookie = { name: `${providerName}_light_auth_callback_url`, value: "", path: "/", maxAge: 0 };
-    const csrfCookieDelete: LightAuthCookie = { name: CSRF_COOKIE_NAME, value: "", path: "/", maxAge: 0 };
+    const cookiesDelete: LightAuthCookie[] = ["state", "code_verifier", "nonce", "callback_url"].map((name) => ({
+      name: `${providerName}_light_auth_${name}`,
+      value: "",
+      path: "/",
+      maxAge: 0,
+    }));
+    cookiesDelete.push({ name: CSRF_COOKIE_NAME, value: "", path: "/", maxAge: 0 });
 
     // delete the cookies
-    await router.setCookies({ env, basePath, cookies: [stateCookieDelete, codeVerifierCookieDelete, callbackUrlCookieDelete, csrfCookieDelete], ...args });
+    await router.setCookies({ env, basePath, cookies: cookiesDelete, ...args });
   } catch {}
 
   return await router.redirectTo({ env, basePath, ...args, url: callbackUrl });

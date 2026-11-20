@@ -51,20 +51,16 @@ npm -i @light-auth/sveltekit
 ``` ts
 // file: "./src/lib/server/auth.ts"
 
-import { Google } from 'arctic';
-
-import type { LightAuthProvider } from '@light-auth/core';
+import { createGoogleProvider } from '@light-auth/core';
 import { CreateLightAuth } from '@light-auth/sveltekit';
 import { env } from '$env/dynamic/private';
 
-const googleProvider: LightAuthProvider = {
-	providerName: 'google',
-	arctic: new Google(
-      env.GOOGLE_CLIENT_ID, 
-      env.GOOGLE_CLIENT_SECRET, 
-      env.REDIRECT_URI),
-	searchParams: new Map([['access_type', 'offline']])
-};
+const googleProvider = createGoogleProvider({
+	clientId: env.GOOGLE_CLIENT_ID,
+	clientSecret: env.GOOGLE_CLIENT_SECRET,
+	redirectUri: env.REDIRECT_URI,
+	accessType: 'offline'
+});
 
 export const { providers, handlers, signIn, signOut, getAuthSession, getUser } 
   = CreateLightAuth({providers: [googleProvider], env: env});

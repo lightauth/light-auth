@@ -51,17 +51,15 @@ npm -i @light-auth/astro
 ``` ts
 // file: "./src/lib/auth.ts"
 
-import { Google } from "arctic";
-import { type LightAuthProvider } from "@light-auth/core";
+import { createGoogleProvider } from "@light-auth/core";
 import { CreateLightAuth } from "@light-auth/astro";
 
-const googleProvider: LightAuthProvider = {
-  providerName: "google",
-  arctic: new Google(import.meta.env.GOOGLE_CLIENT_ID, 
-        import.meta.env.GOOGLE_CLIENT_SECRET, 
-        import.meta.env.REDIRECT_URI),
-  searchParams: new Map([["access_type", "offline"]]),
-};
+const googleProvider = createGoogleProvider({
+  clientId: import.meta.env.GOOGLE_CLIENT_ID,
+  clientSecret: import.meta.env.GOOGLE_CLIENT_SECRET,
+  redirectUri: import.meta.env.REDIRECT_URI,
+  accessType: "offline",
+});
 
 
 export const { providers, handlers, getAuthSession, getUser, signIn, signOut } 

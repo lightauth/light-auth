@@ -1,4 +1,4 @@
-export * from "./artic-provider";
+export * from "./light-auth-tokens";
 export * from "./light-auth-base";
 export * from "./light-auth-components";
 export * from "./light-auth-config";

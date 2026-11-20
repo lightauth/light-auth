@@ -10,6 +10,6 @@ export async function getCsrfToken<Session extends LightAuthSession = LightAuthS
   const secret = buildSecret(env);
 
   // create a new csrf token
-  const csrfToken = createCsrfToken(secret);
+  const csrfToken = await createCsrfToken(secret);
   return router.returnJson({ env, basePath, data: csrfToken, ...args });
 }

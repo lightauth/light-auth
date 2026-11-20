@@ -50,7 +50,6 @@
   },
   "dependencies": {
     "@light-auth/core": "^0.3.5",
-    "arctic": "^3.6.0",
     "jose": "^6.0.10"
   },
   "devDependencies": {

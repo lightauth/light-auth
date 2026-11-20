@@ -1,6 +1,4 @@
-import * as sha2 from "@oslojs/crypto/sha2";
-import { hmac } from "@oslojs/crypto/hmac";
-import * as encoding from "@oslojs/encoding";
+import { base64url } from "jose";
 import { type LightAuthConfig, type LightAuthCookie, type LightAuthCsrfToken, type LightAuthSession, type LightAuthUser } from "../models";
 import { internalFetch } from "./internal-fetch";
 
@@ -13,10 +11,15 @@ export const CSRF_TOKEN_PARAM_NAME = "csrfToken";
 
 const encoder = new TextEncoder();
 
-function signCsrfToken(csrfToken: string, secret: string): string {
+async function hmacSha256(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
+  const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign("HMAC", cryptoKey, data));
+}
+
+async function signCsrfToken(csrfToken: string, secret: string): Promise<string> {
   // dedicated key, so the session encryption key is never used directly to sign CSRF tokens
-  const csrfKey = hmac(sha2.SHA256, encoder.encode(secret), encoder.encode("light-auth-csrf-token"));
-  return encoding.encodeBase64urlNoPadding(hmac(sha2.SHA256, csrfKey, encoder.encode(csrfToken)));
+  const csrfKey = await hmacSha256(encoder.encode(secret), encoder.encode("light-auth-csrf-token"));
+  return base64url.encode(await hmacSha256(csrfKey, encoder.encode(csrfToken)));
 }
 
 function constantTimeEqual(a: string, b: string): boolean {
@@ -29,9 +32,7 @@ function constantTimeEqual(a: string, b: string): boolean {
 }
 
 function generateRandomCsrf(): string {
-  const randomValues = new Uint8Array(32);
-  crypto.getRandomValues(randomValues);
-  return encoding.encodeBase64urlNoPadding(randomValues);
+  return base64url.encode(crypto.getRandomValues(new Uint8Array(32)));
 }
 
 /**
@@ -101,10 +102,10 @@ export async function checkCsrfOrigin(headers: Headers) {
   return true;
 }
 
-export function createCsrfToken(secret: string): LightAuthCsrfToken {
+export async function createCsrfToken(secret: string): Promise<LightAuthCsrfToken> {
   // New CSRF token
   const csrfToken = generateRandomCsrf();
-  const csrfTokenHash = signCsrfToken(csrfToken, secret);
+  const csrfTokenHash = await signCsrfToken(csrfToken, secret);
   return { csrfToken, csrfTokenHash };
 }
 
@@ -112,7 +113,7 @@ export function createCsrfToken(secret: string): LightAuthCsrfToken {
  * Double-submit validation: the signed token stored in the CSRF cookie must be authentic
  * and match the token sent back with the request (query parameter or header), which a cross-site attacker cannot read.
  */
-export function validateCsrfToken(cookies: LightAuthCookie[], secret: string, requestCsrfToken: string | null | undefined): boolean {
+export async function validateCsrfToken(cookies: LightAuthCookie[], secret: string, requestCsrfToken: string | null | undefined): Promise<boolean> {
   const cookieValue = cookies.find((cookie) => cookie.name === CSRF_COOKIE_NAME)?.value;
   if (!cookieValue || !requestCsrfToken) return false;
 
@@ -123,5 +124,5 @@ export function validateCsrfToken(cookies: LightAuthCookie[], secret: string, re
   const csrfToken = cookieValue.slice(separatorIndex + 1);
 
   if (!csrfToken || !constantTimeEqual(csrfToken, requestCsrfToken)) return false;
-  return constantTimeEqual(csrfTokenHash, signCsrfToken(csrfToken, secret));
+  return constantTimeEqual(csrfTokenHash, await signCsrfToken(csrfToken, secret));
 }

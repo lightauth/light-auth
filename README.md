@@ -47,28 +47,30 @@ npm -i @light-auth/nextjs
 
 ### 2) Configure Light Auth
 
-Set a random `LIGHT_AUTH_SECRET_VALUE` environment variable of at least 32 characters, used to encrypt the session cookie (light auth refuses to start otherwise):
+Set a random `LIGHT_AUTH_SECRET_VALUE` environment variable of at least 32 characters, used to encrypt the session cookie (light auth refuses to start otherwise), and the public URL of your application, used to compute the providers callback URL (`${LIGHT_AUTH_URL}/api/auth/callback/<providerName>`):
 
 ``` sh
 LIGHT_AUTH_SECRET_VALUE=$(openssl rand -base64 32)
+LIGHT_AUTH_URL=http://localhost:3000
 ```
 
 ``` ts
-import { Google, Github } from "arctic";
 import { CreateLightAuth } from "@light-auth/nextjs";
+import { createGitHubProvider, createGoogleProvider } from "@light-auth/core";
 
-const googleProvider = {
-  providerName: "google",
-  arctic: new Google(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT),
-};
+const googleProvider = createGoogleProvider({
+  clientId: GOOGLE_CLIENT_ID,
+  clientSecret: GOOGLE_CLIENT_SECRET,
+});
 
-const githubProvider = {
-  providerName: "github",
-  arctic: new GitHub(GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, REDIRECT)
-};
+const githubProvider = createGitHubProvider({
+  clientId: GITHUB_CLIENT_ID,
+  clientSecret: GITHUB_CLIENT_SECRET,
+});
 
 export const { providers, handlers, signIn, signOut, getAuthSession, getUser } = CreateLightAuth({
   providers: [googleProvider, githubProvider]
+});
 ```
 
 ### 3) Add Light Auth Handlers
@@ -113,6 +115,45 @@ export default async function Home() {
   );
 }
 ```
+
+## Providers
+
+| Factory | Provider | Default scopes |
+| --- | --- | --- |
+| `createGoogleProvider` | Google (OpenID Connect), set `accessType: "offline"` to get a refresh token | openid, profile, email |
+| `createMicrosoftEntraIdProvider` | Microsoft Entra ID (OpenID Connect), `tenant` defaults to `"common"`, add `offline_access` to get a refresh token | openid, profile, email |
+| `createGitHubProvider` | GitHub (OAuth 2.0) | read:user, user:email |
+| `createDiscordProvider` | Discord (OAuth 2.0) | identify, email |
+| `createAppleProvider` | Sign in with Apple (OpenID Connect), with `teamId`, `keyId` and `privateKey` instead of a client secret | name, email |
+| `createOidcProvider` | Any OpenID Connect provider, configured from its `issuer` (discovery) | openid, profile, email |
+| `createOAuth2Provider` | Any OAuth 2.0 provider, with explicit endpoints and a `getProfile` function | none |
+
+Every factory takes a `clientId`, a `clientSecret`, an optional `redirectUri` (default `${LIGHT_AUTH_URL}${basePath}/callback/<providerName>`) and `scopes`, added to the default ones.
+
+OpenID Connect id_tokens are fully validated (signature against the provider keys, issuer, audience, expiration and nonce), and their claims are available in the `onSessionSaving` / `onUserSaving` hooks:
+
+``` ts
+onSessionSaving: async (session, tokens) => {
+  if (typeof tokens?.idTokenClaims?.given_name === "string") session.firstName = tokens.idTokenClaims.given_name;
+  return session;
+},
+```
+
+### Migrating from arctic (0.4.0)
+
+[arctic](https://www.npmjs.com/package/arctic) is deprecated and no longer used by light auth, you can remove it from your dependencies:
+
+``` ts
+// before
+import { Google } from "arctic";
+const googleProvider = { providerName: "google", arctic: new Google(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT) };
+
+// after
+import { createGoogleProvider } from "@light-auth/core";
+const googleProvider = createGoogleProvider({ clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET, redirectUri: REDIRECT });
+```
+
+The hooks receive a plain `tokens` object (`accessToken`, `refreshToken`, `accessTokenExpiresAt`, `idToken`, `idTokenClaims`, `scopes`, `raw`) instead of the arctic `OAuth2Tokens` class.
 
 ## Contributing
 

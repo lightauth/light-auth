@@ -1,7 +1,7 @@
-import { generateState, generateCodeVerifier } from "arctic";
 import { type LightAuthConfig, type BaseResponse, type LightAuthCookie, type LightAuthSession, type LightAuthUser } from "../models";
 import { buildSecret, checkConfig, sanitizeCallbackUrl } from "../services/utils";
 import { CSRF_COOKIE_NAME, validateCsrfToken } from "../services";
+import { createAuthorizationRequest } from "../services/oauth-client";
 
 /**
  * Redirects the user to the provider login page.
@@ -21,15 +21,12 @@ export async function redirectToProviderLoginHandler<
 
   const { provider, router, env, basePath } = checkConfig(config, providerName);
 
-  const state = generateState();
-  const codeVerifier = generateCodeVerifier();
-
   // Check if CSRF validation is required
   // it could be disable for direct call from a post action issued by the SSR framework
   if (checkCsrf) {
     const secret = buildSecret(env);
     const cookies = await router.getCookies({ env, basePath, ...args });
-    const csrfIsValid = validateCsrfToken(cookies, secret, args.csrfToken);
+    const csrfIsValid = await validateCsrfToken(cookies, secret, args.csrfToken);
     if (!csrfIsValid) throw new Error("Invalid CSRF token");
   }
 
@@ -38,63 +35,30 @@ export async function redirectToProviderLoginHandler<
     throw new Error("light-auth: Credentials provider login should be handled through POST to /credentials/login endpoint, not redirect-to-provider");
   }
 
-  // OAuth provider flow
-  // Using Set to ensure unique scopes
-  // and adding default scopes
-  const scopeSet = new Set(provider.scopes ?? []);
-  scopeSet.add("openid");
-  scopeSet.add("profile");
-  scopeSet.add("email");
-  const scopes = Array.from(scopeSet);
+  // OAuth provider flow: state, PKCE code verifier and OpenID Connect nonce are kept in short-lived cookies until the callback
+  const { url, state, codeVerifier, nonce } = await createAuthorizationRequest(provider, { env, basePath });
 
-  const url = provider.arctic.createAuthorizationURL(state, codeVerifier, scopes);
-
-  // add additional params to the url
-  if (provider.searchParams) {
-    for (const [key, value] of provider.searchParams) {
-      url.searchParams.append(key, value);
-    }
-  }
-
-  const newHeaders = new Headers();
-  // add additional headers
-  if (provider.headers) for (const [key, value] of provider.headers) newHeaders.append(key, value);
-
-  const stateCookie: LightAuthCookie = {
-    name: `${provider.providerName}_light_auth_state`,
-    value: state,
+  // a form_post response comes from the provider domain: the cookies must be sent with a cross-site POST
+  const isFormPost = provider.responseMode === "form_post";
+  const flowCookie = (name: string, value: string): LightAuthCookie => ({
+    name: `${provider.providerName}_light_auth_${name}`,
+    value,
     path: "/",
     httpOnly: true,
-    secure: env["NODE_ENV"] === "production",
-    sameSite: "lax",
+    secure: isFormPost || env["NODE_ENV"] === "production",
+    sameSite: isFormPost ? "none" : "lax",
     maxAge: 60 * 10, // 10 minutes
-  };
+  });
 
-  const codeVerifierCookie: LightAuthCookie = {
-    name: `${provider.providerName}_light_auth_code_verifier`,
-    value: codeVerifier,
-    path: "/",
-    httpOnly: true,
-    secure: env["NODE_ENV"] === "production",
-    sameSite: "lax",
-    maxAge: 60 * 10, // 10 minutes
-  };
-
-  const callbackUrlCookie: LightAuthCookie = {
-    name: `${provider.providerName}_light_auth_callback_url`,
-    value: sanitizeCallbackUrl(args.callbackUrl),
-    path: "/",
-    httpOnly: true,
-    secure: env["NODE_ENV"] === "production",
-    sameSite: "lax",
-    maxAge: 60 * 10, // 10 minutes
-  };
+  const cookies: LightAuthCookie[] = [flowCookie("state", state), flowCookie("callback_url", sanitizeCallbackUrl(args.callbackUrl))];
+  if (codeVerifier) cookies.push(flowCookie("code_verifier", codeVerifier));
+  if (nonce) cookies.push(flowCookie("nonce", nonce));
 
   // delete the csrf token cookie (same path as when it was set, otherwise the browser keeps it)
-  const csrfCookieDelete: LightAuthCookie = { name: CSRF_COOKIE_NAME, value: "", path: "/", maxAge: 0 };
+  cookies.push({ name: CSRF_COOKIE_NAME, value: "", path: "/", maxAge: 0 });
 
   // set the cookies in the response
-  const res = await router.setCookies({ env, basePath, cookies: [stateCookie, codeVerifierCookie, callbackUrlCookie, csrfCookieDelete], ...args });
+  const res = await router.setCookies({ env, basePath, cookies, ...args });
 
-  return await router.redirectTo({ env, basePath, url: url.toString(), headers: newHeaders, res, ...args });
+  return await router.redirectTo({ env, basePath, url: url.toString(), res, ...args });
 }

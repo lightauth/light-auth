@@ -13,16 +13,24 @@ type LightAuthProvider =
 ## OAuth Provider
 
 ```typescript
-import { createOAuthProvider } from "@light-auth/core";
-import { Google } from "arctic";
+import { createGoogleProvider, createOidcProvider } from "@light-auth/core";
 
-const provider = createOAuthProvider({
-  providerName: "google",
-  arctic: new Google(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI),
-  scopes: ["email", "profile"],           // Optional
+// presets: createGoogleProvider, createMicrosoftEntraIdProvider, createGitHubProvider, createDiscordProvider, createAppleProvider
+const provider = createGoogleProvider({
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET,
+  redirectUri: REDIRECT_URI,               // Optional: default ${LIGHT_AUTH_URL}${basePath}/callback/<providerName>
+  scopes: ["https://www.googleapis.com/auth/calendar.readonly"], // Optional: added to the default scopes
   searchParams: new Map([["key", "val"]]), // Optional
-  headers: new Map([["header", "value"]]), // Optional
-  onGetOAuth2Tokens: (tokens) => tokens,  // Optional
+  onGetOAuth2Tokens: (tokens) => tokens,   // Optional
+});
+
+// any OpenID Connect provider, configured from its issuer
+const keycloak = createOidcProvider({
+  providerName: "keycloak",
+  issuer: "https://sso.example.com/realms/main",
+  clientId: CLIENT_ID,
+  clientSecret: CLIENT_SECRET,
 });
 ```
 
@@ -77,8 +85,8 @@ interface LightAuthUserClaims {
 import { isOAuthProvider, isCredentialsProvider } from "@light-auth/core";
 
 if (isOAuthProvider(provider)) {
-  // provider.arctic is available
-  const url = provider.arctic.createAuthorizationURL(...);
+  // provider.clientId, provider.issuer, provider.scopes... are available
+  console.log(provider.clientId);
 }
 
 if (isCredentialsProvider(provider)) {
@@ -87,34 +95,30 @@ if (isCredentialsProvider(provider)) {
 }
 ```
 
-## Backward Compatibility
+## Migration from arctic
 
 ```typescript
-// ✅ Legacy format (without type field) still works
+// ❌ arctic is deprecated and no longer supported: light auth throws an explicit error at startup
 const legacyProvider = {
   providerName: "google",
   arctic: new Google(...),
-  // No 'type' field - automatically converted to type: "oauth"
 };
+
+// ✅ use a provider preset (or createOidcProvider / createOAuth2Provider)
+const provider = createGoogleProvider({ clientId, clientSecret, redirectUri });
 ```
 
 ## Mixed Provider Configuration
 
 ```typescript
 import { CreateLightAuth } from "@light-auth/nextjs";
-import { createOAuthProvider, createCredentialsProvider } from "@light-auth/core";
+import { createGitHubProvider, createGoogleProvider, createCredentialsProvider } from "@light-auth/core";
 
 const { handlers, signIn, signOut, getAuthSession } = CreateLightAuth({
   providers: [
     // OAuth providers
-    createOAuthProvider({ 
-      providerName: "google", 
-      arctic: new Google(...) 
-    }),
-    createOAuthProvider({ 
-      providerName: "github", 
-      arctic: new GitHub(...) 
-    }),
+    createGoogleProvider({ clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET }),
+    createGitHubProvider({ clientId: GITHUB_CLIENT_ID, clientSecret: GITHUB_CLIENT_SECRET }),
     
     // Credentials provider
     createCredentialsProvider({
@@ -219,7 +223,7 @@ await fetch("/api/auth/credentials/register", {
 | Type | `"oauth"` | `"credentials"` |
 | Redirect Flow | ✅ Yes | ❌ No |
 | Callback URL | ✅ Required | ❌ N/A |
-| Arctic Integration | ✅ Required | ❌ N/A |
+| OAuth 2.0 / OpenID Connect client | ✅ Built-in (oauth4webapi) | ❌ N/A |
 | Password Handling | ❌ N/A | ✅ Custom |
 | Token Refresh | ✅ Supported | ❌ N/A |
 | Token Revocation | ✅ Supported | ❌ N/A |
